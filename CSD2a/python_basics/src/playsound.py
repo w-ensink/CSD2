@@ -27,7 +27,7 @@ def get_filename() -> str:
 
 
 # plays given sound file a given number of times and waits for it to finish (blocking)
-def play_sound(filename, num_times: int = 1):
+def play_sound(filename, num_times: int = 1) -> None:
     print(f'Playing \'{basename(filename)}\' {num_times} time(s)')
     file = sa.WaveObject.from_wave_file(filename)
 
@@ -52,7 +52,7 @@ def ask_num_times_to_play() -> int:
 
 
 # ask if the user wants to play the sample again, doesn't stop until a valid answer has been given
-def ask_go_again():
+def ask_go_again() -> bool:
     while True:
         ans = input('Want to go again? (y/n): ').lower()
         if ans == 'y':
@@ -62,7 +62,7 @@ def ask_go_again():
         print('Invalid input, try again...')
 
 
-def main():
+def main() -> None:
     go_again = True
     sample_filename = get_filename()
 
