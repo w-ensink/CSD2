@@ -6,7 +6,7 @@ This folder contains two files, namely ```hello_world.py``` and ```playsound.py`
 ## Hello, World!
 ```hello_world.py``` can be run by simply using: ```python3 hello_world.py``` assuming your terminal has been cd'ed to the ```src``` directory.
 
-The program should first output "Hello, World!" and then ask for your name. It should finally print "hello [your name]" to the console and exit
+The program should first output "Hello, World!" and then ask for your name. It should finally print "Hello, [your name]!" to the console and exit
 
 ---
 ## Play Sound
