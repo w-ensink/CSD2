@@ -21,10 +21,12 @@ import simpleaudio as sa
 
 
 class EventGenerator:
-    @staticmethod
-    def generate_events(time_stamps_ticks):
+    def __init__(self, audio_file):
+        self.audio_file = audio_file
+
+    def generate_events(self, time_stamps_ticks):
         events = []
-        audio_file = sa.WaveObject.from_wave_file('../audio/kick.wav')
+        audio_file = sa.WaveObject.from_wave_file(self.audio_file)
 
         for time_stamp in time_stamps_ticks:
             events.append(Event(time_stamp_ticks=time_stamp, audio_file=audio_file))
@@ -64,7 +66,7 @@ class AudioTransport(Thread):
         self.tempo_bpm = 100
         self.ms_between_ticks = 0
         self.pulses_per_quarter_note = 4
-        self.events = EventGenerator.generate_events([0, 4, 8, 12, 16])
+        self.events = []
         self.event_handler = EventHandler()
         self.recalculate_tick_time()
         self.keep_thread_active = True
@@ -76,12 +78,17 @@ class AudioTransport(Thread):
     def stop_playback(self):
         self.play_state = PlayStates.stopped
 
+    def set_events(self, events):
+        self.events = events
+
     def run(self):
+        print('Starting Transport Thread')
         while self.keep_thread_active:
             if self.play_state == PlayStates.playing:
                 self.handle_all_events_for_playhead_position()
                 self.playhead.position_in_ticks += 1
                 self.wait_for_next_tick()
+        print('Stopping Transport Thread')
 
     def handle_all_events_for_playhead_position(self):
         for event in self.events:
@@ -104,9 +111,12 @@ class AudioTransport(Thread):
 
 
 class ConsoleInterface:
-    def __init__(self, transport: AudioTransport):
+    def __init__(self, transport: AudioTransport, event_generator: EventGenerator):
         self.transport = transport
         self.keep_running = True
+        self.event_generator = event_generator
+        event_time_stamps = [0, 4, 8, 12, 16, 18, 19, 20, 24, 28, 29, 31, 34, 36]
+        self.transport.set_events(self.event_generator.generate_events(event_time_stamps))
 
     def run(self):
         while self.keep_running:
@@ -126,11 +136,18 @@ class ConsoleInterface:
                 print('invalid command')
 
 
+class SingleSampleSequencer:
+    def __init__(self, sample_filename):
+        self.transport = AudioTransport()
+        self.event_generator = EventGenerator(sample_filename)
+        self.interface = ConsoleInterface(self.transport, self.event_generator)
+
+    def run(self):
+        self.interface.run()
+
+
 def main():
-    transport = AudioTransport()
-    interface = ConsoleInterface(transport)
-    interface.run()
-    print('transport done')
+    SingleSampleSequencer('../audio/kick.wav').run()
 
 
 if __name__ == '__main__':
