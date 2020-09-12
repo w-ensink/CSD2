@@ -4,7 +4,7 @@ import time
 from play_head import PlayHead
 from time_signature import TimeSignature
 from threading import Thread
-from events import Event, EventHandler
+from events import EventHandler, EventList
 
 
 class PlayStates:
@@ -21,7 +21,7 @@ class AudioTransport(Thread):
         self.ticks_per_quarter_note = 4
         self.time_signature = TimeSignature(4, 4, self.ticks_per_quarter_note)
         self.playhead = PlayHead()
-        self.events = []
+        self.event_list = EventList([])
         self.event_handler = EventHandler()
         self.recalculate_tick_time()
         self.keep_thread_active = True
@@ -33,37 +33,20 @@ class AudioTransport(Thread):
     def stop_playback(self):
         self.play_state = PlayStates.stopped
 
-    def set_events(self, events: [Event]):
-        self.events = events
-        # find the event with the highest time stamp, then find the next bar ending to
-        # use that as the range end of the playhead, to avoid weird looping
-        loop_end = self.find_highest_event_time_stamp()
-
-        while not self.time_signature.is_tick_end_of_bar(loop_end):
-            loop_end += 1
-
-        self.playhead.set_looping(0, loop_end)
-
-    def find_highest_event_time_stamp(self):
-        highest_time = 0
-        for e in self.events:
-            if e.time_stamp_ticks > highest_time:
-                highest_time = e.time_stamp_ticks
-        return highest_time
+    def set_events(self, event_list: EventList):
+        self.event_list = event_list
+        self.playhead.set_looping(0, self.event_list.find_looping_point_for_time_signature(self.time_signature))
 
     def run(self):
-        print('Starting Transport Thread')
         while self.keep_thread_active:
             if self.play_state == PlayStates.playing:
                 self.handle_all_events_for_playhead_position()
                 self.playhead.advance_tick()
                 self.wait_for_next_tick()
-        print('Stopping Transport Thread')
 
     def handle_all_events_for_playhead_position(self):
-        for event in self.events:
-            if event.time_stamp_ticks == self.playhead.position_in_ticks:
-                self.event_handler.handle(event)
+        for e in self.event_list.get_all_events_with_time_stamp(self.playhead.position_in_ticks):
+            self.event_handler.handle(e)
 
     def wait_for_next_tick(self):
         time.sleep(self.ms_between_ticks / 1000)
@@ -74,8 +57,11 @@ class AudioTransport(Thread):
         self.ms_between_ticks = ms_per_minute / num_ticks_per_minute
 
     def set_tempo_bpm(self, tempo: float):
-        self.tempo_bpm = tempo
-        self.recalculate_tick_time()
+        if tempo > 0:
+            self.tempo_bpm = tempo
+            self.recalculate_tick_time()
+        else:
+            print('tempo change ignored, can\'t play non-positive tempo')
 
     def rewind(self):
         self.playhead.rewind()

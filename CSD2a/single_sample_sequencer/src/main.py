@@ -1,6 +1,6 @@
 # Written by Wouter Ensink
 
-from audio_transport import AudioTransport
+from transport import AudioTransport
 from events import EventGenerator
 from console_interface import ConsoleInterface
 
