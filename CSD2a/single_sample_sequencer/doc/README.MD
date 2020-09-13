@@ -26,3 +26,5 @@ The project also contains a couple of unit tests, to test if everything works as
 ```
 python3 unit_tests.py
 ```
+
+## Architecture
