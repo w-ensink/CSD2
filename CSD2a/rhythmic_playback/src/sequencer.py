@@ -1,6 +1,6 @@
 # Written by Wouter Ensink
 
-from SamplePlayer import *
+from sample_player import *
 import time
 
 

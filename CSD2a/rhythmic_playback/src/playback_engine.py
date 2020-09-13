@@ -1,7 +1,7 @@
 # Written by Wouter Ensink
 
-from InputProvider import *
-from Sequencer import *
+from input_provider import *
+from sequencer import *
 
 
 class RhythmToSequenceConverter:

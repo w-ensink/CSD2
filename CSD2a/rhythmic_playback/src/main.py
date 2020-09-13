@@ -1,6 +1,6 @@
 # Written by Wouter Ensink
 
-from RhythmicPlaybackEngine import RhythmicPlaybackEngine
+from playback_engine import RhythmicPlaybackEngine
 import sys
 from os.path import isfile
 
