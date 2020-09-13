@@ -2,7 +2,6 @@
 
 from transport import AudioTransport
 from events import EventGenerator
-import os
 import regex
 
 

@@ -1,7 +1,7 @@
 # Written by Wouter Ensink
 
 import time
-from play_head import PlayHead
+from playhead import PlayHead
 from time_signature import TimeSignature
 from threading import Thread
 from events import EventHandler, EventList

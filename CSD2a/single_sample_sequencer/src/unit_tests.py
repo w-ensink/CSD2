@@ -6,7 +6,7 @@ from transport import PlayStates
 from unittest import TestCase
 import unittest
 from time_signature import TimeSignature
-from play_head import PlayHead
+from playhead import PlayHead
 from events import Event, EventList, EventGenerator
 
 
