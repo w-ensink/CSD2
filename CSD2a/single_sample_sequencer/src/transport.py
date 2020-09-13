@@ -18,8 +18,7 @@ class AudioTransport(Thread):
         self.play_state = PlayStates.stopped
         self.tempo_bpm = 100
         self.ms_between_ticks = 0
-        self.ticks_per_quarter_note = 4
-        self.time_signature = TimeSignature(4, 4, self.ticks_per_quarter_note)
+        self.time_signature = TimeSignature(numerator=4, denumerator=4, ticks_per_quarter_note=4)
         self.playhead = PlayHead()
         self.event_list = EventList([])
         self.event_handler = EventHandler()
@@ -52,7 +51,7 @@ class AudioTransport(Thread):
         time.sleep(self.ms_between_ticks / 1000)
 
     def recalculate_tick_time(self):
-        num_ticks_per_minute = self.ticks_per_quarter_note * self.tempo_bpm
+        num_ticks_per_minute = self.time_signature.ticks_per_quarter_note * self.tempo_bpm
         ms_per_minute = 60_000
         self.ms_between_ticks = ms_per_minute / num_ticks_per_minute
 
