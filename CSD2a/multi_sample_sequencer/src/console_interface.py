@@ -64,7 +64,7 @@ class ConsoleInterface:
 
     def print_current_sequence(self):
         time_signature = self.transport.time_signature
-        string = self.transport.event_list.to_string_with_time_signature(time_signature)
+        string = self.transport.event_manager.to_string_with_time_signature(time_signature)
         self.io_provider.present_message(string)
 
     def change_sequence(self):
@@ -72,9 +72,9 @@ class ConsoleInterface:
             self.print_current_sequence()
             m = ' - set with: s <bar> <beat> <tick>\n - reset with: r <bar> <beat> <tick>\n - done\n |-> '
             command = self.io_provider.present_message_and_get_answer(m)
+
             if command == 'done':
                 return
-
             elif self.set_event_command_pattern.match(command):
                 bar, beat, tick = self.parse_change_command_arguments(command)
                 self.event_time_stamps.append(self.transport.time_signature.musical_time_to_ticks(bar, beat, tick))

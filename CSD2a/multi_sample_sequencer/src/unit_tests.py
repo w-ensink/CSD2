@@ -7,7 +7,7 @@ from unittest import TestCase
 import unittest
 from time_signature import TimeSignature
 from playhead import PlayHead
-from events import Event, EventList, EventGenerator
+from events import Event, EventManager, EventGenerator
 
 
 # The type of IO Provider that is useful for testing all functionality of the interface
@@ -51,7 +51,7 @@ class MockTransport:
 class MockEventGenerator:
     @staticmethod
     def generate_events(time_stamps):
-        return EventList([Event(t, 'dummy.lol') for t in time_stamps])
+        return EventManager([Event(t, 'dummy.lol') for t in time_stamps])
 
 
 # Unit Test for Console Interface, testing the states
@@ -155,19 +155,19 @@ class EventList_UnitTest(TestCase):
     def test_find_looping_point_for_0_time_stamp(self):
         time_signature = TimeSignature(numerator=4, denumerator=4, ticks_per_quarter_note=4)
         event_time_stamps = [0]
-        event_list: EventList = MockEventGenerator().generate_events(event_time_stamps)
+        event_list: EventManager = MockEventGenerator().generate_events(event_time_stamps)
         looping_point = event_list.find_looping_point_for_time_signature(time_signature)
         self.assertEqual(time_signature.get_num_ticks_per_bar(), looping_point)
 
     def test_find_highest_time_stamp(self):
         event_time_stamps = [0, 2, 5, 100]
-        event_list: EventList = MockEventGenerator().generate_events(event_time_stamps)
+        event_list: EventManager = MockEventGenerator().generate_events(event_time_stamps)
         self.assertEqual(event_list.find_highest_time_stamp(), 100)
 
     def test_to_string(self):
         time_signature = TimeSignature(numerator=5, denumerator=4, ticks_per_quarter_note=8)
         event_time_stamps = [0, 8, 16, 24, 32]
-        event_list: EventList = MockEventGenerator().generate_events(event_time_stamps)
+        event_list: EventManager = MockEventGenerator().generate_events(event_time_stamps)
         expected_string = '|x....... x....... x....... x....... x.......|'
         actual_string = event_list.to_string_with_time_signature(time_signature)
         self.assertEqual(expected_string, actual_string)

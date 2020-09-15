@@ -1,23 +1,36 @@
 # Written by Wouter Ensink
 
 import simpleaudio as sa
+import time
 
 
 # Represents the playing of an audio file at a time stamp
 class Event:
     def __init__(self, time_stamp_ticks: int, audio_file):
         self.time_stamp_ticks = time_stamp_ticks
-        self.audio_file = audio_file
+        self.filename = audio_file
 
-
+'''
 # handles plays the content of an event
 class EventHandler:
-    @staticmethod
-    def handle(event):
-        event.audio_file.play()
+    def __init__(self, filenames):
+        files = [sa.WaveObject.from_wave_file(f) for f in filenames]
+        self.samples = dict(zip(filenames, files))
+
+    def handle(self, event):
+        self.samples[event.filename].play()
+'''
 
 
-class EventList:
+class EventHandler:
+    def __init__(self):
+        self.file = sa.WaveObject.from_wave_file('../audio/kick.wav')
+
+    def handle(self, e):
+        self.file.play()
+
+
+class EventManager:
     def __init__(self, events: [Event]):
         self.events = events
 
@@ -43,6 +56,14 @@ class EventList:
 
     def get_all_events_with_time_stamp(self, time_stamp):
         return [e for e in self.events if e.time_stamp_ticks == time_stamp]
+
+    def handle_all_events_with_time_stamp(self, time_stamp, handler):
+        for e in self.events:
+            if e.time_stamp_ticks == time_stamp:
+                t = time.time()
+                handler.handle(e)
+                dt = time.time() - t
+                print(f'handling {dt * 1000} ms')
 
     def to_string_with_time_signature(self, time_signature):
         num_ticks = int(self.find_looping_point_for_time_signature(time_signature))
@@ -75,6 +96,6 @@ class EventGenerator:
     def __init__(self, audio_file):
         self.audio_file = audio_file
 
-    def generate_events(self, time_stamps_ticks: [int]) -> EventList:
+    def generate_events(self, time_stamps_ticks: [int]) -> EventManager:
         audio_file = sa.WaveObject.from_wave_file(self.audio_file)
-        return EventList([Event(ts, audio_file) for ts in time_stamps_ticks])
+        return EventManager([Event(ts, audio_file) for ts in time_stamps_ticks])
