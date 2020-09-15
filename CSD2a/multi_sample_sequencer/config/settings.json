@@ -1,0 +1,52 @@
+{
+    "samples": {
+        "kick": "../audio/kick.wav",
+        "perc": "../audio/perc.wav"
+    },
+    "time_signature": {
+        "numerator": 5,
+        "denumerator": 4,
+        "ticks_per_quarter_note": 4
+    },
+    "tempo": 120,
+    "events": [
+        {
+            "sample_name": "kick",
+            "time_stamp": 0
+        },
+        {
+            "sample_name": "kick",
+            "time_stamp": 4
+        },
+        {
+            "sample_name": "perc",
+            "time_stamp": 4
+        },
+        {
+            "sample_name": "kick",
+            "time_stamp": 8
+        },
+        {
+            "sample_name": "kick",
+            "time_stamp": 12
+        },
+        {
+            "sample_name": "perc",
+            "time_stamp": 12
+        },
+        {
+            "sample_name": "kick",
+            "time_stamp": 16
+        }
+    ],
+    "commands": {
+        "start_playback": {
+            "pattern": "^start$",
+            "hint": "start"
+        },
+        "stop_playback": {
+            "pattern": "^stop$",
+            "hint": "stop"
+        }
+    }
+}

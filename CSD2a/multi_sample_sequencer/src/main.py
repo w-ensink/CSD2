@@ -1,10 +1,11 @@
 # Written by Wouter Ensink
 
 from transport import AudioTransport
-from events import EventGenerator
+from events import EventManager, PyDub_EventHandler
 from console_interface import ConsoleInterface
 from os.path import isfile
 import sys
+import json
 
 
 def exit_with_message(message: str):
@@ -30,17 +31,22 @@ def get_filename() -> str:
 
 # resembles the whole sequencer put together, so both ui and the audio part
 class SingleSampleSequencer:
-    def __init__(self, sample_filename: str):
-        self.transport = AudioTransport()
-        self.event_generator = EventGenerator(sample_filename)
-        self.interface = ConsoleInterface(self.transport, self.event_generator)
+    def __init__(self, settings):
+        event_manager = EventManager(settings)
+        self.transport = AudioTransport(settings=settings, event_manager=event_manager)
+        self.interface = ConsoleInterface(self.transport)
 
     def run(self):
-        self.interface.run()
+        self.transport.run()
 
 
 def main():
-    SingleSampleSequencer(get_filename()).run()
+    with open('../config/settings.json', 'r') as file:
+        settings = json.load(file)
+        SingleSampleSequencer(settings).run()
+
+    with open('../config/settings.json', 'w') as file:
+        file.write(json.dumps(settings, indent=4))
 
 
 if __name__ == '__main__':

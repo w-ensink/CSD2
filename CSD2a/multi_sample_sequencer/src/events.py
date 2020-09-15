@@ -2,46 +2,82 @@
 
 import simpleaudio as sa
 import time
+import sounddevice as sd
+import soundfile as sf
+import pydub
+from pydub.playback import play
 
 
 # Represents the playing of an audio file at a time stamp
 class Event:
-    def __init__(self, time_stamp_ticks: int, audio_file):
-        self.time_stamp_ticks = time_stamp_ticks
-        self.filename = audio_file
+    def __init__(self, time_stamp_ticks: int, sample_name: str):
+        self.time_stamp = time_stamp_ticks
+        self.sample_name = sample_name
 
-'''
-# handles plays the content of an event
+
+# base class for the different types of event handlers
 class EventHandler:
-    def __init__(self, filenames):
+    def handle(self, event: Event):
+        pass
+
+
+# simpleaudio based event handler
+class SimpleAudio_EventHandler(EventHandler):
+    def __init__(self, sample_dict: [str, str]):
+        filenames = sample_dict.values()
+        sample_names = sample_dict.keys()
         files = [sa.WaveObject.from_wave_file(f) for f in filenames]
-        self.samples = dict(zip(filenames, files))
+        self.samples = dict(zip(sample_names, files))
 
-    def handle(self, event):
-        self.samples[event.filename].play()
-'''
+    def handle(self, event: Event):
+        # t = time.time()
+        self.samples[event['sample_name']].play()
+        # print(f'trigger time: {(time.time() - t) * 1000} ms')
 
 
-class EventHandler:
-    def __init__(self):
-        self.file = sa.WaveObject.from_wave_file('../audio/kick.wav')
+# handles plays the content of an event using sound file lib
+class SoundFile_EventHandler(EventHandler):
+    def __init__(self, sample_dict: [str, str]):
+        filenames = sample_dict.values()
+        sample_names = sample_dict.keys()
+        files = []
 
-    def handle(self, e):
-        self.file.play()
+        for f in filenames:
+            file_data, self.sample_rate = sf.read(f, dtype='float32')
+            files.append(file_data)
+        self.samples = dict(zip(sample_names, files))
+
+    def handle(self, event: Event):
+        t = time.time()
+        sd.play(self.samples[event.sample_name], self.sample_rate)
+        print(f'trigger time: {(time.time() - t) * 1000} ms')
+
+
+# pygame based event handler
+class PyDub_EventHandler(EventHandler):
+    def __init__(self, sample_dict: [str, str]):
+        self.sound = pydub.AudioSegment.from_file('../audio/kick.wav')
+
+    def handle(self, event: Event):
+        t = time.time()
+        play(self.sound)
+        print(f'trigger time: {(time.time() - t) * 1000} ms')
 
 
 class EventManager:
-    def __init__(self, events: [Event]):
-        self.events = events
+    def __init__(self, settings):
+        self.events = settings['events']
+        self.event_handler = SimpleAudio_EventHandler(settings['samples'])
+        self.sample_names = settings['samples'].keys()
 
     def get_time_stamps(self):
-        return [int(e.time_stamp_ticks) for e in self.events]
+        return [int(e['time_stamp']) for e in self.events]
+
+    def get_time_stamps_for_sample(self, sample_name):
+        return [int(e['time_stamp']) for e in self.events if e['sample_name'] == sample_name]
 
     def find_highest_time_stamp(self):
-        highest_time = 0
-        for e in self.events:
-            highest_time = max(e.time_stamp_ticks, highest_time)
-        return highest_time
+        return max(self.get_time_stamps())
 
     def find_looping_point_for_time_signature(self, time_signature):
         loop_end = self.find_highest_time_stamp()
@@ -55,17 +91,22 @@ class EventManager:
         return loop_end
 
     def get_all_events_with_time_stamp(self, time_stamp):
-        return [e for e in self.events if e.time_stamp_ticks == time_stamp]
+        return [e for e in self.events if e['time_stamp'] == time_stamp]
 
-    def handle_all_events_with_time_stamp(self, time_stamp, handler):
+    def add_event(self, sample_name, time_stamp):
+        self.events.append({'sample_name': sample_name, 'time_stamp': int(time_stamp)})
+
+    def remove_event(self, sample_name, time_stamp):
         for e in self.events:
-            if e.time_stamp_ticks == time_stamp:
-                t = time.time()
-                handler.handle(e)
-                dt = time.time() - t
-                print(f'handling {dt * 1000} ms')
+            if e['time_stamp'] == time_stamp and e['sample_name'] == sample_name:
+                self.events.remove_event(e)
 
-    def to_string_with_time_signature(self, time_signature):
+    def handle_all_events_with_time_stamp(self, time_stamp):
+        for e in self.events:
+            if e['time_stamp'] == time_stamp:
+                self.event_handler.handle(e)
+
+    def sample_events_to_string_with_time_signature(self, sample_name, time_signature):
         num_ticks = int(self.find_looping_point_for_time_signature(time_signature))
         ticks_per_denum = int(time_signature.ticks_per_denumerator)
         ticks_per_bar = int(time_signature.get_num_ticks_per_bar())
@@ -73,7 +114,7 @@ class EventManager:
 
         seq = [False] * num_ticks
 
-        for i in self.get_time_stamps():
+        for i in self.get_time_stamps_for_sample(sample_name):
             seq[i] = True
 
         string = '|'
@@ -90,12 +131,9 @@ class EventManager:
 
         return string
 
+    def to_string_with_time_signature(self, time_signature):
+        return '\n'.join('{:<5}'.format(s[:5]) + self.sample_events_to_string_with_time_signature(s, time_signature)
+                         for s in self.sample_names)
 
-# generates events with the given audio file and time stamps
-class EventGenerator:
-    def __init__(self, audio_file):
-        self.audio_file = audio_file
 
-    def generate_events(self, time_stamps_ticks: [int]) -> EventManager:
-        audio_file = sa.WaveObject.from_wave_file(self.audio_file)
-        return EventManager([Event(ts, audio_file) for ts in time_stamps_ticks])
+

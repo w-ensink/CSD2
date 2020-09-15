@@ -84,7 +84,7 @@ class ConsoleInterface_UnitTest(TestCase):
         interface.io_provider = io_provider
         interface.handle_next_command()
         interface.event_time_stamps = [0]
-        interface.transport.set_events(interface.event_generator.generate_events(interface.event_time_stamps))
+        interface.transport.update_looping_position(interface.event_generator.generate_events(interface.event_time_stamps))
         self.assertEqual(transport.playhead.range_end, 16)
         # self.assertEqual(io_provider.last_printed, '')
 
