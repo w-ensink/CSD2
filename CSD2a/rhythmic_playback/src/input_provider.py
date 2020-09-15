@@ -26,14 +26,25 @@ class Console_InputProvider(InputProvider):
         self.is_first_time = True
 
     def get_rhythm_description(self) -> RhythmDescription:
-        times = int(input('Enter number of samples: '))
+        times = int(self.ask_positive_numeric_input('Enter number of samples: '))
         intervals_in_beats: [float] = []
 
         for i in range(times):
-            intervals_in_beats.append(float(input(f'Enter time interval {i + 1}: ')))
+            intervals_in_beats.append(self.ask_positive_numeric_input(f'Enter time interval {i + 1}: '))
 
-        tempo = int(input('Enter tempo: '))
+        tempo = int(self.ask_positive_numeric_input('Enter tempo: '))
         return RhythmDescription(times=times, intervals_in_beats=intervals_in_beats, tempo=tempo)
+
+    @staticmethod
+    def ask_positive_numeric_input(message: str) -> float:
+        while True:
+            try:
+                ans = float(input(message))
+                if ans > 0:
+                    return ans
+                print(f'{ans} is not a positive number, please try again...')
+            except ValueError:
+                print('Couldn\'t parse answer as number, please try again...')
 
     def go_again(self) -> bool:
         if self.is_first_time:

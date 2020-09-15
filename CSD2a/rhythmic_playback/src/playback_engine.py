@@ -16,7 +16,7 @@ class RhythmToSequenceConverter:
 
 class RhythmicPlaybackEngine:
     def __init__(self, sample_filename: str):
-        self.sequencer: Sequencer = Sleep_Sequencer()
+        self.sequencer: Sequencer = AbsoluteTime_Sequencer()
         self.sequencer.set_sample_player(SimpleAudio_SamplePlayer(filename=sample_filename))
         self.input_provider: InputProvider = Console_InputProvider()
         self.converter = RhythmToSequenceConverter()
