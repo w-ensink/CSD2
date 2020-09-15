@@ -57,8 +57,7 @@ class AbsoluteTime_Sequencer(Sequencer):
         for i in sequence.time_intervals:
             absolute_time_stamps.append(current_time_stamp)
             current_time_stamp += i / 1000
+        # reverse to make popping values work correctly
         absolute_time_stamps.reverse()
-
-        print(absolute_time_stamps)
         return absolute_time_stamps
 
