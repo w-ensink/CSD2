@@ -33,7 +33,7 @@ The ```change``` command opens a menu. In this menu you will be presented with t
 |```done``` | returns to main menu |
 
 ---
-## Archtecture
+## Architecture
 The sequencer is built off a couple of parts:
 
 | Class Name | Task |

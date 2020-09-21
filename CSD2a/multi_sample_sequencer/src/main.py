@@ -30,15 +30,15 @@ def get_filename() -> str:
 
 # resembles the whole sequencer put together, so both ui and the audio part
 class MultiSampleSequencer:
-    def __init__(self, settings):
+    def __init__(self, settings: dict):
         self.transport = Sequencer(state=settings)
         self.interface = ConsoleInterface(self.transport)
 
-    def run(self):
+    def run(self) -> None:
         self.transport.run()
 
 
-def main():
+def main() -> None:
     with open('../config/settings.json', 'r') as file:
         settings = json.load(file)
         MultiSampleSequencer(settings).run()

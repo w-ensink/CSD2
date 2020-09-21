@@ -12,7 +12,6 @@ class PlayStates:
     stopped, playing = 0, 1
 
 
-# responsible for the state of the playback and sending the events to the handler
 class Sequencer:
     def __init__(self, state: dict):
         self.state = None
@@ -30,50 +29,51 @@ class Sequencer:
     def __del__(self):
         self.safe_state()
 
-    def load_state(self, state: dict):
+    def load_state(self, state: dict) -> None:
         self.state = state
         self.play_state = PlayStates.stopped
         self.tempo_bpm = state['tempo']
         self.time_signature = TimeSignature(settings=state['time_signature'])
         self.sample_list = SampleList(state['samples'])
         self.event_handler = SimpleAudio_EventHandler(self.sample_list)
-        self.event_list = EventList(sample_list=self.sample_list, settings=state)
+        self.event_list = EventList(sample_list=self.sample_list, state=state['events'])
         self.clock = Clock(tick_time_ms=self.calculate_tick_time())
         self.keep_thread_active = True
         self.update_looping_position()
+        self.rewind()
 
-    def safe_state(self):
+    def safe_state(self) -> None:
         self.state['tempo'] = self.tempo_bpm
 
-    def start_playback(self):
+    def start_playback(self) -> None:
         self.play_state = PlayStates.playing
         self.clock.start()
 
-    def stop_playback(self):
+    def stop_playback(self) -> None:
         self.play_state = PlayStates.stopped
 
-    def update_looping_position(self):
+    def update_looping_position(self) -> None:
         self.playhead.set_looping(0, self.event_list.find_looping_point_for_time_signature(self.time_signature))
 
-    def run(self):
+    def run(self) -> None:
         while self.keep_thread_active:
             if self.play_state == PlayStates.playing:
                 self.handle_all_events_for_playhead_position()
                 self.playhead.advance_tick()
                 self.clock.block_until_next_tick()
 
-    def handle_all_events_for_playhead_position(self):
+    def handle_all_events_for_playhead_position(self) -> None:
         self.event_list.handle_all_events_with_time_stamp(self.playhead.position_in_ticks, self.event_handler)
 
-    def calculate_tick_time(self):
+    def calculate_tick_time(self) -> float:
         num_ticks_per_minute = self.time_signature.ticks_per_quarter_note * self.tempo_bpm
         ms_per_minute = 60_000
         return ms_per_minute / num_ticks_per_minute
 
-    def set_tempo_bpm(self, tempo: float):
+    def set_tempo_bpm(self, tempo: float) -> None:
         if tempo > 0:
             self.tempo_bpm = tempo
             self.clock.update_tick_time_ms(self.calculate_tick_time())
 
-    def rewind(self):
+    def rewind(self) -> None:
         self.playhead.rewind()

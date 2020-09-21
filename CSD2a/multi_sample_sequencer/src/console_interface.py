@@ -7,49 +7,51 @@ from threading import Thread
 
 # base class for IOProviders, main reason for using this is to make testing easier
 class IOProvider:
-    def present_message(self, m):
+    def present_message(self, m: str) -> None:
         pass
 
-    def present_message_and_get_answer(self, m):
+    def present_message_and_get_answer(self, m: str) -> str:
         pass
 
 
 # the type of IO Provider that should be used with console user interaction
 class ConsoleIOProvider(IOProvider):
-    def present_message(self, message):
+    def present_message(self, message: str) -> None:
         print(message)
 
-    def present_message_and_get_answer(self, message):
+    def present_message_and_get_answer(self, message: str) -> str:
         return input(message)
 
 
 # Manages console user interaction with the transport
 class ConsoleInterface(Thread):
-    def __init__(self, transport: Sequencer):
+    def __init__(self, sequencer: Sequencer):
         super(ConsoleInterface, self).__init__()
-        self.transport = transport
+        self.sequencer = sequencer
         self.keep_running = True
         self.io_provider = ConsoleIOProvider()
         self.set_event_command_pattern = regex.compile(r'^s\s\w*\s\d*\s\d*\s\d*$')
         self.reset_event_command_pattern = regex.compile(r'^r\s\w*\s\d*\s\d*\s\d*$')
+        # regex for any valid file path to a .wav file
         self.file_name_pattern = regex.compile(r'^[a-zA-Z0-9_/.-]*\.wav')
+        # regex for: load <sample_file_path> as <sample_name>
         self.load_command_pattern = regex.compile(r'load [a-zA-Z0-9_/.-]*\.wav as [a-zA-Z_]*$')
         self.start()
 
-    def run(self):
+    def run(self) -> None:
         while self.keep_running:
             self.handle_next_command()
 
-    def handle_next_command(self):
+    def handle_next_command(self) -> None:
         command = self.io_provider.present_message_and_get_answer('-> ')
         if command == 'start':
-            self.transport.start_playback()
+            self.sequencer.start_playback()
         elif command == 'stop':
-            self.transport.stop_playback()
+            self.sequencer.stop_playback()
         elif command == 'rewind':
-            self.transport.rewind()
+            self.sequencer.rewind()
         elif command == 'exit':
-            self.transport.keep_thread_active = False
+            self.sequencer.keep_thread_active = False
             self.keep_running = False
         elif command.isnumeric():
             self.attempt_tempo_change(int(command))
@@ -63,32 +65,32 @@ class ConsoleInterface(Thread):
             valid_commands = ['start', 'stop', 'rewind', 'change', '<number> (changes tempo)', 'exit']
             self.present_invalid_command_message(command, valid_commands)
 
-    def attempt_loading_sample(self, command):
+    def attempt_loading_sample(self, command: str) -> None:
         command = command[5:]
         start, end = self.file_name_pattern.search(command).span()
         file_name = command[start:end]
         sample_name = command[end+4:]
-        self.transport.sample_list.add_sample(sample_name, file_name)
+        self.sequencer.sample_list.add_sample(sample_name, file_name)
 
-    def attempt_removing_sample(self, command):
+    def attempt_removing_sample(self, command: str) -> None:
         sample_name = command[7:]
-        self.transport.sample_list.remove_sample(sample_name)
+        self.sequencer.sample_list.remove_sample(sample_name)
 
-    def attempt_tempo_change(self, new_tempo):
+    def attempt_tempo_change(self, new_tempo: int) -> None:
         if new_tempo <= 0:
             return self.io_provider.present_message(f'{new_tempo} is not a positive number, tempo change ignored...')
-        self.transport.set_tempo_bpm(new_tempo)
+        self.sequencer.set_tempo_bpm(new_tempo)
 
-    def present_invalid_command_message(self, command, valid_commands):
+    def present_invalid_command_message(self, command: str, valid_commands: [str]) -> None:
         m = f'command "{command}" is invalid, try:\n' + '\n'.join(f' - {c}' for c in valid_commands)
         self.io_provider.present_message(m)
 
-    def print_current_sequence(self):
-        time_signature = self.transport.time_signature
-        string = self.transport.event_list.to_string_with_time_signature(time_signature)
+    def print_current_sequence(self) -> None:
+        time_signature = self.sequencer.time_signature
+        string = self.sequencer.event_list.to_string_with_time_signature(time_signature)
         self.io_provider.present_message(string)
 
-    def change_sequence(self):
+    def change_sequence(self) -> None:
         while True:
             self.print_current_sequence()
 
@@ -110,21 +112,21 @@ class ConsoleInterface(Thread):
             else:
                 self.io_provider.present_message(f'unknown command: "{command}"')
 
-            self.transport.update_looping_position()
+            self.sequencer.update_looping_position()
 
-    def handle_set_event_command(self, command):
+    def handle_set_event_command(self, command: str) -> None:
         name, bar, beat, tick = self.parse_change_command_arguments(command)
-        time_stamp = self.transport.time_signature.musical_time_to_ticks(bar, beat, tick)
-        self.transport.event_list.add_event(sample_name=name, time_stamp=time_stamp)
+        time_stamp = self.sequencer.time_signature.musical_time_to_ticks(bar, beat, tick)
+        self.sequencer.event_list.add_event(sample_name=name, time_stamp=time_stamp)
 
-    def handle_reset_event_command(self, command):
+    def handle_reset_event_command(self, command: str) -> None:
         name, bar, beat, tick = self.parse_change_command_arguments(command)
-        time_stamp = self.transport.time_signature.musical_time_to_ticks(bar, beat, tick)
-        self.transport.event_list.remove_event(sample_name=name, time_stamp=time_stamp)
+        time_stamp = self.sequencer.time_signature.musical_time_to_ticks(bar, beat, tick)
+        self.sequencer.event_list.remove_event(sample_name=name, time_stamp=time_stamp)
 
     # finds the 3 numeric arguments (bar, beat, tick) of a set or reset command
     @staticmethod
-    def parse_change_command_arguments(command):
+    def parse_change_command_arguments(command: str) -> (str, int, int, int):
         # chop off the 'r' or 's'
         command = command[2:]
         args = command.split(' ')

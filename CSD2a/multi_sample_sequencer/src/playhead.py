@@ -9,20 +9,20 @@ class PlayHead:
         self.range_start = 0
         self.range_end = -1
 
-    def rewind(self):
+    def rewind(self) -> None:
         self.position_in_ticks = 0
 
-    def set_looping(self, range_start, range_end):
+    def set_looping(self, range_start: int, range_end: int) -> None:
         self.range_start = range_start
         self.range_end = range_end
 
-    def stop_looping(self):
+    def stop_looping(self) -> None:
         self.range_end = -1
 
-    def is_looping(self):
+    def is_looping(self) -> bool:
         return self.range_end > 0
 
-    def advance_tick(self):
+    def advance_tick(self) -> None:
         self.position_in_ticks += 1
 
         if self.is_looping():
