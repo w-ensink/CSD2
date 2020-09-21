@@ -14,7 +14,7 @@
         "denumerator": 4,
         "ticks_per_quarter_note": 4
     },
-    "tempo": 100,
+    "tempo": 300,
     "events": [
         {
             "sample_name": "kick",
@@ -23,10 +23,6 @@
         {
             "sample_name": "perc",
             "time_stamp": 4
-        },
-        {
-            "sample_name": "kick",
-            "time_stamp": 8
         },
         {
             "sample_name": "perc",

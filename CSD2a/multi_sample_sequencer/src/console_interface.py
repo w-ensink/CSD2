@@ -32,6 +32,8 @@ class ConsoleInterface(Thread):
         self.io_provider = ConsoleIOProvider()
         self.set_event_command_pattern = regex.compile(r'^s\s\w*\s\d*\s\d*\s\d*$')
         self.reset_event_command_pattern = regex.compile(r'^r\s\w*\s\d*\s\d*\s\d*$')
+        self.file_name_pattern = regex.compile(r'^[a-zA-Z0-9_/.-]*\.wav')
+        self.load_command_pattern = regex.compile(r'load [a-zA-Z0-9_/.-]*\.wav as [a-zA-Z_]*$')
         self.start()
 
     def run(self):
@@ -53,9 +55,24 @@ class ConsoleInterface(Thread):
             self.attempt_tempo_change(int(command))
         elif command == 'change':
             self.change_sequence()
+        elif self.load_command_pattern.match(command):
+            self.attempt_loading_sample(command)
+        elif command[:6] == 'remove':
+            self.attempt_removing_sample(command)
         else:
             valid_commands = ['start', 'stop', 'rewind', 'change', '<number> (changes tempo)', 'exit']
             self.present_invalid_command_message(command, valid_commands)
+
+    def attempt_loading_sample(self, command):
+        command = command[5:]
+        start, end = self.file_name_pattern.search(command).span()
+        file_name = command[start:end]
+        sample_name = command[end+4:]
+        self.transport.sample_list.add_sample(sample_name, file_name)
+
+    def attempt_removing_sample(self, command):
+        sample_name = command[7:]
+        self.transport.sample_list.remove_sample(sample_name)
 
     def attempt_tempo_change(self, new_tempo):
         if new_tempo <= 0:
@@ -68,7 +85,7 @@ class ConsoleInterface(Thread):
 
     def print_current_sequence(self):
         time_signature = self.transport.time_signature
-        string = self.transport.event_manager.to_string_with_time_signature(time_signature)
+        string = self.transport.event_list.to_string_with_time_signature(time_signature)
         self.io_provider.present_message(string)
 
     def change_sequence(self):
@@ -98,12 +115,12 @@ class ConsoleInterface(Thread):
     def handle_set_event_command(self, command):
         name, bar, beat, tick = self.parse_change_command_arguments(command)
         time_stamp = self.transport.time_signature.musical_time_to_ticks(bar, beat, tick)
-        self.transport.event_manager.add_event(sample_name=name, time_stamp=time_stamp)
+        self.transport.event_list.add_event(sample_name=name, time_stamp=time_stamp)
 
     def handle_reset_event_command(self, command):
         name, bar, beat, tick = self.parse_change_command_arguments(command)
         time_stamp = self.transport.time_signature.musical_time_to_ticks(bar, beat, tick)
-        self.transport.event_manager.remove_event(sample_name=name, time_stamp=time_stamp)
+        self.transport.event_list.remove_event(sample_name=name, time_stamp=time_stamp)
 
     # finds the 3 numeric arguments (bar, beat, tick) of a set or reset command
     @staticmethod

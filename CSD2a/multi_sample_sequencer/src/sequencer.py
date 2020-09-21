@@ -3,8 +3,9 @@
 import time
 from playhead import PlayHead
 from time_signature import TimeSignature
-from events import EventManager
+from events import EventList, SimpleAudio_EventHandler
 from clock import Clock
+from sample_list import SampleList
 
 
 class PlayStates:
@@ -18,8 +19,10 @@ class Sequencer:
         self.play_state = PlayStates.stopped
         self.tempo_bpm = 100
         self.playhead = PlayHead()
-        self.event_manager = None
+        self.event_list = None
         self.time_signature = None
+        self.sample_list = None
+        self.event_handler = None
         self.clock = None
         self.keep_thread_active = True
         self.load_state(state)
@@ -32,7 +35,9 @@ class Sequencer:
         self.play_state = PlayStates.stopped
         self.tempo_bpm = state['tempo']
         self.time_signature = TimeSignature(settings=state['time_signature'])
-        self.event_manager = EventManager(settings=state)
+        self.sample_list = SampleList(state['samples'])
+        self.event_handler = SimpleAudio_EventHandler(self.sample_list)
+        self.event_list = EventList(sample_list=self.sample_list, settings=state)
         self.clock = Clock(tick_time_ms=self.calculate_tick_time())
         self.keep_thread_active = True
         self.update_looping_position()
@@ -48,7 +53,7 @@ class Sequencer:
         self.play_state = PlayStates.stopped
 
     def update_looping_position(self):
-        self.playhead.set_looping(0, self.event_manager.find_looping_point_for_time_signature(self.time_signature))
+        self.playhead.set_looping(0, self.event_list.find_looping_point_for_time_signature(self.time_signature))
 
     def run(self):
         while self.keep_thread_active:
@@ -58,7 +63,7 @@ class Sequencer:
                 self.clock.block_until_next_tick()
 
     def handle_all_events_for_playhead_position(self):
-        self.event_manager.handle_all_events_with_time_stamp(self.playhead.position_in_ticks)
+        self.event_list.handle_all_events_with_time_stamp(self.playhead.position_in_ticks, self.event_handler)
 
     def calculate_tick_time(self):
         num_ticks_per_minute = self.time_signature.ticks_per_quarter_note * self.tempo_bpm

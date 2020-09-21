@@ -2,6 +2,7 @@
 
 import simpleaudio as sa
 import time
+from sample_list import SampleList
 
 
 # base class for the different types of event handlers
@@ -11,10 +12,13 @@ class EventHandler:
 
 
 # simpleaudio based event handler
-class SimpleAudio_EventHandler(EventHandler):
-    def __init__(self, sample_list):
+class SimpleAudio_EventHandler(EventHandler, SampleList.Listener):
+    def __init__(self, sample_list: SampleList):
+        self.sample_list = sample_list
+        self.sample_list.add_listener(self)
         self.samples = {}
-        for s in sample_list:
+
+        for s in sample_list.samples:
             self.samples[s['sample_name']] = sa.WaveObject.from_wave_file(s['file_name'])
 
     def handle(self, event):
@@ -22,12 +26,24 @@ class SimpleAudio_EventHandler(EventHandler):
         self.samples[event['sample_name']].play()
         # print(f'trigger time: {(time.time() - t) * 1000} ms')
 
+    # if a sample is added to the sample list, this handler needs to load it for playback
+    def sample_added(self, sample_name):
+        self.samples[sample_name] \
+            = sa.WaveObject.from_wave_file(self.sample_list.get_filename_for_sample(sample_name))
 
-class EventManager:
-    def __init__(self, settings):
+    # if a sample is removed from the sample list, this handler can let go of the corresponding wave object
+    def sample_removed(self, sample_name):
+        del self.samples[sample_name]
+
+
+# class with methods specifically for dealing with a list of events
+# requires a sample list to check if events can be added and to delete all events
+# that use a particular sample when the sample gets removed from the project
+class EventList(SampleList.Listener):
+    def __init__(self, sample_list: SampleList, settings: dict):
         self.events = settings['events']
-        self.event_handler = SimpleAudio_EventHandler(settings['samples'])
-        self.sample_names = [s['sample_name'] for s in settings['samples']]
+        self.sample_list = sample_list
+        self.sample_list.add_listener(self)
 
     def get_time_stamps(self):
         return [int(e['time_stamp']) for e in self.events]
@@ -52,11 +68,8 @@ class EventManager:
     def get_all_events_with_time_stamp(self, time_stamp):
         return [e for e in self.events if e['time_stamp'] == time_stamp]
 
-    def has_sample_with_name(self, name):
-        return name in self.sample_names
-
     def add_event(self, sample_name, time_stamp):
-        if self.has_sample_with_name(sample_name):
+        if self.sample_list.contains(sample_name):
             self.events.append({'sample_name': sample_name, 'time_stamp': int(time_stamp)})
 
     def remove_event(self, sample_name, time_stamp):
@@ -64,10 +77,21 @@ class EventManager:
             if e['time_stamp'] == time_stamp and e['sample_name'] == sample_name:
                 self.events.remove(e)
 
-    def handle_all_events_with_time_stamp(self, time_stamp):
+    def remove_all_invalid_events(self):
+        valid_sample_names = self.sample_list.get_all_sample_names()
+        for e in self.events:
+            if not e['sample_name'] in valid_sample_names:
+                self.events.remove(e)
+
+    # when a sample gets removed from the list of samples, all events using that sample become invalid
+    # and thus need to be removed
+    def sample_removed(self, sample_name):
+        self.remove_all_invalid_events()
+
+    def handle_all_events_with_time_stamp(self, time_stamp, event_handler: EventHandler):
         for e in self.events:
             if e['time_stamp'] == time_stamp:
-                self.event_handler.handle(e)
+                event_handler.handle(e)
 
     # makes a timeline in string format for all events with this sample, based on the given time signature
     def sample_events_to_string_with_time_signature(self, sample_name, time_signature):
@@ -97,7 +121,7 @@ class EventManager:
 
     def to_string_with_time_signature(self, time_signature):
         return '\n'.join('{:<5}'.format(s[:5]) + self.sample_events_to_string_with_time_signature(s, time_signature)
-                         for s in self.sample_names)
+                         for s in self.sample_list.get_all_sample_names())
 
 
 
