@@ -1,7 +1,6 @@
 # Written by Wouter Ensink
 
-from transport import AudioTransport
-from events import EventManager, PyDub_EventHandler
+from sequencer import Sequencer
 from console_interface import ConsoleInterface
 from os.path import isfile
 import sys
@@ -30,10 +29,9 @@ def get_filename() -> str:
 
 
 # resembles the whole sequencer put together, so both ui and the audio part
-class SingleSampleSequencer:
+class MultiSampleSequencer:
     def __init__(self, settings):
-        event_manager = EventManager(settings)
-        self.transport = AudioTransport(settings=settings, event_manager=event_manager)
+        self.transport = Sequencer(state=settings)
         self.interface = ConsoleInterface(self.transport)
 
     def run(self):
@@ -43,7 +41,7 @@ class SingleSampleSequencer:
 def main():
     with open('../config/settings.json', 'r') as file:
         settings = json.load(file)
-        SingleSampleSequencer(settings).run()
+        MultiSampleSequencer(settings).run()
 
     with open('../config/settings.json', 'w') as file:
         file.write(json.dumps(settings, indent=4))

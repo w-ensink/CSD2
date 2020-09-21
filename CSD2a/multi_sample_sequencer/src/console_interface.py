@@ -1,6 +1,6 @@
 # Written by Wouter Ensink
 
-from transport import AudioTransport
+from sequencer import Sequencer
 import regex
 from threading import Thread
 
@@ -25,7 +25,7 @@ class ConsoleIOProvider(IOProvider):
 
 # Manages console user interaction with the transport
 class ConsoleInterface(Thread):
-    def __init__(self, transport: AudioTransport):
+    def __init__(self, transport: Sequencer):
         super(ConsoleInterface, self).__init__()
         self.transport = transport
         self.keep_running = True
@@ -50,12 +50,17 @@ class ConsoleInterface(Thread):
             self.transport.keep_thread_active = False
             self.keep_running = False
         elif command.isnumeric():
-            self.transport.set_tempo_bpm(int(command))
+            self.attempt_tempo_change(int(command))
         elif command == 'change':
             self.change_sequence()
         else:
-            self.present_invalid_command_message(command,
-                                                 ['start', 'stop', 'rewind', 'change', '<number> (changes tempo)'])
+            valid_commands = ['start', 'stop', 'rewind', 'change', '<number> (changes tempo)', 'exit']
+            self.present_invalid_command_message(command, valid_commands)
+
+    def attempt_tempo_change(self, new_tempo):
+        if new_tempo <= 0:
+            return self.io_provider.present_message(f'{new_tempo} is not a positive number, tempo change ignored...')
+        self.transport.set_tempo_bpm(new_tempo)
 
     def present_invalid_command_message(self, command, valid_commands):
         m = f'command "{command}" is invalid, try:\n' + '\n'.join(f' - {c}' for c in valid_commands)
@@ -69,25 +74,36 @@ class ConsoleInterface(Thread):
     def change_sequence(self):
         while True:
             self.print_current_sequence()
+
             m = ' - set with: s <sample_name> <bar> <beat> <tick>\n' \
                 ' - reset with: r <sample_name> <bar> <beat> <tick>\n' \
                 ' - exit with: done\n |-> '
+
             command = self.io_provider.present_message_and_get_answer(m)
 
             if command == 'done':
                 return
+
             elif self.set_event_command_pattern.match(command):
-                name, bar, beat, tick = self.parse_change_command_arguments(command)
-                time_stamp = self.transport.time_signature.musical_time_to_ticks(bar, beat, tick)
-                self.transport.event_manager.add_event(sample_name=name, time_stamp=time_stamp)
+                self.handle_set_event_command(command)
+
             elif self.reset_event_command_pattern.match(command):
-                name, bar, beat, tick = self.parse_change_command_arguments(command)
-                time_stamp = self.transport.time_signature.musical_time_to_ticks(bar, beat, tick)
-                self.transport.event_manager.remove_event(sample_name=name, time_stamp=time_stamp)
+                self.handle_reset_event_command(command)
+
             else:
                 self.io_provider.present_message(f'unknown command: "{command}"')
 
             self.transport.update_looping_position()
+
+    def handle_set_event_command(self, command):
+        name, bar, beat, tick = self.parse_change_command_arguments(command)
+        time_stamp = self.transport.time_signature.musical_time_to_ticks(bar, beat, tick)
+        self.transport.event_manager.add_event(sample_name=name, time_stamp=time_stamp)
+
+    def handle_reset_event_command(self, command):
+        name, bar, beat, tick = self.parse_change_command_arguments(command)
+        time_stamp = self.transport.time_signature.musical_time_to_ticks(bar, beat, tick)
+        self.transport.event_manager.remove_event(sample_name=name, time_stamp=time_stamp)
 
     # finds the 3 numeric arguments (bar, beat, tick) of a set or reset command
     @staticmethod
