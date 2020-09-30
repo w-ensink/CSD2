@@ -76,6 +76,7 @@ class EventList(SampleList.Listener):
             if e['time_stamp'] == time_stamp and e['sample_name'] == sample_name:
                 self.events.remove(e)
 
+    # removes all event that use a sample that's no longer in the sample_list
     def remove_all_invalid_events(self) -> None:
         valid_sample_names = self.sample_list.get_all_sample_names()
         for e in self.events:

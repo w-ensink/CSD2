@@ -61,6 +61,9 @@ class Sequencer:
                 self.handle_all_events_for_playhead_position()
                 self.playhead.advance_tick()
                 self.clock.block_until_next_tick()
+            else:
+                # if the sequencer is stopped, sleep before checking if it has started to safe cpu
+                time.sleep(0.01)
 
     def handle_all_events_for_playhead_position(self) -> None:
         self.event_list.handle_all_events_with_time_stamp(self.playhead.position_in_ticks, self.event_handler)

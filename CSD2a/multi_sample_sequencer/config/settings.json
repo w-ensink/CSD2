@@ -7,10 +7,6 @@
         {
             "sample_name": "perc",
             "file_name": "../audio/perc.wav"
-        },
-        {
-            "sample_name": "hat",
-            "file_name": "../audio/hat.wav"
         }
     ],
     "time_signature": {
@@ -35,6 +31,10 @@
         {
             "sample_name": "kick",
             "time_stamp": 4
+        },
+        {
+            "sample_name": "kick",
+            "time_stamp": 8
         }
     ]
 }
