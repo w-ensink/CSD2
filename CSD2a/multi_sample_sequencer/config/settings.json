@@ -7,6 +7,10 @@
         {
             "sample_name": "perc",
             "file_name": "../audio/perc.wav"
+        },
+        {
+            "sample_name": "hat",
+            "file_name": "../audio/hat.wav"
         }
     ],
     "time_signature": {
@@ -14,7 +18,7 @@
         "denumerator": 4,
         "ticks_per_quarter_note": 4
     },
-    "tempo": 200,
+    "tempo": 100,
     "events": [
         {
             "sample_name": "kick",
@@ -35,6 +39,22 @@
         {
             "sample_name": "kick",
             "time_stamp": 8
+        },
+        {
+            "sample_name": "hat",
+            "time_stamp": 2
+        },
+        {
+            "sample_name": "hat",
+            "time_stamp": 6
+        },
+        {
+            "sample_name": "hat",
+            "time_stamp": 10
+        },
+        {
+            "sample_name": "hat",
+            "time_stamp": 14
         }
     ]
 }
