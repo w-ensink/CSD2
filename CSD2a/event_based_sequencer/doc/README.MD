@@ -1,6 +1,6 @@
-# Multi Sample Sequencer - Documentation
+# Event Based Sequencer - Documentation
 
-This document contains all documentation regarding the Multi Sample Sequencer assignment. The source code can be found in the ```src``` folder.
+This document contains all documentation regarding the Event Based Sequencer assignment. The source code can be found in the ```src``` folder.
 
 ---
 
