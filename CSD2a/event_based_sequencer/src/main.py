@@ -19,7 +19,8 @@ def main() -> None:
     # load the settings json file to use as a project in the sequencer
     with open('../config/settings.json', 'r') as file:
         settings = json.load(file)
-        MultiSampleSequencer(settings).run()
+
+    MultiSampleSequencer(settings).run()
 
     # save the changes made to the settings file (things like adding/removing samples and events)
     with open('../config/settings.json', 'w') as file:
