@@ -3,7 +3,7 @@
 # A session resembles a project in the sequencer
 
 from core.time_signature import TimeSignature
-from core.samples.sample import Sample, SpectralPositions
+from core.sample import Sample, SpectralPositions
 from core.events.event import Event
 import unittest
 

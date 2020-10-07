@@ -2,31 +2,48 @@
 
 import time
 from core.playhead import PlayHead
-from core.time_signature import TimeSignature
 from core.clock import Clock
-from core.samples.sample_list import SampleList
+from core.session import Session
+from core.events.event_handlers import EventHandler
+from core.events.event import Event
+from core.sample import Sample
+from core.time_signature import TimeSignature
+from threading import Thread
+from core.utility import find_highest_time_stamp_in_event_list, find_looping_point_for_time_signature
 
 
 class PlayStates:
     stopped, playing = 0, 1
 
 
-class Sequencer:
+# the sequencer will run in it's own thread
+class Sequencer(Session.Listener, Thread):
     def __init__(self):
-        self.state = None
+        Thread.__init__(self)
+        self.session = None
         self.play_state = PlayStates.stopped
-        self.tempo_bpm = 100
         self.playhead = PlayHead()
-        self.event_list = None
-        self.time_signature = None
-        self.event_handler = None
+        # dummy eventhandler, doesn't actually handle them. Inject acutual one via set_event_handler()
+        self.event_handler: EventHandler = EventHandler()
         self.clock = Clock(tick_time_ms=1000)
         self.keep_thread_active = True
+        self.update_looping_position()
+        self.rewind()
+        self.start()
+
+    def load_session(self, session: Session):
+        if self.session:
+            self.session.remove_listener(self)
+        self.session = session
+        self.session.add_listener(self)
         self.update_looping_position()
         self.rewind()
 
     def set_event_handler(self, event_handler):
         self.event_handler = event_handler
+        # load all currently available samples in the event handler
+        for s in self.session.samples:
+            self.event_handler.add_sample(s)
 
     def start_playback(self) -> None:
         self.play_state = PlayStates.playing
@@ -36,7 +53,9 @@ class Sequencer:
         self.play_state = PlayStates.stopped
 
     def update_looping_position(self) -> None:
-        self.playhead.set_looping(0, self.event_list.find_looping_point_for_time_signature(self.time_signature))
+        highest_time_stamp = find_highest_time_stamp_in_event_list(self.session.events)
+        looping_point = find_looping_point_for_time_signature(highest_time_stamp, self.session.time_signature)
+        self.playhead.set_looping(0, looping_point)
 
     def run(self) -> None:
         while self.keep_thread_active:
@@ -49,17 +68,49 @@ class Sequencer:
                 time.sleep(0.01)
 
     def handle_all_events_for_playhead_position(self) -> None:
-        self.event_list.handle_all_events_with_time_stamp(self.playhead.position_in_ticks, self.event_handler)
+        for e in self.session.events:
+            if e.time_stamp == self.playhead.position_in_ticks:
+                self.event_handler.handle(e)
 
     def calculate_tick_time(self) -> float:
-        num_ticks_per_minute = self.time_signature.ticks_per_quarter_note * self.tempo_bpm
+        num_ticks_per_minute = self.session.time_signature.ticks_per_quarter_note * self.session.tempo_bpm
         ms_per_minute = 60_000
         return ms_per_minute / num_ticks_per_minute
 
-    def set_tempo_bpm(self, tempo: float) -> None:
-        if tempo > 0:
-            self.tempo_bpm = tempo
-            self.clock.update_tick_time_ms(self.calculate_tick_time())
-
     def rewind(self) -> None:
         self.playhead.rewind()
+
+    # --------------------------------------------------------------------------------------------
+    # below are all the methods inherited from Session.Listener:
+
+    # with a new tempo, the clock needs to be updated
+    # keep in mind that this method is not responable for making sure the tempo is not 0bpm
+    # it will assert for it to let it know if it somehow is...
+    def tempo_changed(self, tempo_bpm: float, session):
+        assert session == self.session
+        assert tempo_bpm != 0
+        self.clock.update_tick_time_ms(self.calculate_tick_time())
+
+    # with a different time signature the tick time could be different
+    def time_signature_changed(self, time_signature: TimeSignature, session):
+        assert session == self.session
+        self.update_looping_position()
+        self.clock.update_tick_time_ms(self.calculate_tick_time())
+
+    def sample_removed_from_session(self, sample: Sample, session):
+        assert session == self.session
+        self.event_handler.remove_sample(sample)
+
+    def sample_added_to_session(self, sample: Sample, session):
+        assert session == self.session
+        self.event_handler.add_sample(sample)
+
+    # when a sample is added/removed, the loop could have changed in length -> update
+    def event_added_to_session(self, event: Event, session):
+        assert session == self.session
+        self.update_looping_position()
+
+    # when a sample is added/removed, the loop could have changed in length -> update
+    def event_removed_from_session(self, event: Event, session):
+        assert session == self.session
+        self.update_looping_position()

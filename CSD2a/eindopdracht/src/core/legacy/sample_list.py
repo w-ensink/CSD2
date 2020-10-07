@@ -1,8 +1,8 @@
 # Written by Wouter Ensink
 
-from core.samples.sample import Sample
+from core.sample import Sample
 
-
+# SHOULD NOT BE USED ANYMORE, JUST HERE FOR REFERENCE FOR CONVERTING TO TEXT
 # just a wrapper around an already existing list of samples, to provide handy
 # notifications when new samples are added by the user.
 # it doesn't own the list of samples, the list of samples is probably from the session object

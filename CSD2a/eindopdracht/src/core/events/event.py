@@ -1,6 +1,6 @@
 # Written by Wouter Ensink
 
-from core.samples.sample import Sample
+from core.sample import Sample
 
 
 # an event doesn't contain it's own wave object, because that wouldn't make the system as extendable

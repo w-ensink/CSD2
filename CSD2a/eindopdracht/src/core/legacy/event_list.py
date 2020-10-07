@@ -1,10 +1,11 @@
 
 # Written by Wouter Ensink
 
-from core.samples.sample_list import SampleList
+from core.legacy.sample_list import SampleList
 from core.time_signature import TimeSignature
 
 
+# SHOULD NOT BE USED ANYMORE, JUST HERE FOR REFERENCE FOR CONVERTING TO TEXT
 # class with methods specifically for dealing with a list of events
 # requires a sample list to check if events can be added and to delete all events
 # that use a particular sample when the sample gets removed from the project
