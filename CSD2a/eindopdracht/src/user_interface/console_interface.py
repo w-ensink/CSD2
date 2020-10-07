@@ -1,6 +1,6 @@
 # Written by Wouter Ensink
 
-from sequencer import Sequencer
+from core.sequencer import Sequencer
 import regex
 from threading import Thread
 

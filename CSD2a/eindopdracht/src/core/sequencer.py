@@ -1,11 +1,10 @@
 # Written by Wouter Ensink
 
 import time
-from playhead import PlayHead
-from time_signature import TimeSignature
-from events import EventList, SimpleAudio_EventHandler
-from clock import Clock
-from sample_list import SampleList
+from core.playhead import PlayHead
+from core.time_signature import TimeSignature
+from core.clock import Clock
+from core.samples.sample_list import SampleList
 
 
 class PlayStates:
@@ -13,37 +12,21 @@ class PlayStates:
 
 
 class Sequencer:
-    def __init__(self, state: dict):
+    def __init__(self):
         self.state = None
         self.play_state = PlayStates.stopped
         self.tempo_bpm = 100
         self.playhead = PlayHead()
         self.event_list = None
         self.time_signature = None
-        self.sample_list = None
         self.event_handler = None
-        self.clock = None
-        self.keep_thread_active = True
-        self.load_state(state)
-
-    def __del__(self):
-        self.safe_state()
-
-    def load_state(self, state: dict) -> None:
-        self.state = state
-        self.play_state = PlayStates.stopped
-        self.tempo_bpm = state['tempo']
-        self.time_signature = TimeSignature(settings=state['time_signature'])
-        self.sample_list = SampleList(state['samples'])
-        self.event_handler = SimpleAudio_EventHandler(self.sample_list)
-        self.event_list = EventList(sample_list=self.sample_list, state=state['events'])
-        self.clock = Clock(tick_time_ms=self.calculate_tick_time())
+        self.clock = Clock(tick_time_ms=1000)
         self.keep_thread_active = True
         self.update_looping_position()
         self.rewind()
 
-    def safe_state(self) -> None:
-        self.state['tempo'] = self.tempo_bpm
+    def set_event_handler(self, event_handler):
+        self.event_handler = event_handler
 
     def start_playback(self) -> None:
         self.play_state = PlayStates.playing
@@ -62,7 +45,7 @@ class Sequencer:
                 self.playhead.advance_tick()
                 self.clock.block_until_next_tick()
             else:
-                # if the sequencer is stopped, sleep before checking if it has started to safe cpu
+                # if the core is stopped, sleep before checking if it has started to safe cpu
                 time.sleep(0.01)
 
     def handle_all_events_for_playhead_position(self) -> None:

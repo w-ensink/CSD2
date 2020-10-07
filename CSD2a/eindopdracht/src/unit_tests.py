@@ -1,12 +1,12 @@
 # Written by Wouter Ensink
 # This file contains all unit tests for the project
 
-from console_interface import IOProvider, ConsoleInterface
-from sequencer import PlayStates
+from user_interface.console_interface import IOProvider
+from core.sequencer import PlayStates
 from unittest import TestCase
 import unittest
-from time_signature import TimeSignature
-from playhead import PlayHead
+from core.time_signature import TimeSignature
+from core.playhead import PlayHead
 
 
 # The type of IO Provider that is useful for testing all functionality of the interface

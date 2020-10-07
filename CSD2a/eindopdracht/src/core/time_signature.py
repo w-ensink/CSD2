@@ -4,29 +4,12 @@
 # This class resembles a time signature and the calculations related to it
 class TimeSignature:
     def __init__(self, numerator: int = 4, denumerator: int = 4,
-                 ticks_per_quarter_note: int = 4, settings: dict = None):
+                 ticks_per_quarter_note: int = 4):
         self.numerator = numerator
         self.denumerator = denumerator
         self.ticks_per_quarter_note = ticks_per_quarter_note
-        self.settings = settings
-        self.load_state()
         self.ticks_per_denumerator = 0
         self.calculate_ticks_per_denumerator()
-
-    def __del__(self):
-        self.safe_state()
-
-    def safe_state(self) -> None:
-        if self.settings:
-            self.settings['numerator'] = self.numerator
-            self.settings['denumerator'] = self.denumerator
-            self.settings['ticks_per_quarter_note'] = self.ticks_per_quarter_note
-
-    def load_state(self) -> None:
-        if self.settings:
-            self.numerator = self.settings['numerator']
-            self.denumerator = self.settings['denumerator']
-            self.ticks_per_denumerator = self.settings['ticks_per_quarter_note']
 
     def is_tick_start_of_bar(self, tick: int) -> bool:
         return tick % self.get_num_ticks_per_bar() == 0

@@ -1,46 +1,16 @@
+
 # Written by Wouter Ensink
 
-import simpleaudio as sa
-import time
-from sample_list import SampleList
-from time_signature import TimeSignature
-
-
-# base class for the different types of event handlers
-class EventHandler:
-    def handle(self, event: dict) -> None:
-        pass
-
-
-# simpleaudio based event handler
-class SimpleAudio_EventHandler(EventHandler, SampleList.Listener):
-    def __init__(self, sample_list: SampleList):
-        self.sample_list = sample_list
-        self.sample_list.add_listener(self)
-        self.samples = {}
-
-        for s in sample_list.samples:
-            self.samples[s['sample_name']] = sa.WaveObject.from_wave_file(s['file_name'])
-
-    def handle(self, event: dict) -> None:
-        self.samples[event['sample_name']].play()
-
-    # if a sample is added to the sample list, this handler needs to load it for playback
-    def sample_added(self, sample_name: str) -> None:
-        self.samples[sample_name] \
-            = sa.WaveObject.from_wave_file(self.sample_list.get_filename_for_sample(sample_name))
-
-    # if a sample is removed from the sample list, this handler can let go of the corresponding wave object
-    def sample_removed(self, sample_name: str) -> None:
-        del self.samples[sample_name]
+from core.samples.sample_list import SampleList
+from core.time_signature import TimeSignature
 
 
 # class with methods specifically for dealing with a list of events
 # requires a sample list to check if events can be added and to delete all events
 # that use a particular sample when the sample gets removed from the project
 class EventList(SampleList.Listener):
-    def __init__(self, sample_list: SampleList, state: [dict]):
-        self.events = state
+    def __init__(self, sample_list: SampleList):
+        self.events = []
         self.sample_list = sample_list
         self.sample_list.add_listener(self)
 

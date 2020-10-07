@@ -6,6 +6,7 @@
 
 import unittest
 import math
+from generators.constraints import SequenceGenerationConstraints
 
 
 class EuclideanRhythmGenerator:
@@ -22,6 +23,9 @@ class EuclideanRhythmGenerator:
             previous = current
 
         return result
+
+    def generate_random_sequence(self, constraints: SequenceGenerationConstraints):
+        pass
 
 
 class Euclidean_UnitTest(unittest.TestCase):

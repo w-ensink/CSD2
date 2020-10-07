@@ -3,7 +3,7 @@
 import time
 
 
-# supposed to be the main clock for a sequencer,
+# supposed to be the main clock for a core,
 # works by supplying a tick time, then this class will be able to
 # block until the next tick, regardless how long it has been since the last tick
 class Clock:

@@ -1,7 +1,7 @@
 # Written by Wouter Ensink
 
-from sequencer import Sequencer
-from console_interface import ConsoleInterface
+from core.sequencer import Sequencer
+from user_interface.console_interface import ConsoleInterface
 from os.path import isfile
 import sys
 import json
@@ -28,7 +28,7 @@ def get_filename() -> str:
     return filename
 
 
-# resembles the whole sequencer put together, so both ui and the audio part
+# resembles the whole core put together, so both ui and the audio part
 class MultiSampleSequencer:
     def __init__(self, settings: dict):
         self.transport = Sequencer(state=settings)
