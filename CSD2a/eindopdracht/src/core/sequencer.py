@@ -4,8 +4,8 @@ import time
 from core.playhead import PlayHead
 from core.clock import Clock
 from core.session import Session
-from core.events.event_handlers import EventHandler
-from core.events.event import Event
+from core.event_handlers import EventHandler
+from core.event import Event
 from core.sample import Sample
 from core.time_signature import TimeSignature
 from threading import Thread

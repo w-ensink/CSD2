@@ -4,7 +4,7 @@
 
 from core.time_signature import TimeSignature
 from core.sample import Sample, SpectralPositions
-from core.events.event import Event
+from core.event import Event
 import unittest
 
 

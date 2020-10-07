@@ -2,7 +2,7 @@
 # Written by Wouter Ensink
 
 from core.sample import Sample
-from core.events.event import Event
+from core.event import Event
 import simpleaudio as sa
 
 

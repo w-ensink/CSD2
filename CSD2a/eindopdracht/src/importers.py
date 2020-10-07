@@ -2,7 +2,7 @@
 
 from core.session import Session
 from core.sample import Sample, SpectralPositions
-from core.events.event import Event
+from core.event import Event
 from core.time_signature import TimeSignature
 from core.utility import convert_dictionary_to_session
 import json

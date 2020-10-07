@@ -4,11 +4,6 @@ from core.engine import Engine
 import time
 
 
-def exit_with_message(message: str):
-    print(message)
-    exit(-1)
-
-
 def main():
     engine = Engine()
     engine.import_session('../config/project.json')

@@ -4,7 +4,7 @@
 # but are still useful
 
 from core.time_signature import TimeSignature
-from core.events.event import Event
+from core.event import Event
 from core.session import Session
 from core.sample import Sample
 import unittest
@@ -23,6 +23,10 @@ def find_looping_point_for_time_signature(time_stamp: int, time_signature: TimeS
     while not time_signature.is_tick_start_of_bar(time_stamp):
         time_stamp += 1
     return time_stamp
+
+
+def find_all_time_stamps_for_sample(session, sample):
+    return [e.time_stamp for e in session.events if e.sample == sample]
 
 
 def convert_session_to_dictionary(session: Session) -> dict:
@@ -59,6 +63,7 @@ def convert_dictionary_to_time_signature(dictionary: dict) -> TimeSignature:
                          ticks_per_quarter_note=dictionary['ticks_per_quarter_note'])
 
 
+# manipulating session's members directly is ok here, because, no one is listening yet
 def convert_dictionary_to_session(dictionary: dict) -> Session:
     session = Session()
     session.samples.extend(convert_dictionary_to_sample(s) for s in dictionary['samples'])
@@ -66,6 +71,38 @@ def convert_dictionary_to_session(dictionary: dict) -> Session:
     session.time_signature = convert_dictionary_to_time_signature(dictionary['time_signature'])
     session.tempo_bpm = dictionary['tempo']
     return session
+
+
+# I hate this function
+def all_events_with_sample_to_string(session: Session, sample: Sample) -> str:
+    max_time_stamp = find_highest_time_stamp_in_event_list(session.events)
+    num_ticks = int(find_looping_point_for_time_signature(max_time_stamp, session.time_signature))
+    ticks_per_denum = int(session.time_signature.ticks_per_denumerator)
+    ticks_per_bar = int(session.time_signature.get_num_ticks_per_bar())
+    num_bars = int(num_ticks / ticks_per_bar)
+
+    seq = [False] * num_ticks
+
+    for i in find_all_time_stamps_for_sample(session, sample):
+        seq[i] = True
+
+    string = '|'
+
+    for bar in range(num_bars):
+        for beat in range(session.time_signature.numerator):
+            for tick in range(ticks_per_denum):
+                if seq[bar * ticks_per_bar + ticks_per_denum * beat + tick]:
+                    string += 'x'
+                else:
+                    string += '.'
+            string += ' '
+        string = string[:-1] + '|'
+
+    return string
+
+
+def session_to_formatted_string(session: Session) -> str:
+    return '\n'.join(s.name.ljust(5) + all_events_with_sample_to_string(session, s) for s in session.samples)
 
 
 # -------------------------------------------------------------------------------------------

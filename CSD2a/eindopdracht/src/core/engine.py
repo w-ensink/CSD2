@@ -4,10 +4,9 @@
 # The UI can give it commands and ask for status about the core and the rhythm generators.
 
 from exporters import MidiFileSequenceExporter, JsonFileSessionExporter
-from generators.euclidean import EuclideanRhythmGenerator
 from core.sequencer import Sequencer
-from importers import JsonFileSessionImporter, DummyImporter
-from core.events.event_handlers import SimpleAudio_EventHandler
+from importers import JsonFileSessionImporter
+from core.event_handlers import SimpleAudio_EventHandler
 from core.session import Session
 from core.session_editor import SessionEditor
 
