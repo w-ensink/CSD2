@@ -5,6 +5,9 @@
 
 
 import mido
+from core.session import Session
+from core.utility import convert_session_to_dictionary
+import json
 
 
 class MidiFileSequenceExporter:
@@ -12,8 +15,13 @@ class MidiFileSequenceExporter:
         pass
 
 
-class JsonFileSequenceExporter:
-    pass
+class JsonFileSessionExporter:
+    def store_session(self, session: Session, file_path: str):
+        dictionary = convert_session_to_dictionary(session)
+        json_string = json.dumps(dictionary, indent=4)
+        with open(file_path, 'w') as file:
+            file.write(json_string)
+
 
 '''
 midi_file = mido.MidiFile(type=1, clip=True)

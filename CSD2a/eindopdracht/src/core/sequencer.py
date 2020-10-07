@@ -17,6 +17,8 @@ class PlayStates:
 
 
 # the sequencer will run in it's own thread
+# it is the only class that listens to a session, because it's the only
+# one that needs to be updated on the fly while the sequence is changed by the user.
 class Sequencer(Session.Listener, Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -33,14 +35,19 @@ class Sequencer(Session.Listener, Thread):
         self.start()
 
     def load_session(self, session: Session):
-        if self.session:
-            self.session.remove_listener(self)
+        # get rid of the old session
+        self.remove_all_session_samples_from_event_handler()
+        self.session.remove_listener(self)
+        # setup the new session
         self.session = session
         self.session.add_listener(self)
         self.add_all_session_samples_to_event_handler()
         self.clock.update_tick_time_ms(self.calculate_tick_time())
         self.update_looping_position()
         self.rewind()
+
+    def shut_down(self):
+        self.keep_thread_active = False
 
     def set_event_handler(self, event_handler):
         self.event_handler = event_handler
@@ -50,6 +57,10 @@ class Sequencer(Session.Listener, Thread):
     def add_all_session_samples_to_event_handler(self):
         for s in self.session.samples:
             self.event_handler.add_sample(s)
+
+    def remove_all_session_samples_from_event_handler(self):
+        for s in self.session.samples:
+            self.event_handler.remove_sample(s)
 
     def start_playback(self) -> None:
         self.play_state = PlayStates.playing

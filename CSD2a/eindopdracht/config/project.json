@@ -1,0 +1,181 @@
+{
+    "samples": [
+        {
+            "name": "kick",
+            "path": "../audio/kick.wav",
+            "spectral_position": 0
+        },
+        {
+            "name": "perc",
+            "path": "../audio/perc.wav",
+            "spectral_position": 1
+        },
+        {
+            "name": "hat",
+            "path": "../audio/hat.wav",
+            "spectral_position": 2
+        }
+    ],
+    "events": [
+        {
+            "sample": {
+                "name": "hat",
+                "path": "../audio/hat.wav",
+                "spectral_position": 2
+            },
+            "time_stamp": 0,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "kick",
+                "path": "../audio/kick.wav",
+                "spectral_position": 0
+            },
+            "time_stamp": 0,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "hat",
+                "path": "../audio/hat.wav",
+                "spectral_position": 2
+            },
+            "time_stamp": 2,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "hat",
+                "path": "../audio/hat.wav",
+                "spectral_position": 2
+            },
+            "time_stamp": 4,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "perc",
+                "path": "../audio/perc.wav",
+                "spectral_position": 1
+            },
+            "time_stamp": 4,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "kick",
+                "path": "../audio/kick.wav",
+                "spectral_position": 0
+            },
+            "time_stamp": 4,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "hat",
+                "path": "../audio/hat.wav",
+                "spectral_position": 2
+            },
+            "time_stamp": 6,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "hat",
+                "path": "../audio/hat.wav",
+                "spectral_position": 2
+            },
+            "time_stamp": 8,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "kick",
+                "path": "../audio/kick.wav",
+                "spectral_position": 0
+            },
+            "time_stamp": 8,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "hat",
+                "path": "../audio/hat.wav",
+                "spectral_position": 2
+            },
+            "time_stamp": 10,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "hat",
+                "path": "../audio/hat.wav",
+                "spectral_position": 2
+            },
+            "time_stamp": 12,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "perc",
+                "path": "../audio/perc.wav",
+                "spectral_position": 1
+            },
+            "time_stamp": 12,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "kick",
+                "path": "../audio/kick.wav",
+                "spectral_position": 0
+            },
+            "time_stamp": 12,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        },
+        {
+            "sample": {
+                "name": "hat",
+                "path": "../audio/hat.wav",
+                "spectral_position": 2
+            },
+            "time_stamp": 14,
+            "duration": 1,
+            "midi_note": 60,
+            "velocity": 127
+        }
+    ],
+    "time_signature": {
+        "numerator": 4,
+        "denumerator": 4,
+        "ticks_per_quarter_note": 4
+    },
+    "tempo": 120
+}
