@@ -20,7 +20,8 @@ class PlayStates:
 class Sequencer(Session.Listener, Thread):
     def __init__(self):
         Thread.__init__(self)
-        self.session = None
+        self.session = Session()
+        self.session.add_listener(self)
         self.play_state = PlayStates.stopped
         self.playhead = PlayHead()
         # dummy eventhandler, doesn't actually handle them. Inject acutual one via set_event_handler()
@@ -36,12 +37,17 @@ class Sequencer(Session.Listener, Thread):
             self.session.remove_listener(self)
         self.session = session
         self.session.add_listener(self)
+        self.add_all_session_samples_to_event_handler()
+        self.clock.update_tick_time_ms(self.calculate_tick_time())
         self.update_looping_position()
         self.rewind()
 
     def set_event_handler(self, event_handler):
         self.event_handler = event_handler
         # load all currently available samples in the event handler
+        self.add_all_session_samples_to_event_handler()
+
+    def add_all_session_samples_to_event_handler(self):
         for s in self.session.samples:
             self.event_handler.add_sample(s)
 

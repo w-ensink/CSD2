@@ -9,7 +9,8 @@ import unittest
 
 
 def find_highest_time_stamp_in_event_list(events: [Event]):
-    return max([e.time_stamp for e in events])
+    time_stamps = [e.time_stamp for e in events]
+    return 0 if len(time_stamps) == 0 else max(time_stamps)
 
 
 def find_looping_point_for_time_signature(time_stamp: int, time_signature: TimeSignature):

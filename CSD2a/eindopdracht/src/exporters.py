@@ -15,7 +15,7 @@ class MidiFileSequenceExporter:
 class JsonFileSequenceExporter:
     pass
 
-
+'''
 midi_file = mido.MidiFile(type=1, clip=True)
 
 track = mido.MidiTrack()
@@ -28,3 +28,4 @@ track.append(mido.Message('note_on', note=60, time=0.0))
 track.append(mido.Message('note_off', note=60, time=50))
 
 midi_file.save(filename='../midi/f.mid')
+'''
