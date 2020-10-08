@@ -1,14 +1,16 @@
 # Written by Wouter Ensink
 
 from core.engine import Engine
-import time
+from user_interface.transport_console_interface import MainConsoleMenu, SessionChangeMenu
 
 
 def main():
     engine = Engine()
     engine.import_session('../config/project.json')
-    engine.sequencer.start_playback()
-    time.sleep(10)
+    main_menu = MainConsoleMenu(engine.sequencer)
+    session_change_menu = SessionChangeMenu(engine.session_editor)
+    main_menu.add_sub_menu(session_change_menu)
+    main_menu.enter_menu()
     engine.shut_down()
 
 

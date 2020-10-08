@@ -81,7 +81,7 @@ class Sequencer(Session.Listener, Thread):
                 self.playhead.advance_tick()
                 self.clock.block_until_next_tick()
             else:
-                # if the core is stopped, sleep before checking if it has started to safe cpu
+                # if the sequencer is stopped, sleep before checking if it has started to safe cpu
                 time.sleep(0.01)
 
     def handle_all_events_for_playhead_position(self) -> None:
@@ -109,15 +109,19 @@ class Sequencer(Session.Listener, Thread):
         self.clock.update_tick_time_ms(self.calculate_tick_time())
 
     # with a different time signature the tick time could be different
+    # and the logical looping point could have moved too
     def time_signature_changed(self, time_signature: TimeSignature, session):
         assert session == self.session
         self.update_looping_position()
         self.clock.update_tick_time_ms(self.calculate_tick_time())
 
+    # when a sample gets removed, events using that sample also get removed.
+    # the removal of these events is already handled by the event_removed_from_sample()
     def sample_removed_from_session(self, sample: Sample, session):
         assert session == self.session
         self.event_handler.remove_sample(sample)
 
+    # when a sample gets added, tell the event handler about it
     def sample_added_to_session(self, sample: Sample, session):
         assert session == self.session
         self.event_handler.add_sample(sample)

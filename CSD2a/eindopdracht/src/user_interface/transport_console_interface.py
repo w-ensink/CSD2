@@ -44,12 +44,18 @@ class MainConsoleMenu(ConsoleMenu):
             self.enter_sub_menu_if_needed(command)
 
 
+# this is the menu for changing the session
+# you can load/remove samples, add/remove events, set the time signature and change the tempo
 class SessionChangeMenu(ConsoleMenu):
     def __init__(self, session_editor: SessionEditor):
         super(SessionChangeMenu, self).__init__()
         self.session_editor = session_editor
+        # regex for: s <sample_name> <bar> <beat> <tick>
         self.set_event_command_pattern = regex.compile(r'^s\s\w*\s\d*\s\d*\s\d*$')
+        # regex for: r <sample_name> <bar> <beat> <tick>
         self.reset_event_command_pattern = regex.compile(r'^r\s\w*\s\d*\s\d*\s\d*$')
+        # regex for: tempo <tempo_bpm>
+        self.tempo_change_command_pattern = regex.compile(r'^tempo\s*\d*$')
 
     def get_enter_command(self):
         return 'edit'
@@ -62,6 +68,8 @@ class SessionChangeMenu(ConsoleMenu):
                 self.handle_set_event_command(command)
             if self.reset_event_command_pattern.match(command):
                 self.handle_reset_event_command(command)
+            if command == 'return':
+                return
 
     def handle_set_event_command(self, command: str) -> None:
         name, bar, beat, tick = self.parse_change_command_arguments(command)

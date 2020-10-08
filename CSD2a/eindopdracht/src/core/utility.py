@@ -26,7 +26,7 @@ def find_looping_point_for_time_signature(time_stamp: int, time_signature: TimeS
 
 
 def find_all_time_stamps_for_sample(session, sample):
-    return [e.time_stamp for e in session.events if e.sample == sample]
+    return [int(e.time_stamp) for e in session.events if e.sample == sample]
 
 
 def convert_session_to_dictionary(session: Session) -> dict:
@@ -43,7 +43,7 @@ def convert_session_to_dictionary(session: Session) -> dict:
                         'velocity': e.velocity}
                        for e in session.events],
             'time_signature': {'numerator': session.time_signature.numerator,
-                               'denumerator': session.time_signature.denumerator,
+                               'denumerator': session.time_signature.denominator,
                                'ticks_per_quarter_note': session.time_signature.ticks_per_quarter_note},
             'tempo': session.tempo_bpm}
 
@@ -75,9 +75,9 @@ def convert_dictionary_to_session(dictionary: dict) -> Session:
 
 # I hate this function
 def all_events_with_sample_to_string(session: Session, sample: Sample) -> str:
-    max_time_stamp = find_highest_time_stamp_in_event_list(session.events)
+    max_time_stamp = int(find_highest_time_stamp_in_event_list(session.events))
     num_ticks = int(find_looping_point_for_time_signature(max_time_stamp, session.time_signature))
-    ticks_per_denum = int(session.time_signature.ticks_per_denumerator)
+    ticks_per_denum = int(session.time_signature.calculate_ticks_per_denominator())
     ticks_per_bar = int(session.time_signature.get_num_ticks_per_bar())
     num_bars = int(num_ticks / ticks_per_bar)
 
@@ -102,7 +102,10 @@ def all_events_with_sample_to_string(session: Session, sample: Sample) -> str:
 
 
 def session_to_formatted_string(session: Session) -> str:
-    return '\n'.join(s.name.ljust(5) + all_events_with_sample_to_string(session, s) for s in session.samples)
+    time_info = f'tempo: {session.tempo_bpm}\n'
+    time_info += f'time signature: {session.time_signature.numerator}/{session.time_signature.denominator}\n'
+    return time_info + '\n'.join(s.name.ljust(5) + all_events_with_sample_to_string(session, s)
+                                 for s in session.samples)
 
 
 # -------------------------------------------------------------------------------------------

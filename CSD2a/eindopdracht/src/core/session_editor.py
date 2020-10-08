@@ -31,7 +31,7 @@ class SessionEditor:
         self.session.remove_event(Event(sample=sample, time_stamp=time_stamp))
 
     def find_sample_with_name(self, name):
-        for s in self.session:
+        for s in self.session.samples:
             if s.name == name:
                 return s
         return None
