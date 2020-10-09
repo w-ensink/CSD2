@@ -14,5 +14,6 @@ class Event:
         self.midi_note = 60
         self.velocity = 127
 
-    def __eq__(self, other):
+    # dedicated equality operator to prevent pointer comparison
+    def __eq__(self, other) -> bool:
         return self.sample == other.sample and self.time_stamp == other.time_stamp

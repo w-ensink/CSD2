@@ -25,7 +25,7 @@ def find_looping_point_for_time_signature(time_stamp: int, time_signature: TimeS
     return time_stamp
 
 
-def find_all_time_stamps_for_sample(session, sample):
+def find_all_time_stamps_for_sample(session: Session, sample: Sample) -> [int]:
     return [int(e.time_stamp) for e in session.events if e.sample == sample]
 
 
@@ -59,7 +59,7 @@ def convert_dictionary_to_event(dictionary: dict) -> Event:
 
 def convert_dictionary_to_time_signature(dictionary: dict) -> TimeSignature:
     return TimeSignature(numerator=dictionary['numerator'],
-                         denumerator=dictionary['denumerator'],
+                         denominator=dictionary['denumerator'],
                          ticks_per_quarter_note=dictionary['ticks_per_quarter_note'])
 
 
@@ -112,7 +112,7 @@ def session_to_formatted_string(session: Session) -> str:
 
 class UtilityTests(unittest.TestCase):
     def test_find_looping_point_for_time_signature(self):
-        time_sig = TimeSignature(numerator=5, denumerator=4, ticks_per_quarter_note=2)
+        time_sig = TimeSignature(numerator=5, denominator=4, ticks_per_quarter_note=2)
         time_stamp = 31
         looping_point = find_looping_point_for_time_signature(time_stamp, time_sig)
         self.assertEqual(looping_point, 40)

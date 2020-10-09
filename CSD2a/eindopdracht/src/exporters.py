@@ -11,7 +11,7 @@ import json
 
 
 class MidiFileSequenceExporter:
-    def store_session(self, session: Session, file_path: str):
+    def store_session(self, session: Session, file_path: str) -> None:
         midi = mido.MidiFile(type=1, ticks_per_beat=session.time_signature.ticks_per_quarter_note)
         ts_message = mido.MetaMessage('time_signature',
                                       numerator=session.time_signature.numerator,
@@ -28,7 +28,7 @@ class MidiFileSequenceExporter:
 
 
 class JsonFileSessionExporter:
-    def store_session(self, session: Session, file_path: str):
+    def store_session(self, session: Session, file_path: str) -> None:
         dictionary = convert_session_to_dictionary(session)
         json_string = json.dumps(dictionary, indent=4)
         with open(file_path, 'w') as file:

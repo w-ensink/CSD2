@@ -7,30 +7,30 @@
 from core.session import Session
 from core.event import Event
 from core.utility import session_to_formatted_string
-
+from core.sample import Sample
 
 class SessionEditor:
     def __init__(self):
         self.session = None
 
-    def set_session(self, session: Session):
+    def set_session(self, session: Session) -> None:
         self.session = session
 
-    def add_event(self, sample_name, bar, beat, tick):
+    def add_event(self, sample_name: str, bar: int, beat: int, tick: int) -> None:
         sample = self.find_sample_with_name(sample_name)
         if not sample:
             return
         time_stamp = self.session.time_signature.musical_time_to_ticks(bar, beat, tick)
         self.session.add_event(Event(sample=sample, time_stamp=time_stamp))
 
-    def remove_event(self, sample_name, bar, beat, tick):
+    def remove_event(self, sample_name: str, bar: int, beat: int, tick: int) -> None:
         sample = self.find_sample_with_name(sample_name)
         if not sample:
             return
         time_stamp = self.session.time_signature.musical_time_to_ticks(bar, beat, tick)
         self.session.remove_event(Event(sample=sample, time_stamp=time_stamp))
 
-    def find_sample_with_name(self, name):
+    def find_sample_with_name(self, name: str) -> Sample or None:
         for s in self.session.samples:
             if s.name == name:
                 return s

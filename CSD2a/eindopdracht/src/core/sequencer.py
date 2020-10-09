@@ -34,7 +34,7 @@ class Sequencer(Session.Listener, Thread):
         self.rewind()
         self.start()
 
-    def load_session(self, session: Session):
+    def load_session(self, session: Session) -> None:
         # get rid of the old session
         self.remove_all_session_samples_from_event_handler()
         self.session.remove_listener(self)
@@ -46,19 +46,22 @@ class Sequencer(Session.Listener, Thread):
         self.update_looping_position()
         self.rewind()
 
-    def shut_down(self):
+    def shut_down(self) -> None:
         self.keep_thread_active = False
 
-    def set_event_handler(self, event_handler):
+    def is_playing(self) -> bool:
+        return self.play_state == PlayStates.playing
+
+    def set_event_handler(self, event_handler: EventHandler) -> None:
         self.event_handler = event_handler
         # load all currently available samples in the event handler
         self.add_all_session_samples_to_event_handler()
 
-    def add_all_session_samples_to_event_handler(self):
+    def add_all_session_samples_to_event_handler(self) -> None:
         for s in self.session.samples:
             self.event_handler.add_sample(s)
 
-    def remove_all_session_samples_from_event_handler(self):
+    def remove_all_session_samples_from_event_handler(self) -> None:
         for s in self.session.samples:
             self.event_handler.remove_sample(s)
 
@@ -103,35 +106,35 @@ class Sequencer(Session.Listener, Thread):
     # with a new tempo, the clock needs to be updated
     # keep in mind that this method is not responable for making sure the tempo is not 0bpm
     # it will assert for it to let it know if it somehow is...
-    def tempo_changed(self, tempo_bpm: float, session):
+    def tempo_changed(self, tempo_bpm: float, session: Session) -> None:
         assert session == self.session
         assert tempo_bpm != 0
         self.clock.update_tick_time_ms(self.calculate_tick_time())
 
     # with a different time signature the tick time could be different
     # and the logical looping point could have moved too
-    def time_signature_changed(self, time_signature: TimeSignature, session):
+    def time_signature_changed(self, time_signature: TimeSignature, session: Session) -> None:
         assert session == self.session
         self.update_looping_position()
         self.clock.update_tick_time_ms(self.calculate_tick_time())
 
     # when a sample gets removed, events using that sample also get removed.
     # the removal of these events is already handled by the event_removed_from_sample()
-    def sample_removed_from_session(self, sample: Sample, session):
+    def sample_removed_from_session(self, sample: Sample, session: Session) -> None:
         assert session == self.session
         self.event_handler.remove_sample(sample)
 
     # when a sample gets added, tell the event handler about it
-    def sample_added_to_session(self, sample: Sample, session):
+    def sample_added_to_session(self, sample: Sample, session: Session) -> None:
         assert session == self.session
         self.event_handler.add_sample(sample)
 
     # when a sample is added/removed, the loop could have changed in length -> update
-    def event_added_to_session(self, event: Event, session):
+    def event_added_to_session(self, event: Event, session: Session) -> None:
         assert session == self.session
         self.update_looping_position()
 
     # when a sample is added/removed, the loop could have changed in length -> update
-    def event_removed_from_session(self, event: Event, session):
+    def event_removed_from_session(self, event: Event, session: Session) -> None:
         assert session == self.session
         self.update_looping_position()

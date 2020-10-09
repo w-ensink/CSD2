@@ -1,12 +1,15 @@
 
-
 # what does it need to do?
 # - find the greatest common divisor
 
 
 import unittest
-import math
 from generators.constraints import SequenceGenerationConstraints
+from core.session import Session
+from core.sample import Sample, SpectralPositions
+from core.event import Event
+import random
+import math
 
 
 class EuclideanRhythmGenerator:
@@ -24,8 +27,38 @@ class EuclideanRhythmGenerator:
 
         return result
 
-    def generate_random_sequence(self, constraints: SequenceGenerationConstraints):
-        pass
+    def generate_random_sequence(self, constraints: SequenceGenerationConstraints) -> Session:
+        session = Session()
+        session.samples = constraints.samples
+        num_ticks = constraints.time_signature.get_num_ticks_per_bar()
+
+        def calc_distribution(min_, max_):
+            return math.ceil(random.randint(min_, max_) / 100 * num_ticks)
+
+        low_density = calc_distribution(10, 30)
+        mid_density = calc_distribution(20, 50)
+        high_density = calc_distribution(40, 60)
+        low_distribution = self.make_absolute_distribution(num_ticks, low_density)
+        mid_distribution = self.make_absolute_distribution(num_ticks, mid_density)
+        high_distribution = self.make_absolute_distribution(num_ticks, high_density)
+
+        def add_events_to_session(distribution, sample):
+            for index, item in enumerate(distribution):
+                if item == 1:
+                    session.add_event(Event(sample=sample, time_stamp=index))
+
+        assert len(constraints.samples) == 3
+        for s in constraints.samples:
+            if s.spectral_position == SpectralPositions.low:
+                add_events_to_session(low_distribution, s)
+            if s.spectral_position == SpectralPositions.mid:
+                add_events_to_session(mid_distribution, s)
+            if s.spectral_position == SpectralPositions.high:
+                add_events_to_session(high_distribution, s)
+
+        session.change_time_signature(constraints.time_signature)
+
+        return session
 
 
 class Euclidean_UnitTest(unittest.TestCase):
