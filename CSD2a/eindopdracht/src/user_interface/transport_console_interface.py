@@ -32,27 +32,6 @@ class ConsoleMenu:
                 m.enter_menu()
 
 
-# this is the main menu of the sequencer
-class MainConsoleMenu(ConsoleMenu):
-    def __init__(self, sequencer: Sequencer):
-        super().__init__('Main')
-        self.sequencer = sequencer
-
-    def enter_menu(self) -> None:
-        while True:
-            self.clear()
-            command = input(' -> ')
-            if command == 'start':
-                self.sequencer.start_playback()
-            if command == 'stop':
-                self.sequencer.stop_playback()
-            if command == 'rewind':
-                self.sequencer.rewind()
-            if command == 'exit':
-                break
-            self.enter_sub_menu_if_needed(command)
-
-
 # this is the menu for changing the session
 # you can load/remove samples, add/remove events, set the time signature and change the tempo
 class SessionChangeMenu(ConsoleMenu):
@@ -81,7 +60,13 @@ class SessionChangeMenu(ConsoleMenu):
                 self.handle_reset_event_command(command)
             if command == 'gen':
                 self.engine.generate_random_sequence(None)
-            if command == 'return':
+            if command == 'undo':
+                self.session_editor.undo()
+            if command == 'redo':
+                self.session_editor.redo()
+            if command == 'clear kick':
+                self.session_editor.remove_all_events_with_sample('kick')
+            if command == 'exit':
                 return
 
     def handle_set_event_command(self, command: str) -> None:
