@@ -13,10 +13,6 @@ class UserCommand:
     def matches_command(self, command: str) -> bool:
         pass
 
-    # should return the command in a human readable string, eg: 'remove <sample_name>'
-    def get_command_as_string(self) -> str:
-        pass
-
     # should return a nice hint about what the command does
     def get_help_string(self) -> str:
         pass
@@ -33,9 +29,6 @@ class StartPlayback_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def get_command_as_string(self) -> str:
-        return 'play'
-
     def get_help_string(self) -> str:
         return 'play (starts playback)'
 
@@ -49,9 +42,6 @@ class StopPlayback_UserCommand(UserCommand):
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
-
-    def get_command_as_string(self) -> str:
-        return 'stop'
 
     def get_help_string(self) -> str:
         return 'stop (stops playback)'
@@ -77,11 +67,8 @@ class AddEvent_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def get_command_as_string(self) -> str:
-        return 's <sample_name> <bar> <beat> <tick>'
-
     def get_help_string(self) -> str:
-        return f'{self.get_command_as_string()} (adds event with given sample at given position)'
+        return 's <sample_name> <bar> <beat> <tick> (adds event with given sample at given position)'
 
     def perform(self, engine: Engine, command: str) -> None:
         name, bar, beat, tick = parse_change_command_arguments(command)
@@ -95,11 +82,8 @@ class RemoveEvent_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def get_command_as_string(self) -> str:
-        return 'r <sample_name> <bar> <beat> <tick>'
-
     def get_help_string(self) -> str:
-        return f'{self.get_command_as_string()} (removes event with given sample from given position)'
+        return 'r <sample_name> <bar> <beat> <tick> (removes event with given sample from given position)'
 
     def perform(self, engine: Engine, command: str) -> None:
         name, bar, beat, tick = parse_change_command_arguments(command)
@@ -112,9 +96,6 @@ class Undo_UserCommand(UserCommand):
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
-
-    def get_command_as_string(self) -> str:
-        return 'undo'
 
     def get_help_string(self) -> str:
         return 'undo (undoes last command)'
@@ -130,9 +111,6 @@ class Redo_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def get_command_as_string(self) -> str:
-        return 'redo'
-
     def get_help_string(self) -> str:
         return 'redo (redoes last command)'
 
@@ -146,9 +124,6 @@ class ClearSample_UserCommand(UserCommand):
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
-
-    def get_command_as_string(self) -> str:
-        return 'clear <sample_name>'
 
     def get_help_string(self) -> str:
         return 'clear <sample_name> (removes all events using given sample)'
@@ -164,14 +139,61 @@ class ChangeTempo_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def get_command_as_string(self) -> str:
-        return 'tempo <bpm>'
-
     def get_help_string(self) -> str:
         return 'tempo <bpm> (changes tempo to given argument'
 
     def perform(self, engine: Engine, command: str) -> None:
         engine.session_editor.change_tempo(int(command.strip()[6:]))
+
+
+class SaveJson_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^save\sjson\s[a-zA-Z_/.-]*\.json$')
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def get_help_string(self) -> str:
+        return 'save json <file_path> (saves session as json)'
+
+    def perform(self, engine: Engine, command: str) -> None:
+        engine.export_session_to_json(command[10:])
+
+
+class LoadJson_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^load\sjson\s[a-zA-Z_/.-]*\.json$')
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def get_help_string(self) -> str:
+        return 'load json <file_path> (loads session from json)'
+
+    def perform(self, engine: Engine, command: str) -> None:
+        engine.load_session_from_json(command[10:])
+
+
+class ChangeTimeSignature_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^ts\s\d*/\d*$')
+        self.num_pattern = regex.compile(r'\d+')
+        self.den_pattern = regex.compile(r'/\d+')
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def get_help_string(self) -> str:
+        return 'ts <numerator>/<denominator> (sets the time signature)'
+
+    def perform(self, engine: Engine, command: str) -> None:
+        numerator, denominator = self.parse_command_arguments(command)
+        engine.session_editor.change_time_signature(numerator, denominator, 4)
+
+    def parse_command_arguments(self, command) -> (int, int):
+        num = self.num_pattern.search(command).group()
+        den = self.den_pattern.search(command).group()[1:]
+        return int(num), int(den)
 
 
 # -----------------------------------------------------------------------------------
@@ -184,11 +206,14 @@ class ConsoleInterface:
             StartPlayback_UserCommand(),
             StopPlayback_UserCommand(),
             ChangeTempo_UserCommand(),
+            ChangeTimeSignature_UserCommand(),
             AddEvent_UserCommand(),
             RemoveEvent_UserCommand(),
             Undo_UserCommand(),
             Redo_UserCommand(),
-            ClearSample_UserCommand()
+            ClearSample_UserCommand(),
+            SaveJson_UserCommand(),
+            LoadJson_UserCommand()
         ]
 
     @staticmethod
@@ -202,25 +227,25 @@ class ConsoleInterface:
             print(self.engine.session_editor.get_session_as_string())
             print(f'\n{self.feedback}')
             command = input('\n---> ')
+            self.attempt_handling_command(command)
+
             if command == 'exit':
                 return
-            if not self.attempt_handling_command(command):
-                self.feedback = f'Error: "{command}" is not a valid command, enter "help" to see what\'s possible'
             if command == 'help':
                 self.show_help()
 
-    def attempt_handling_command(self, command) -> bool:
+    def attempt_handling_command(self, command):
         for handler in self.command_handlers:
             if handler.matches_command(command):
                 handler.perform(self.engine, command)
                 self.feedback = 'Enter "help" to see what\'s possible'
-                return True
-        return False
+                return
+        self.feedback = f'Error: "{command}" is not a valid command, enter "help" to see what\'s possible'
 
     def show_help(self):
         self.clear()
         print('List of valid commands:\n')
-        print('\n'.join(f'- {s.get_help_string()}' for s in self.command_handlers))
+        print('\n'.join(f' - {s.get_help_string()}' for s in self.command_handlers))
         input('\nPress enter to return')
         self.feedback = 'Enter "help" to see what\'s possible'
 

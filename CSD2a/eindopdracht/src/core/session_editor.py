@@ -4,6 +4,7 @@
 # this way the editing user interface only needs a reference to this class
 # keeps all the details of the engine out of the way
 
+from core.time_signature import TimeSignature
 from core.session import Session
 from core.event import Event
 from core.utility import session_to_formatted_string
@@ -102,6 +103,19 @@ class ChangeTempo_SessionEdit(UndoableSessionEdit):
         self.perform(session)
 
 
+class ChangeTimeSignature_SessionEdit(UndoableSessionEdit):
+    def __init__(self, time_signature: TimeSignature):
+        self.time_signature = time_signature
+
+    def perform(self, session: Session) -> None:
+        old = session.time_signature
+        session.change_time_signature(self.time_signature)
+        self.time_signature = old
+
+    # undo is the same as perform
+    def undo(self, session: Session) -> None:
+        self.perform(session)
+
 # -----------------------------------------------------------------------------------------
 
 class SessionEditor:
@@ -142,6 +156,10 @@ class SessionEditor:
 
     def change_tempo(self, tempo: float):
         self.undo_manager.perform(ChangeTempo_SessionEdit(tempo), self.session)
+
+    def change_time_signature(self, numerator: int, denominator: int, ticks_per_quarter_note: int):
+        ts = TimeSignature(numerator, denominator, ticks_per_quarter_note)
+        self.undo_manager.perform(ChangeTimeSignature_SessionEdit(ts), self.session)
 
     def find_sample_with_name(self, name: str) -> Sample or None:
         for s in self.session.samples:

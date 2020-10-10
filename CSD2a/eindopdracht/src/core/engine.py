@@ -17,19 +17,19 @@ from core.time_signature import TimeSignature
 class Engine:
     def __init__(self):
         self.midi_exporter = MidiFileSequenceExporter()
-        self.session_importer = JsonFileSessionImporter()
+        self.json_importer = JsonFileSessionImporter()
         self.session = Session()
         self.session_editor = SessionEditor()
         self.sequencer = Sequencer()
         self.sequencer.set_event_handler(SimpleAudio_EventHandler())
-        self.session_exporter = JsonFileSessionExporter()
+        self.json_exporter = JsonFileSessionExporter()
         self.generator = EuclideanRhythmGenerator()
 
     def shut_down(self) -> None:
         self.sequencer.shut_down()
 
-    def load_session_from_file(self, file_name: str) -> None:
-        self.load_session(self.session_importer.load_session(file_name))
+    def load_session_from_json(self, file_name: str) -> None:
+        self.load_session(self.json_importer.load_session(file_name))
 
     def load_session(self, session: Session):
         # if the sequencer is playing, it should stop until the new sequence is fully loaded
@@ -45,8 +45,8 @@ class Engine:
         if should_pause_playback:
             self.sequencer.start_playback()
 
-    def export_sequence(self, file_name: str) -> None:
-        self.session_exporter.store_session(self.session, file_name)
+    def export_session_to_json(self, file_name: str) -> None:
+        self.json_exporter.store_session(self.session, file_name)
 
     def generate_random_sequence(self, constraints):
         ts = TimeSignature(numerator=5, denominator=4, ticks_per_quarter_note=4)

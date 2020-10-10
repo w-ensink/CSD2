@@ -103,7 +103,7 @@ def all_events_with_sample_to_string(session: Session, sample: Sample) -> str:
 
 def session_to_formatted_string(session: Session) -> str:
     time_info = f'tempo: {session.tempo_bpm}\n'
-    time_info += f'time signature: {session.time_signature.numerator}/{session.time_signature.denominator}\n'
+    time_info += f'time signature: {session.time_signature.numerator}/{session.time_signature.denominator}\n\n'
     return time_info + '\n'.join(s.name.ljust(5) + all_events_with_sample_to_string(session, s)
                                  for s in session.samples)
 
