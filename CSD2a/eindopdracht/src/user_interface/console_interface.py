@@ -121,15 +121,19 @@ class Redo_UserCommand(UserCommand):
 class ClearSample_UserCommand(UserCommand):
     def __init__(self):
         self.pattern = regex.compile(r'^\s*clear\s[a-zA-Z_]*\s*$')
+        self.clear_all_pattern = regex.compile(r'^clear$')
 
     def matches_command(self, command: str) -> bool:
-        return self.pattern.match(command)
+        return self.pattern.match(command) or self.clear_all_pattern.match(command)
 
     def get_help_string(self) -> str:
-        return 'clear <sample_name> (removes all events using given sample)'
+        return 'clear [sample_name] (removes all events [using given sample])'
 
     def perform(self, engine: Engine, command: str) -> None:
-        engine.session_editor.remove_all_events_with_sample(command.strip()[6:])
+        if self.pattern.match(command):
+            engine.session_editor.remove_all_events_with_sample(command.strip()[6:])
+        else:
+            engine.session_editor.remove_all_events()
 
 
 class ChangeTempo_UserCommand(UserCommand):
@@ -196,6 +200,19 @@ class ChangeTimeSignature_UserCommand(UserCommand):
         return int(num), int(den)
 
 
+class Euclidean_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'euc')
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def get_help_string(self) -> str:
+        return 'euc'
+
+    def perform(self, engine: Engine, command: str) -> None:
+        engine.session_editor.euclidean_for_sample('kick', 3)
+
 # -----------------------------------------------------------------------------------
 # The actual User Interface put together
 class ConsoleInterface:
@@ -213,17 +230,31 @@ class ConsoleInterface:
             Redo_UserCommand(),
             ClearSample_UserCommand(),
             SaveJson_UserCommand(),
-            LoadJson_UserCommand()
+            LoadJson_UserCommand(),
+            Euclidean_UserCommand()
         ]
+        self.name = 'Wouter\'s Sequence Generator Deluxe XL Max Pro Premium'
+        self.header = '''
+░██╗░░░░░░░██╗░█████╗░██╗░░░██╗████████╗███████╗██████╗░
+░██║░░██╗░░██║██╔══██╗██║░░░██║╚══██╔══╝██╔════╝██╔══██╗
+░╚██╗████╗██╔╝██║░░██║██║░░░██║░░░██║░░░█████╗░░██████╔╝
+░░████╔═████║░██║░░██║██║░░░██║░░░██║░░░██╔══╝░░██╔══██╗
+░░╚██╔╝░╚██╔╝░╚█████╔╝╚██████╔╝░░░██║░░░███████╗██║░░██║
+░░░╚═╝░░░╚═╝░░░╚════╝░░╚═════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝'''
+
+    def __del__(self):
+        self.clear()
+        print(self.header)
+        print(f'\nThank you for using\n{self.name} :-)\n\n\n')
 
     @staticmethod
     def clear():
         os.system('clear')
-        print('Wouter\'s Sequence Generator Deluxe XL Max Pro Premium\n')
 
     def enter_menu(self):
         while True:
             self.clear()
+            print(f'{self.header}\n{self.name}\n')
             print(self.engine.session_editor.get_session_as_string())
             print(f'\n{self.feedback}')
             command = input('\n---> ')
@@ -237,15 +268,15 @@ class ConsoleInterface:
     def attempt_handling_command(self, command):
         for handler in self.command_handlers:
             if handler.matches_command(command):
-                handler.perform(self.engine, command)
                 self.feedback = 'Enter "help" to see what\'s possible'
-                return
+                return handler.perform(self.engine, command)
         self.feedback = f'Error: "{command}" is not a valid command, enter "help" to see what\'s possible'
 
     def show_help(self):
         self.clear()
+        print(f'\n{self.name}\n')
         print('List of valid commands:\n')
-        print('\n'.join(f' - {s.get_help_string()}' for s in self.command_handlers))
-        input('\nPress enter to return')
+        print('\n'.join(f' - {s.get_help_string()}' for s in self.command_handlers) + '\n - exit (to exit)')
+        input('\nPress enter to return... ')
         self.feedback = 'Enter "help" to see what\'s possible'
 

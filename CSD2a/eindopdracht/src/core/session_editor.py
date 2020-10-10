@@ -10,6 +10,7 @@ from core.event import Event
 from core.utility import session_to_formatted_string
 from core.sample import Sample
 from copy import copy
+from generators.euclidean import EuclideanRhythmGenerator
 
 
 # Base class for any session edit action that should be undoable.
@@ -89,6 +90,20 @@ class RemoveAllEventsWithSample_SessionEdit(UndoableSessionEdit):
         self.removed_events = []
 
 
+class RemoveAllEvents_SessionEdit(UndoableSessionEdit):
+    def __init__(self):
+        self.backup = []
+
+    def perform(self, session: Session) -> None:
+        self.backup = copy(session.events)
+        for e in self.backup:
+            session.remove_event(e)
+
+    def undo(self, session: Session) -> None:
+        for e in self.backup:
+            session.add_event(e)
+
+
 # Session edit that changes the tempo
 class ChangeTempo_SessionEdit(UndoableSessionEdit):
     def __init__(self, tempo: float):
@@ -115,6 +130,27 @@ class ChangeTimeSignature_SessionEdit(UndoableSessionEdit):
     # undo is the same as perform
     def undo(self, session: Session) -> None:
         self.perform(session)
+
+
+class EuclideanForSample_SessionEdit(UndoableSessionEdit):
+    def __init__(self, num_events: int, sample: Sample):
+        self.clear_edit = RemoveAllEventsWithSample_SessionEdit(sample)
+        self.num_events = num_events
+        self.sample = sample
+
+    def perform(self, session: Session) -> None:
+        self.clear_edit.perform(session)
+        num_ticks = session.time_signature.get_num_ticks_per_bar()
+        distribution = EuclideanRhythmGenerator.make_absolute_distribution(num_ticks=num_ticks,
+                                                                           num_events=self.num_events)
+        for index, item in enumerate(distribution):
+            if item == 1:
+                session.add_event(Event(sample=self.sample, time_stamp=index))
+
+    def undo(self, session: Session) -> None:
+        RemoveAllEventsWithSample_SessionEdit(self.sample).perform(session)
+        self.clear_edit.undo(session)
+
 
 # -----------------------------------------------------------------------------------------
 
@@ -154,12 +190,21 @@ class SessionEditor:
             return
         self.undo_manager.perform(RemoveAllEventsWithSample_SessionEdit(sample), self.session)
 
+    def remove_all_events(self):
+        self.undo_manager.perform(RemoveAllEvents_SessionEdit(), self.session)
+
     def change_tempo(self, tempo: float):
         self.undo_manager.perform(ChangeTempo_SessionEdit(tempo), self.session)
 
     def change_time_signature(self, numerator: int, denominator: int, ticks_per_quarter_note: int):
         ts = TimeSignature(numerator, denominator, ticks_per_quarter_note)
         self.undo_manager.perform(ChangeTimeSignature_SessionEdit(ts), self.session)
+
+    def euclidean_for_sample(self, sample_name: str, num_events: int):
+        sample = self.find_sample_with_name(sample_name)
+        if not sample:
+            return
+        self.undo_manager.perform(EuclideanForSample_SessionEdit(sample=sample, num_events=num_events), self.session)
 
     def find_sample_with_name(self, name: str) -> Sample or None:
         for s in self.session.samples:
