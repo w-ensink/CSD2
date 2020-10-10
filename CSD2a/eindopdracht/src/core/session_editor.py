@@ -11,6 +11,7 @@ from core.sample import Sample
 from copy import copy
 
 
+# Base class for any session edit action that should be undoable.
 class UndoableSessionEdit:
     def perform(self, session: Session) -> None:
         pass
@@ -19,6 +20,7 @@ class UndoableSessionEdit:
         pass
 
 
+# manages a bunch of UndoableSessionEdits in a stack to create full undo/redo functionality
 class SessionUndoManager:
     def __init__(self):
         self.undo_stack = []
@@ -86,6 +88,22 @@ class RemoveAllEventsWithSample_SessionEdit(UndoableSessionEdit):
         self.removed_events = []
 
 
+# Session edit that changes the tempo
+class ChangeTempo_SessionEdit(UndoableSessionEdit):
+    def __init__(self, tempo: float):
+        self.tempo = tempo
+
+    def perform(self, session: Session) -> None:
+        old_tempo = session.tempo_bpm
+        session.change_tempo(self.tempo)
+        self.tempo = old_tempo
+
+    def undo(self, session: Session) -> None:
+        self.perform(session)
+
+
+# -----------------------------------------------------------------------------------------
+
 class SessionEditor:
     def __init__(self):
         self.session = None
@@ -121,6 +139,9 @@ class SessionEditor:
         if not sample:
             return
         self.undo_manager.perform(RemoveAllEventsWithSample_SessionEdit(sample), self.session)
+
+    def change_tempo(self, tempo: float):
+        self.undo_manager.perform(ChangeTempo_SessionEdit(tempo), self.session)
 
     def find_sample_with_name(self, name: str) -> Sample or None:
         for s in self.session.samples:
