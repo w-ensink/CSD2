@@ -23,29 +23,29 @@ class UndoableSessionEdit:
 
 
 # manages a bunch of UndoableSessionEdits in a stack to create full undo/redo functionality
-class SessionUndoManager:
+class SessionEditManager:
     def __init__(self):
         self.undo_stack = []
         self.redo_stack = []
 
-    def perform(self, edit: UndoableSessionEdit, session: Session) -> None:
+    def perform_edit(self, edit: UndoableSessionEdit, session: Session) -> None:
         edit.perform(session)
         self.undo_stack.append(edit)
 
-    def undo(self, session: Session) -> None:
+    def undo_last_edit(self, session: Session) -> None:
         # can't undo actions that are not there...
         if not self.undo_stack:
             return
         edit = self.undo_stack.pop()
-        edit.undo(session)
+        edit.undo_last_edit(session)
         self.redo_stack.append(edit)
 
-    def redo(self, session: Session) -> None:
+    def redo_last_undone_edit(self, session: Session) -> None:
         # can't redo actions that are not there...
         if not self.redo_stack:
             return
         edit = self.redo_stack.pop()
-        edit.perform(session)
+        edit.perform_edit(session)
         self.undo_stack.append(edit)
 
 
@@ -152,21 +152,60 @@ class EuclideanForSample_SessionEdit(UndoableSessionEdit):
         self.clear_edit.undo(session)
 
 
+class AddSample_SessionEdit(UndoableSessionEdit):
+    def __init__(self, sample: Sample):
+        self.sample = sample
+
+    def perform(self, session: Session) -> None:
+        session.add_sample(self.sample)
+
+    def undo(self, session: Session) -> None:
+        session.remove_sample(self.sample)
+
+
+class RemoveSample_SessionEdit(UndoableSessionEdit):
+    def __init__(self, sample: Sample):
+        self.sample = sample
+        self.event_backup = None
+
+    def perform(self, session: Session) -> None:
+        self.event_backup = copy(session.events)
+        session.remove_sample(self.sample)
+
+    def undo(self, session: Session) -> None:
+        session.add_sample(self.sample)
+        for e in self.event_backup:
+            session.add_event(e)
+
+
 # -----------------------------------------------------------------------------------------
 
 class SessionEditor:
     def __init__(self):
         self.session = None
-        self.undo_manager = SessionUndoManager()
+        self.edit_manager = SessionEditManager()
 
     def set_session(self, session: Session) -> None:
         self.session = session
 
     def undo(self):
-        self.undo_manager.undo(self.session)
+        self.edit_manager.undo_last_edit(self.session)
 
     def redo(self):
-        self.undo_manager.redo(self.session)
+        self.edit_manager.redo_last_undone_edit(self.session)
+
+    def add_sample(self, path: str, name: str):
+        # can't add sample with the same name as an existing sample
+        if self.find_sample_with_name(name):
+            return
+        sample = Sample(name, path, 0)
+        self.edit_manager.perform_edit(AddSample_SessionEdit(sample), self.session)
+
+    def remove_sample(self, name: str):
+        sample = self.find_sample_with_name(name)
+        if not sample:
+            return
+        self.edit_manager.perform_edit(RemoveSample_SessionEdit(sample), self.session)
 
     def add_event(self, sample_name: str, bar: int, beat: int, tick: int) -> None:
         sample = self.find_sample_with_name(sample_name)
@@ -174,7 +213,7 @@ class SessionEditor:
             return
         time_stamp = self.session.time_signature.musical_time_to_ticks(bar, beat, tick)
         event = Event(sample=sample, time_stamp=time_stamp)
-        self.undo_manager.perform(AddEvent_SessionEdit(event), session=self.session)
+        self.edit_manager.perform_edit(AddEvent_SessionEdit(event), session=self.session)
 
     def remove_event(self, sample_name: str, bar: int, beat: int, tick: int) -> None:
         sample = self.find_sample_with_name(sample_name)
@@ -182,29 +221,29 @@ class SessionEditor:
             return
         time_stamp = self.session.time_signature.musical_time_to_ticks(bar, beat, tick)
         event = Event(sample=sample, time_stamp=time_stamp)
-        self.undo_manager.perform(RemoveEvent_SessionEdit(event), session=self.session)
+        self.edit_manager.perform_edit(RemoveEvent_SessionEdit(event), session=self.session)
 
     def remove_all_events_with_sample(self, sample_name: str):
         sample = self.find_sample_with_name(sample_name)
         if not sample:
             return
-        self.undo_manager.perform(RemoveAllEventsWithSample_SessionEdit(sample), self.session)
+        self.edit_manager.perform_edit(RemoveAllEventsWithSample_SessionEdit(sample), self.session)
 
     def remove_all_events(self):
-        self.undo_manager.perform(RemoveAllEvents_SessionEdit(), self.session)
+        self.edit_manager.perform_edit(RemoveAllEvents_SessionEdit(), self.session)
 
     def change_tempo(self, tempo: float):
-        self.undo_manager.perform(ChangeTempo_SessionEdit(tempo), self.session)
+        self.edit_manager.perform_edit(ChangeTempo_SessionEdit(tempo), self.session)
 
     def change_time_signature(self, numerator: int, denominator: int, ticks_per_quarter_note: int):
         ts = TimeSignature(numerator, denominator, ticks_per_quarter_note)
-        self.undo_manager.perform(ChangeTimeSignature_SessionEdit(ts), self.session)
+        self.edit_manager.perform_edit(ChangeTimeSignature_SessionEdit(ts), self.session)
 
     def euclidean_for_sample(self, sample_name: str, num_events: int):
         sample = self.find_sample_with_name(sample_name)
         if not sample:
             return
-        self.undo_manager.perform(EuclideanForSample_SessionEdit(sample=sample, num_events=num_events), self.session)
+        self.edit_manager.perform_edit(EuclideanForSample_SessionEdit(sample=sample, num_events=num_events), self.session)
 
     def find_sample_with_name(self, name: str) -> Sample or None:
         for s in self.session.samples:

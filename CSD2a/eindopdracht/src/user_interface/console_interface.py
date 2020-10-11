@@ -101,7 +101,7 @@ class Undo_UserCommand(UserCommand):
         return 'undo (undoes last command)'
 
     def perform(self, engine: Engine, command: str) -> None:
-        engine.session_editor.undo()
+        engine.session_editor.undo_last_edit()
 
 
 class Redo_UserCommand(UserCommand):
@@ -115,7 +115,7 @@ class Redo_UserCommand(UserCommand):
         return 'redo (redoes last command)'
 
     def perform(self, engine: Engine, command: str) -> None:
-        engine.session_editor.redo()
+        engine.session_editor.redo_last_undone_edit()
 
 
 class ClearSample_UserCommand(UserCommand):
@@ -180,7 +180,7 @@ class LoadJson_UserCommand(UserCommand):
 
 class ChangeTimeSignature_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'^ts\s\d*/\d*$')
+        self.pattern = regex.compile(r'^ts\s\d+/\d+$')
         self.num_pattern = regex.compile(r'\d+')
         self.den_pattern = regex.compile(r'/\d+')
 
@@ -202,16 +202,57 @@ class ChangeTimeSignature_UserCommand(UserCommand):
 
 class Euclidean_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'euc')
+        self.pattern = regex.compile(r'^euc\s[a-zA-Z]+\s\d+$')
+        self.id_pattern = regex.compile(r'^[a-zA-Z]+')
+        self.num_pattern = regex.compile(r'\d+')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
     def get_help_string(self) -> str:
-        return 'euc'
+        return 'euc <sample_name> <num_hits> (makes an euclidean distribution for given sample)'
 
     def perform(self, engine: Engine, command: str) -> None:
-        engine.session_editor.euclidean_for_sample('kick', 3)
+        name = self.id_pattern.search(command[4:]).group()
+        arg = int(self.num_pattern.search(command).group())
+        engine.session_editor.euclidean_for_sample(name, arg)
+
+
+class LoadSample_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^load\s[a-zA-Z0-9_/.-]+\.wav\sas\s[a-zA-Z]+$')
+        self.file_path_pattern = regex.compile(r'[a-zA-Z0-9_/.-]+\.wav')
+
+    def get_help_string(self) -> str:
+        return 'load <file_path> as <sample_name> (loads sample from given file path as given sample name)'
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def perform(self, engine: Engine, command: str) -> None:
+        path, name = self.parse_arguments(command)
+        engine.session_editor.add_sample(path, name)
+
+    def parse_arguments(self, command: str) -> (str, str):
+        path_match = self.file_path_pattern.search(command)
+        path = path_match.group()
+        name = command[path_match.span()[1] + 4:]
+        return path, name
+
+
+class RemoveSample_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^remove\s[a-zA-Z]+$')
+
+    def get_help_string(self) -> str:
+        return 'remove <sample_name> (removes sample with given name from session)'
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def perform(self, engine: Engine, command: str) -> None:
+        engine.session_editor.remove_sample(command[7:])
+
 
 # -----------------------------------------------------------------------------------
 # The actual User Interface put together
@@ -224,6 +265,8 @@ class ConsoleInterface:
             StopPlayback_UserCommand(),
             ChangeTempo_UserCommand(),
             ChangeTimeSignature_UserCommand(),
+            LoadSample_UserCommand(),
+            RemoveSample_UserCommand(),
             AddEvent_UserCommand(),
             RemoveEvent_UserCommand(),
             Undo_UserCommand(),
