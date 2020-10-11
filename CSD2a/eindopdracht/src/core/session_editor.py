@@ -7,10 +7,15 @@
 from core.time_signature import TimeSignature
 from core.session import Session
 from core.event import Event
-from core.utility import session_to_formatted_string
-from core.sample import Sample
+from core.utility import session_to_formatted_string, \
+    find_all_events_with_sample, \
+    find_looping_point_for_session, \
+    wrap
+from core.sample import Sample, SpectralPositions
 from copy import copy
 from generators.euclidean import EuclideanRhythmGenerator
+import random
+import math
 
 
 # Base class for any session edit action that should be undoable.
@@ -37,7 +42,7 @@ class SessionEditManager:
         if not self.undo_stack:
             return
         edit = self.undo_stack.pop()
-        edit.undo_last_edit(session)
+        edit.undo(session)
         self.redo_stack.append(edit)
 
     def redo_last_undone_edit(self, session: Session) -> None:
@@ -45,7 +50,7 @@ class SessionEditManager:
         if not self.redo_stack:
             return
         edit = self.redo_stack.pop()
-        edit.perform_edit(session)
+        edit.perform(session)
         self.undo_stack.append(edit)
 
 
@@ -178,6 +183,56 @@ class RemoveSample_SessionEdit(UndoableSessionEdit):
             session.add_event(e)
 
 
+# rotates all events that use a particular sample
+class RotateSample_SessionEdit(UndoableSessionEdit):
+    def __init__(self, sample: Sample, amount: int):
+        self.sample = sample
+        self.amount = amount
+
+    def perform(self, session: Session) -> None:
+        events = find_all_events_with_sample(session, self.sample)
+        RemoveAllEventsWithSample_SessionEdit(self.sample).perform(session)
+        looping_point = find_looping_point_for_session(session)
+
+        for e in events:
+            e.time_stamp = wrap(value=e.time_stamp + self.amount, wrapping_point=looping_point)
+            session.add_event(e)
+
+    def undo(self, session: Session) -> None:
+        events = find_all_events_with_sample(session, self.sample)
+        RemoveAllEventsWithSample_SessionEdit(self.sample).perform(session)
+        looping_point = find_looping_point_for_session(session)
+
+        for e in events:
+            e.time_stamp = wrap(value=e.time_stamp - self.amount, wrapping_point=looping_point)
+            session.add_event(e)
+
+
+class GenerateSequence_SessionEdit(UndoableSessionEdit):
+    def __init__(self):
+        self.clear_edit = RemoveAllEvents_SessionEdit()
+
+    def perform(self, session: Session) -> None:
+        self.clear_edit.perform(session)
+        num_ticks = session.time_signature.get_num_ticks_per_bar()
+        low_dist = math.ceil(random.randint(0, num_ticks) / 4)
+        mid_dist = math.ceil(random.randint(0, num_ticks) / 4)
+        high_dist = math.ceil(random.randint(0, num_ticks - 4))
+        for s in session.samples:
+            if s.spectral_position == SpectralPositions.low:
+                EuclideanForSample_SessionEdit(low_dist, s).perform(session)
+            if s.spectral_position == SpectralPositions.mid:
+                EuclideanForSample_SessionEdit(mid_dist, s).perform(session)
+                RotateSample_SessionEdit(s, random.randint(4, num_ticks - 4)).perform(session)
+            if s.spectral_position == SpectralPositions.high:
+                EuclideanForSample_SessionEdit(high_dist, s).perform(session)
+                RotateSample_SessionEdit(s, random.randint(0, num_ticks)).perform(session)
+
+    def undo(self, session: Session) -> None:
+        RemoveAllEvents_SessionEdit().perform(session)
+        self.clear_edit.undo(session)
+
+
 # -----------------------------------------------------------------------------------------
 
 class SessionEditor:
@@ -253,4 +308,13 @@ class SessionEditor:
 
     def get_session_as_string(self) -> str:
         return session_to_formatted_string(self.session)
+
+    def rotate_all_events_with_sample(self, sample_name: str, amount: int):
+        sample = self.find_sample_with_name(sample_name)
+        if not sample:
+            return
+        self.edit_manager.perform_edit(RotateSample_SessionEdit(sample, amount), self.session)
+
+    def generate_sequence(self):
+        self.edit_manager.perform_edit(GenerateSequence_SessionEdit(), self.session)
 

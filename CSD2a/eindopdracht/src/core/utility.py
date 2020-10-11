@@ -25,8 +25,17 @@ def find_looping_point_for_time_signature(time_stamp: int, time_signature: TimeS
     return time_stamp
 
 
+def find_looping_point_for_session(session: Session) -> int:
+    highest_time_stamp = find_highest_time_stamp_in_event_list(session.events)
+    return find_looping_point_for_time_signature(highest_time_stamp, session.time_signature)
+
+
 def find_all_time_stamps_for_sample(session: Session, sample: Sample) -> [int]:
     return [int(e.time_stamp) for e in session.events if e.sample == sample]
+
+
+def find_all_events_with_sample(session: Session, sample: Sample) -> [Event]:
+    return [e for e in session.events if e.sample == sample]
 
 
 def convert_session_to_dictionary(session: Session) -> dict:
@@ -71,6 +80,15 @@ def convert_dictionary_to_session(dictionary: dict) -> Session:
     session.time_signature = convert_dictionary_to_time_signature(dictionary['time_signature'])
     session.tempo_bpm = dictionary['tempo']
     return session
+
+
+# wraps a given value between 0 and given maximum (useful for rotating events)
+def wrap(value, wrapping_point) -> int:
+    if value >= 0:
+        return value % wrapping_point
+    while value < 0:
+        value += wrapping_point
+    return value
 
 
 # I hate this function

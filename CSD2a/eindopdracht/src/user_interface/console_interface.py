@@ -101,7 +101,7 @@ class Undo_UserCommand(UserCommand):
         return 'undo (undoes last command)'
 
     def perform(self, engine: Engine, command: str) -> None:
-        engine.session_editor.undo_last_edit()
+        engine.session_editor.undo()
 
 
 class Redo_UserCommand(UserCommand):
@@ -115,7 +115,7 @@ class Redo_UserCommand(UserCommand):
         return 'redo (redoes last command)'
 
     def perform(self, engine: Engine, command: str) -> None:
-        engine.session_editor.redo_last_undone_edit()
+        engine.session_editor.redo()
 
 
 class ClearSample_UserCommand(UserCommand):
@@ -254,6 +254,56 @@ class RemoveSample_UserCommand(UserCommand):
         engine.session_editor.remove_sample(command[7:])
 
 
+class RotateSampleRight_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^rr\s[a-zA-Z]+\s\d+$')
+        self.num_pattern = regex.compile(r'\d+')
+        self.name_pattern = regex.compile(r'[a-zA-Z]+')
+
+    def get_help_string(self) -> str:
+        return 'rr <sample_name> <amount> (rotates all events for given sample to the right)'
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def perform(self, engine: Engine, command: str) -> None:
+        amount = int(self.num_pattern.search(command).group())
+        name = self.name_pattern.search(command[2:]).group()
+        engine.session_editor.rotate_all_events_with_sample(name, amount)
+
+
+class RotateSampleLeft_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^rl\s[a-zA-Z]+\s\d+$')
+        self.num_pattern = regex.compile(r'\d+')
+        self.name_pattern = regex.compile(r'[a-zA-Z]+')
+
+    def get_help_string(self) -> str:
+        return 'rl <sample_name> <amount> (rotates all events for given sample to the left)'
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def perform(self, engine: Engine, command: str) -> None:
+        amount = int(self.num_pattern.search(command).group())
+        name = self.name_pattern.search(command[2:]).group()
+        engine.session_editor.rotate_all_events_with_sample(name, -amount)
+
+
+class GenerateSequence_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^surprise\sme$')
+
+    def get_help_string(self) -> str:
+        return 'surprise me (generates sequence)'
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command) or command == 'g'
+
+    def perform(self, engine: Engine, command: str) -> None:
+        engine.session_editor.generate_sequence()
+
+
 # -----------------------------------------------------------------------------------
 # The actual User Interface put together
 class ConsoleInterface:
@@ -263,6 +313,7 @@ class ConsoleInterface:
         self.command_handlers = [
             StartPlayback_UserCommand(),
             StopPlayback_UserCommand(),
+            GenerateSequence_UserCommand(),
             ChangeTempo_UserCommand(),
             ChangeTimeSignature_UserCommand(),
             LoadSample_UserCommand(),
@@ -274,7 +325,9 @@ class ConsoleInterface:
             ClearSample_UserCommand(),
             SaveJson_UserCommand(),
             LoadJson_UserCommand(),
-            Euclidean_UserCommand()
+            Euclidean_UserCommand(),
+            RotateSampleRight_UserCommand(),
+            RotateSampleLeft_UserCommand()
         ]
         self.name = 'Wouter\'s Sequence Generator Deluxe XL Max Pro Premium'
         self.header = '''
