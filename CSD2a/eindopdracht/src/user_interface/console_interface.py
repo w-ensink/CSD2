@@ -360,7 +360,10 @@ class ConsoleInterface:
 
     @staticmethod
     def clear():
-        os.system('clear')
+        if os.name == 'posix':
+            os.system('clear')
+        else:
+            os.system('cls')
 
     def enter_menu(self):
         while True:
