@@ -175,7 +175,7 @@ class SaveJson_UserCommand(UserCommand):
         return 'sj <file_path> (saves session as json)'
 
     def perform(self, engine: Engine, command: str) -> None:
-        engine.export_session_to_json(command[10:])
+        engine.export_session_to_json(command[3:])
 
 
 class LoadJson_UserCommand(UserCommand):
@@ -189,7 +189,7 @@ class LoadJson_UserCommand(UserCommand):
         return 'lj <file_path> (loads session from json)'
 
     def perform(self, engine: Engine, command: str) -> None:
-        engine.load_session_from_json(command[10:])
+        engine.load_session_from_json(command[3:])
 
 
 class ChangeTimeSignature_UserCommand(UserCommand):
