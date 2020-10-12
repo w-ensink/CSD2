@@ -50,7 +50,9 @@ class MidiUtil_MidiFileSequenceExporter:
             note -= 1
         return result
 
-class MidiFileSequenceExporter:
+
+# This one doesn't work...
+class Mido_MidiFileSequenceExporter:
     def distribute_midi_notes(self, samples: [Sample]):
         result = {}
         note = 60
@@ -95,17 +97,5 @@ class JsonFileSessionExporter:
 
 # running a test for making a midi file from a session
 if __name__ == '__main__':
-    # midi_file = mido.MidiFile(type=1, ticks_per_beat=4)
-    # midi_track = mido.MidiTrack()
-    # midi_file.tracks.append(midi_track)
-    #
-    # midi_track.append(mido.MetaMessage('time_signature', numerator=5, denominator=4))
-    # midi_track.append(mido.MetaMessage('track_name', name='my fancy track'))
-    # midi_track.append(mido.MetaMessage('set_tempo', tempo=129))
-    # midi_track.append(mido.Message('note_on', note=63, time=1))
-    # midi_track.append(mido.Message('note_off', note=63, time=2))
-    # midi_file.save(filename='../midi/midi_test.mid')
-    # print('done saving midi file')
-
     test_session = JsonFileSessionImporter().load_session('../config/project.json')
     MidiUtil_MidiFileSequenceExporter().store_session(test_session, '../midi/midi_test.mid')

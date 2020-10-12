@@ -166,13 +166,13 @@ class SaveMidi_UserCommand(UserCommand):
 
 class SaveJson_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'^save\sjson\s[a-zA-Z_/.-]+\.json$')
+        self.pattern = regex.compile(r'^sj\s[a-zA-Z_/.-]+\.json$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
     def get_help_string(self) -> str:
-        return 'save json <file_path> (saves session as json)'
+        return 'sj <file_path> (saves session as json)'
 
     def perform(self, engine: Engine, command: str) -> None:
         engine.export_session_to_json(command[10:])
@@ -180,13 +180,13 @@ class SaveJson_UserCommand(UserCommand):
 
 class LoadJson_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'^load\sjson\s[a-zA-Z_/.-]*\.json$')
+        self.pattern = regex.compile(r'^lj\s[a-zA-Z_/.-]+\.json$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
     def get_help_string(self) -> str:
-        return 'load json <file_path> (loads session from json)'
+        return 'lj <file_path> (loads session from json)'
 
     def perform(self, engine: Engine, command: str) -> None:
         engine.load_session_from_json(command[10:])

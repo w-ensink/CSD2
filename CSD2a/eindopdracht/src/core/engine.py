@@ -9,9 +9,7 @@ from importers import JsonFileSessionImporter
 from core.event_handlers import SimpleAudio_EventHandler
 from core.session import Session
 from core.session_editor import SessionEditor
-from generators.constraints import SequenceGenerationConstraints
 from generators.euclidean import EuclideanRhythmGenerator
-from core.time_signature import TimeSignature
 
 
 class Engine:
