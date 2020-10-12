@@ -1,6 +1,6 @@
-# Multi Sample Sequencer - Documentation
+# Irregular Beat Generator - Documentation
 
-This document contains all documentation regarding the Multi Sample Sequencer assignment. The source code can be found in the ```src``` folder.
+This document contains all documentation regarding the Irregular Beat Generator assignment. The source code can be found in the ```src``` folder.
 
 ---
 
@@ -11,42 +11,35 @@ To make use of this project you need to run ```main.py``` via the console. The f
 python3 main.py
 ```
 
-The console will now wait for you to give it commands. The following commands are valid:
+<ins>Note that it is important to run the program from the src directory, because most sessions use relative file paths</ins>
 
-|Command| Effect|
-| --- | --- |
-|```start```| starts playback |
-|```stop```| stops playback |
-|```rewind```| rewinds playhead (starts sequence from start) |
-|```<number>``` | changes tempo (bpm) to given number |
-|```load <file_path> as <sample_name>``` | loads given file so it can be used in the sequencer, addressed by the given name |
-| ```remove <sample_name>``` | removes sample from sequencer and removes all events that used it |
-| ```change``` | opens new menu to change the sequence |
-| ```exit``` | saves the current state and exits the sequencer |
+The program lets you edit a sequence in realtime while also playing it back. (Almost) all changes are undoable and redoable. 
+It can load new samples on the fly and has some useful algorithms for constructing sequences really fast. It's also fully adaptive. If you add an event that is located in a new bar (or if you change the time signature to one with fewer ticks per bar), the sequence will be extended an extra bar and the engine will adapt its looping point. 
+When that event gets removed, it will go back to its original length.
 
+Further more, you can save any session as json, so you can load it back in when you want to continue working on it. Exporting as MIDI is also possible (although it behaves a little weird at the moment).
 
-The ```change``` command opens a menu. In this menu you will be presented with the current sequence and the ability to change it. The following commands will be valid:
-|Command | Effect|
+Below is a list of valid commands. It will probably be extended in the future.
+
+|Command|Effect|
 |---|---|
-|```s <sample_name> <bar> <beat> <tick>``` | adds event with given sample at given time stamp |
-|```r <sample_name> <bar> <beat> <tick>``` | removes event with given sample and time stamp |
-|```done``` | returns to main menu |
-
----
-## Architecture
-The sequencer is built off a couple of parts:
-
-| Class Name | Task |
-| --- | --- |
-| ```Clock``` | makes sure each tick in the sequencer is exactly on time |
-| ```EventHandler``` | handles a given event (plays sample), is also a ```SampleList.Listener```, so it knows when samples are added, so it can load them for playback |
-| ```EventList``` | keeps track of all events, is also a ```SampleList.Listener``` so it can remove events when a sample is removed |
-| ```SampleList``` | keeps track of all samples, notifies its listeners when samples are added or removed |
-| ```SampleList.Listener``` | base class for a class that listens to a ```SampleList``` so it can update itself when a sample is added or removed |
-| ```PlayHead``` | tracks the position (in ticks) within the sequence and wraps around if it's in looping mode |
-| ```Sequencer``` | uses all the above classes to form a sequencer |
-| ```TimeSignature``` | resembles the current time signature of the sequencer |
-| ```ConsoleInterface``` | user interface (thread) using the console for interaction with a given ```Sequencer``` instance |
-| ```IOProvider``` | base class for any io provider, to make the interface usable from different types of io, was intented to be used for testing only |
-
-This architecture makes it possible to swap out different parts of the system. If for example we would want to handle events with an external sample player controlled via OSC, the only thing we need to do is making a new ```EventHandler``` and swap the ```SimpleAudio_EventHandler``` with this new one. This makes the system very modular and extendable.
+|```play``` | starts playback|
+|```stop``` | stops playback|
+|```load <file_path> as <sample_name>```| loads sample at given file path (must be ```.wav```)|
+|```remove <sample_name>``` | removes given sample from the session (and all the events that use it)|
+|```r <sample_name> <bar> <beat> <tick>``` | removes event for given sample at given position|
+|```s <sample_name> <bar> <beat> <tick>``` | adds event for given sample at given position|
+|```clear [sample_name]```| removes all events [optionally for given sample only]|
+|```euc <sample_name> <num_hits>```| makes euclidean distribution for sample with given number of events|
+|```rr <sample_name> <num_ticks>```|rotates all events using given sample given number of ticks to the right|
+|```rl <sample_name> <num_ticks>```|rotates all events using given sample given number of ticks to the left|
+|```g``` or ```surprise me```| generates sequence |
+|```sm <file_path>```|saves current session as midi (file_path must end with ```.mid``` or ```.midi```) |
+|```sj <file_path>```|saves current session as json (file_path must end with ```.json```)|
+|```lj <file_path>``` | loads session from json (file_path must end with ```.json```)|
+|```tempo <tempo_bpm>``` | sets the tempo to the given argument|
+|```ts <numerator>/<denominator>```| sets the time signature |
+|```undo``` | undoes the last edit to the session|
+|```redo``` | redoes the last undone edit to the session|
+|```help```|shows a menu with a list of all valid commands|
+|```exit```| exits the program|
