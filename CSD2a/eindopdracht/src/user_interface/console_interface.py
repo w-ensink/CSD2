@@ -150,9 +150,23 @@ class ChangeTempo_UserCommand(UserCommand):
         engine.session_editor.change_tempo(int(command.strip()[6:]))
 
 
+class SaveMidi_UserCommand(UserCommand):
+    def __init__(self):
+        self.pattern = regex.compile(r'^sm\s[a-zA-Z_/.-]+\.(mid|midi)$')
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def get_help_string(self) -> str:
+        return 'sm <file_path> (saves session as midi)'
+
+    def perform(self, engine: Engine, command: str) -> None:
+        engine.export_session_to_midi(command[3:])
+
+
 class SaveJson_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'^save\sjson\s[a-zA-Z_/.-]*\.json$')
+        self.pattern = regex.compile(r'^save\sjson\s[a-zA-Z_/.-]+\.json$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -323,6 +337,7 @@ class ConsoleInterface:
             Undo_UserCommand(),
             Redo_UserCommand(),
             ClearSample_UserCommand(),
+            SaveMidi_UserCommand(),
             SaveJson_UserCommand(),
             LoadJson_UserCommand(),
             Euclidean_UserCommand(),

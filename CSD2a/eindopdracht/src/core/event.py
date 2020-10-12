@@ -10,7 +10,7 @@ class Event:
     def __init__(self, sample: Sample, time_stamp: int):
         self.sample = sample
         self.time_stamp = time_stamp
-        self.duration = 1
+        self.duration = 0.25  # a quarter note
         self.midi_note = 60
         self.velocity = 127
 

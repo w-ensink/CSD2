@@ -3,7 +3,7 @@
 # This file contains the engine class. This is the main component of the core.
 # The UI can give it commands and ask for status about the core and the rhythm generators.
 
-from exporters import MidiFileSequenceExporter, JsonFileSessionExporter
+from exporters import MidiUtil_MidiFileSequenceExporter, JsonFileSessionExporter
 from core.sequencer import Sequencer
 from importers import JsonFileSessionImporter
 from core.event_handlers import SimpleAudio_EventHandler
@@ -16,7 +16,7 @@ from core.time_signature import TimeSignature
 
 class Engine:
     def __init__(self):
-        self.midi_exporter = MidiFileSequenceExporter()
+        self.midi_exporter = MidiUtil_MidiFileSequenceExporter()
         self.json_importer = JsonFileSessionImporter()
         self.session = Session()
         self.session_editor = SessionEditor()
@@ -48,10 +48,6 @@ class Engine:
     def export_session_to_json(self, file_name: str) -> None:
         self.json_exporter.store_session(self.session, file_name)
 
-    def generate_random_sequence(self, constraints):
-        ts = TimeSignature(numerator=5, denominator=4, ticks_per_quarter_note=4)
-        constraints = SequenceGenerationConstraints(samples=self.session.samples,
-                                                    time_signature=ts,
-                                                    num_bars=1)
-        session = self.generator.generate_random_sequence(constraints)
-        self.load_session(session)
+    def export_session_to_midi(self, file_name: str) -> None:
+        self.midi_exporter.store_session(self.session, file_name)
+
