@@ -10,7 +10,8 @@ from core.event import Event
 from core.utility import session_to_formatted_string, \
     find_all_events_with_sample, \
     find_looping_point_for_session, \
-    wrap
+    wrap, \
+    spectral_position_from_string
 from core.sample import Sample, SpectralPositions
 from copy import copy
 from generators.euclidean import EuclideanRhythmGenerator
@@ -208,6 +209,32 @@ class RotateSample_SessionEdit(UndoableSessionEdit):
             session.add_event(e)
 
 
+class ChangeSpectralPositionForSample_SessionEdit(UndoableSessionEdit):
+    def __init__(self, sample: Sample, spectral_position: int):
+        self.sample = sample
+        self.spectral_position = spectral_position
+        self.prev_spectral_position = None
+
+    def perform(self, session: Session) -> None:
+        for s in session.samples:
+            if s == self.sample:
+                self.prev_spectral_position = s.spectral_position
+                s.spectral_position = self.spectral_position
+
+        for e in session.events:
+            if e.sample == self.sample:
+                e.sample.spectral_position = self.spectral_position
+
+    def undo(self, session: Session) -> None:
+        for s in session.samples:
+            if s == self.sample:
+                s.spectral_position = self.prev_spectral_position
+
+        for e in session.events:
+            if e.sample == self.sample:
+                e.sample.spectral_position = self.prev_spectral_position
+
+
 class GenerateSequence_SessionEdit(UndoableSessionEdit):
     def __init__(self):
         self.clear_edit = RemoveAllEvents_SessionEdit()
@@ -314,6 +341,14 @@ class SessionEditor:
         if not sample:
             return
         self.edit_manager.perform_edit(RotateSample_SessionEdit(sample, amount), self.session)
+
+    def change_spectral_position_for_sample(self, sample_name: str, spectral_position: str):
+        sp = spectral_position_from_string(spectral_position)
+        sample = self.find_sample_with_name(sample_name)
+        # if either the sample doesn't exist or the spectral position is invalid, there is no point in trying..
+        if not sample:
+            return
+        self.edit_manager.perform_edit(ChangeSpectralPositionForSample_SessionEdit(sample, sp), self.session)
 
     def generate_sequence(self):
         self.edit_manager.perform_edit(GenerateSequence_SessionEdit(), self.session)

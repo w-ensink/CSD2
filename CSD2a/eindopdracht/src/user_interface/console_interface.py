@@ -318,6 +318,25 @@ class GenerateSequence_UserCommand(UserCommand):
         engine.session_editor.generate_sequence()
 
 
+class ChangeSpectralPositionForSample_UserCommand(UserCommand):
+    def __init__(self):
+        # sp <sample_name> <spectral_position>
+        self.pattern = regex.compile(r'^sp\s[a-zA-Z]+\s(low|mid|high)$')
+        self.sample_name_pattern = regex.compile(r'[a-zA-Z]+')
+        self.spectral_pattern = regex.compile(r'(low|mid|high)')
+
+    def matches_command(self, command: str) -> bool:
+        return self.pattern.match(command)
+
+    def get_help_string(self) -> str:
+        return 'sp <sample_name> <low|mid|high> (changes spectral position of given sample)'
+
+    def perform(self, engine: Engine, command: str) -> None:
+        sample_name = self.sample_name_pattern.search(command[3:]).group()
+        spectral_position = self.spectral_pattern.search(command).group()
+        engine.session_editor.change_spectral_position_for_sample(sample_name, spectral_position)
+
+
 # -----------------------------------------------------------------------------------
 # The actual User Interface put together
 class ConsoleInterface:
@@ -342,7 +361,8 @@ class ConsoleInterface:
             LoadJson_UserCommand(),
             Euclidean_UserCommand(),
             RotateSampleRight_UserCommand(),
-            RotateSampleLeft_UserCommand()
+            RotateSampleLeft_UserCommand(),
+            ChangeSpectralPositionForSample_UserCommand()
         ]
         self.name = 'Wouter\'s Sequence Generator Deluxe XL Max Pro Premium'
         self.header = '''

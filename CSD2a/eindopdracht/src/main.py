@@ -7,8 +7,8 @@ from user_interface.console_interface import ConsoleInterface
 def main() -> None:
     engine = Engine()
     engine.load_session_from_json('../config/project.json')
-    session_change_menu = ConsoleInterface(engine)
-    session_change_menu.enter_menu()
+    interface = ConsoleInterface(engine)
+    interface.enter_menu()
     engine.shut_down()
 
 

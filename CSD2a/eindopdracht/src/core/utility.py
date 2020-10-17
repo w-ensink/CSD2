@@ -6,7 +6,7 @@
 from core.time_signature import TimeSignature
 from core.event import Event
 from core.session import Session
-from core.sample import Sample
+from core.sample import Sample, SpectralPositions
 import unittest
 
 
@@ -119,10 +119,35 @@ def all_events_with_sample_to_string(session: Session, sample: Sample) -> str:
     return string
 
 
+def spectral_position_to_string(spectral_position: int) -> str:
+    if spectral_position == SpectralPositions.low:
+        return '(l)'
+    if spectral_position == SpectralPositions.mid:
+        return '(m)'
+    if spectral_position == SpectralPositions.high:
+        return '(h)'
+
+
+def spectral_position_from_string(spectral_position: str) -> int or None:
+    if spectral_position == 'low':
+        return SpectralPositions.low
+    if spectral_position == 'mid':
+        return SpectralPositions.mid
+    if spectral_position == 'high':
+        return SpectralPositions.high
+    return None
+
+
+# returns a formatted string with all information about the given session, in the format:
+# tempo: <tempo>
+# time signature <time_signature>
+# <sample_name_1>(<spectral_position>) |x... .x..|
+# <sample_name_n>(<spectral_position>) |..x. ..x.|
 def session_to_formatted_string(session: Session) -> str:
     time_info = f'tempo: {session.tempo_bpm}\n'
     time_info += f'time signature: {session.time_signature.numerator}/{session.time_signature.denominator}\n\n'
-    return time_info + '\n'.join(s.name.ljust(5) + all_events_with_sample_to_string(session, s)
+    return time_info + '\n'.join((s.name + spectral_position_to_string(s.spectral_position)).ljust(8)
+                                 + all_events_with_sample_to_string(session, s)
                                  for s in session.samples)
 
 

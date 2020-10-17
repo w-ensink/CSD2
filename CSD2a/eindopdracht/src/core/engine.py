@@ -3,7 +3,7 @@
 # This file contains the engine class. This is the main component of the core.
 # The UI can give it commands and ask for status about the core and the rhythm generators.
 
-from exporters import MidiUtil_MidiFileSequenceExporter, JsonFileSessionExporter
+from exporters import MidiUtil_MidiFileSessionExporter, JsonFileSessionExporter
 from core.sequencer import Sequencer
 from importers import JsonFileSessionImporter
 from core.event_handlers import SimpleAudio_EventHandler
@@ -14,7 +14,7 @@ from generators.euclidean import EuclideanRhythmGenerator
 
 class Engine:
     def __init__(self):
-        self.midi_exporter = MidiUtil_MidiFileSequenceExporter()
+        self.midi_exporter = MidiUtil_MidiFileSessionExporter()
         self.json_importer = JsonFileSessionImporter()
         self.session = Session()
         self.session_editor = SessionEditor()

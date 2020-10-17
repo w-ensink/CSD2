@@ -14,7 +14,7 @@ from copy import copy
 from midiutil.MidiFile import MIDIFile
 
 
-class MidiUtil_MidiFileSequenceExporter:
+class MidiUtil_MidiFileSessionExporter:
     def store_session(self, session: Session, file_path: str):
         m = MIDIFile(1)
         track, channel = 0, 0
@@ -52,7 +52,7 @@ class MidiUtil_MidiFileSequenceExporter:
 
 
 # This one doesn't work...
-class Mido_MidiFileSequenceExporter:
+class Mido_MidiFileSessionExporter:
     def distribute_midi_notes(self, samples: [Sample]):
         result = {}
         note = 60
@@ -98,4 +98,4 @@ class JsonFileSessionExporter:
 # running a test for making a midi file from a session
 if __name__ == '__main__':
     test_session = JsonFileSessionImporter().load_session('../config/project.json')
-    MidiUtil_MidiFileSequenceExporter().store_session(test_session, '../midi/midi_test.mid')
+    MidiUtil_MidiFileSessionExporter().store_session(test_session, '../midi/midi_test.mid')
