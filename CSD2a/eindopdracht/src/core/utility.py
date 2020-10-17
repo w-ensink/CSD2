@@ -140,7 +140,7 @@ def spectral_position_from_string(spectral_position: str) -> int or None:
 
 # returns a formatted string with all information about the given session, in the format:
 # tempo: <tempo>
-# time signature <time_signature>
+# time signature: <time_signature>
 # <sample_name_1>(<spectral_position>) |x... .x..|
 # <sample_name_n>(<spectral_position>) |..x. ..x.|
 def session_to_formatted_string(session: Session) -> str:

@@ -1,8 +1,15 @@
 # Written by Wouter Ensink
 
-# this class should be the only one actually in charge of editing the session
-# this way the editing user interface only needs a reference to this class
-# keeps all the details of the engine out of the way
+# The idea of the session editor is that it's the only class that actually edits the session
+# directly. The idea about it was that this would make it easy to find bugs.
+# in the future this class may grow too big and should maybe be split up across different classes,
+# but for now it's managable.
+
+# The main class (called SessionEditor) is made of a SessionEditManager, that manages the edits that
+# are done on the session (it's basically an undo/redo manager)
+# The actual edits are implemented using a combination of the Memento pattern and the Command pattern,
+# where each edit is its own class with a perform and an undo method. This way the undo/redo is
+# a very trivial process of managing a couple of stacks containing session edits.
 
 from core.time_signature import TimeSignature
 from core.session import Session

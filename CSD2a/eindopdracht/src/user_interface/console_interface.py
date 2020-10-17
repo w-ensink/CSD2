@@ -4,6 +4,16 @@
 from core.engine import Engine
 import regex
 import os
+from os.path import isfile
+from termcolor import colored
+
+# Architecture for user interface:
+# the user interface is constructed of one main class that contains a load of
+# command handlers. The idea is that the main class dispatches the command it receives from the user
+# to the command handler that says it can handle that command.
+# When telling the handler to handle the command, it also passes the engine instance
+# with it, so the handler can do whatever it needs to do.
+# this design makes it really easy, fast and safe to add new commands to the system
 
 
 # subclasses of UserCommand should implement their behaviour and information in these given functions
@@ -18,7 +28,7 @@ class UserCommand:
         pass
 
     # should perform the command on the engine
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         pass
 
 
@@ -32,8 +42,9 @@ class StartPlayback_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'play (starts playback)'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         engine.sequencer.start_playback()
+        return 'I started playback for you!'
 
 
 class StopPlayback_UserCommand(UserCommand):
@@ -46,12 +57,13 @@ class StopPlayback_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'stop (stops playback)'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         engine.sequencer.stop_playback()
+        return 'I stopped playback for you'
 
 
 # finds the 3 numeric arguments (bar, beat, tick) of a set or reset command and the sample name
-def parse_change_command_arguments(command: str) -> (str, int, int, int):
+def parse_add_remove_event_command_arguments(command: str) -> (str, int, int, int):
     # chop off the 'r' or 's'
     command = command[2:]
     args = command.split(' ')
@@ -62,7 +74,7 @@ def parse_change_command_arguments(command: str) -> (str, int, int, int):
 
 class AddEvent_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'^s\s\w*\s\d*\s\d*\s\d*$')
+        self.pattern = regex.compile(r'^s\s\w+\s\d+\s\d+\s\d+$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -70,14 +82,15 @@ class AddEvent_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 's <sample_name> <bar> <beat> <tick> (adds event with given sample at given position)'
 
-    def perform(self, engine: Engine, command: str) -> None:
-        name, bar, beat, tick = parse_change_command_arguments(command)
+    def perform(self, engine: Engine, command: str) -> str:
+        name, bar, beat, tick = parse_add_remove_event_command_arguments(command)
         engine.session_editor.add_event(name, bar, beat, tick)
+        return 'I added the event you wanted, I always knew something was missing there'
 
 
 class RemoveEvent_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'^r\s\w*\s\d*\s\d*\s\d*$')
+        self.pattern = regex.compile(r'^r\s\w+\s\d+\s\d+\s\d+$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -85,9 +98,10 @@ class RemoveEvent_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'r <sample_name> <bar> <beat> <tick> (removes event with given sample from given position)'
 
-    def perform(self, engine: Engine, command: str) -> None:
-        name, bar, beat, tick = parse_change_command_arguments(command)
+    def perform(self, engine: Engine, command: str) -> str:
+        name, bar, beat, tick = parse_add_remove_event_command_arguments(command)
         engine.session_editor.remove_event(name, bar, beat, tick)
+        return 'I removed the event you wanted, I always knew it was not supposed to be there'
 
 
 class Undo_UserCommand(UserCommand):
@@ -100,8 +114,9 @@ class Undo_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'undo (undoes last command)'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         engine.session_editor.undo()
+        return 'I undid what I just did, hope you\'re happy now'
 
 
 class Redo_UserCommand(UserCommand):
@@ -114,13 +129,14 @@ class Redo_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'redo (redoes last command)'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         engine.session_editor.redo()
+        return 'I redid all the work I had just undone for you, make up your mind!'
 
 
 class ClearSample_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'^\s*clear\s[a-zA-Z_]*\s*$')
+        self.pattern = regex.compile(r'^\s*clear\s[a-zA-Z_]+\s*$')
         self.clear_all_pattern = regex.compile(r'^clear$')
 
     def matches_command(self, command: str) -> bool:
@@ -129,16 +145,19 @@ class ClearSample_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'clear [sample_name] (removes all events [using given sample])'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         if self.pattern.match(command):
-            engine.session_editor.remove_all_events_with_sample(command.strip()[6:])
+            sample_name = command.strip()[6:]
+            engine.session_editor.remove_all_events_with_sample(sample_name)
+            return f'I removed all events for {sample_name}'
         else:
             engine.session_editor.remove_all_events()
+            return 'I removed all events, now you can try to actually make something'
 
 
 class ChangeTempo_UserCommand(UserCommand):
     def __init__(self):
-        self.pattern = regex.compile(r'^\s*tempo\s\d*\s*$')
+        self.pattern = regex.compile(r'^\s*tempo\s\d+\s*$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -146,8 +165,12 @@ class ChangeTempo_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'tempo <bpm> (changes tempo to given argument'
 
-    def perform(self, engine: Engine, command: str) -> None:
-        engine.session_editor.change_tempo(int(command.strip()[6:]))
+    def perform(self, engine: Engine, command: str) -> str:
+        tempo = int(command.strip()[6:])
+        if tempo == 0:
+            return '0bpm is not a valid tempo, tempo change ignored :-('
+        engine.session_editor.change_tempo(tempo)
+        return f'tempo changed to {tempo}, that should do it!'
 
 
 class SaveMidi_UserCommand(UserCommand):
@@ -160,8 +183,10 @@ class SaveMidi_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'sm <file_path> (saves session as midi)'
 
-    def perform(self, engine: Engine, command: str) -> None:
-        engine.export_session_to_midi(command[3:])
+    def perform(self, engine: Engine, command: str) -> str:
+        file_path = command[3:]
+        engine.export_session_to_midi(file_path)
+        return f'I saved your beat as midi to {file_path}, please don\'t leave me :-('
 
 
 class SaveJson_UserCommand(UserCommand):
@@ -174,8 +199,10 @@ class SaveJson_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'sj <file_path> (saves session as json)'
 
-    def perform(self, engine: Engine, command: str) -> None:
-        engine.export_session_to_json(command[3:])
+    def perform(self, engine: Engine, command: str) -> str:
+        file_path = command[3:]
+        engine.export_session_to_json(file_path)
+        return f'I save your session as json to {file_path}, never forget to get back to it!'
 
 
 class LoadJson_UserCommand(UserCommand):
@@ -188,8 +215,12 @@ class LoadJson_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'lj <file_path> (loads session from json)'
 
-    def perform(self, engine: Engine, command: str) -> None:
-        engine.load_session_from_json(command[3:])
+    def perform(self, engine: Engine, command: str) -> str:
+        file_path = command[3:]
+        if isfile(file_path):
+            engine.load_session_from_json(file_path)
+            return f'I loaded a json session from {file_path}, what a beat!'
+        return f'I couldn\'t load json from {file_path}, because it doesn\'t exits :-('
 
 
 class ChangeTimeSignature_UserCommand(UserCommand):
@@ -204,9 +235,14 @@ class ChangeTimeSignature_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'ts <numerator>/<denominator> (sets the time signature)'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         numerator, denominator = self.parse_command_arguments(command)
+        if denominator not in [2, 4, 8, 16, 32]:
+            return f'{denominator} is not a valid denominator, try 2, 4, 8, 16 or 32 instead ;-)'
+        if numerator <= 0:
+            return f'{numerator} is not a valid numerator, try positive numbers ;-)'
         engine.session_editor.change_time_signature(numerator, denominator, 4)
+        return f'I changed your time signature to {numerator}/{denominator}, good choice!'
 
     def parse_command_arguments(self, command) -> (int, int):
         num = self.num_pattern.search(command).group()
@@ -226,10 +262,11 @@ class Euclidean_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'euc <sample_name> <num_hits> (makes an euclidean distribution for given sample)'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         name = self.id_pattern.search(command[4:]).group()
         arg = int(self.num_pattern.search(command).group())
         engine.session_editor.euclidean_for_sample(name, arg)
+        return f'Made a euclidean distribution of {arg} for {name}, enjoy!'
 
 
 class LoadSample_UserCommand(UserCommand):
@@ -243,9 +280,12 @@ class LoadSample_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         path, name = self.parse_arguments(command)
+        if not isfile(path):
+            return f'hmmm, {path} doesn\'t exist :-('
         engine.session_editor.add_sample(path, name)
+        return f'I loaded {name} from {path} :-)'
 
     def parse_arguments(self, command: str) -> (str, str):
         path_match = self.file_path_pattern.search(command)
@@ -264,8 +304,10 @@ class RemoveSample_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
+        name = command[7:]
         engine.session_editor.remove_sample(command[7:])
+        return f'Removed {name} from your session, I didn\'t like it either'
 
 
 class RotateSampleRight_UserCommand(UserCommand):
@@ -280,10 +322,11 @@ class RotateSampleRight_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         amount = int(self.num_pattern.search(command).group())
         name = self.name_pattern.search(command[2:]).group()
         engine.session_editor.rotate_all_events_with_sample(name, amount)
+        return f'I rotated {name} {amount} to the right. Groovy, isn\'t it?'
 
 
 class RotateSampleLeft_UserCommand(UserCommand):
@@ -298,10 +341,11 @@ class RotateSampleLeft_UserCommand(UserCommand):
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         amount = int(self.num_pattern.search(command).group())
         name = self.name_pattern.search(command[2:]).group()
         engine.session_editor.rotate_all_events_with_sample(name, -amount)
+        return f'I rotated {name} {amount} to the left, that was a good move!'
 
 
 class GenerateSequence_UserCommand(UserCommand):
@@ -309,13 +353,14 @@ class GenerateSequence_UserCommand(UserCommand):
         self.pattern = regex.compile(r'^surprise\sme$')
 
     def get_help_string(self) -> str:
-        return 'surprise me (generates sequence)'
+        return 'g (generates sequence)'
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command) or command == 'g'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         engine.session_editor.generate_sequence()
+        return f'I tried my best, I hope you like it!'
 
 
 class ChangeSpectralPositionForSample_UserCommand(UserCommand):
@@ -331,10 +376,11 @@ class ChangeSpectralPositionForSample_UserCommand(UserCommand):
     def get_help_string(self) -> str:
         return 'sp <sample_name> <low|mid|high> (changes spectral position of given sample)'
 
-    def perform(self, engine: Engine, command: str) -> None:
+    def perform(self, engine: Engine, command: str) -> str:
         sample_name = self.sample_name_pattern.search(command[3:]).group()
         spectral_position = self.spectral_pattern.search(command).group()
         engine.session_editor.change_spectral_position_for_sample(sample_name, spectral_position)
+        return f'Deep down I always knew {sample_name} was supposed to be {spectral_position}'
 
 
 # -----------------------------------------------------------------------------------
@@ -375,7 +421,7 @@ class ConsoleInterface:
 
     def __del__(self):
         self.clear()
-        print(self.header)
+        print(colored(self.header, 'blue'))
         print(f'\nThank you for using\n{self.name} :-)\n\n\n')
 
     @staticmethod
@@ -388,7 +434,7 @@ class ConsoleInterface:
     def enter_menu(self):
         while True:
             self.clear()
-            print(f'{self.header}\n{self.name}\n')
+            print(colored(f'{self.header}\n{self.name}\n', 'blue'))
             print(self.engine.session_editor.get_session_as_string())
             print(f'\n{self.feedback}')
             command = input('\n---> ')
@@ -402,8 +448,8 @@ class ConsoleInterface:
     def attempt_handling_command(self, command):
         for handler in self.command_handlers:
             if handler.matches_command(command):
-                self.feedback = 'Enter "help" to see what\'s possible'
-                return handler.perform(self.engine, command)
+                self.feedback = handler.perform(self.engine, command)
+                return
         self.feedback = f'Error: "{command}" is not a valid command, enter "help" to see what\'s possible'
 
     def show_help(self):
