@@ -6,7 +6,7 @@
 
 import mido
 import json
-from core.sample import Sample
+from core.sample import Sample, SpectralPositions
 from core.session import Session
 from core.utility import convert_session_to_dictionary
 from core.importers import JsonFileSessionImporter
@@ -47,10 +47,18 @@ class MidiUtil_MidiFileSessionExporter:
     @staticmethod
     def distribute_midi_notes(samples: [Sample]):
         result = {}
-        note = 60
+        low_notes = list(reversed([35, 36, 41]))
+        mid_notes = list(reversed([38, 39, 40]))
+        high_notes = list(reversed([42, 44, 46, 53]))
+
         for s in samples:
-            result[s.name] = note
-            note -= 1
+            if s.spectral_position == SpectralPositions.low:
+                result[s.name] = low_notes.pop() if low_notes else s.spectral_position + 30
+            elif s.spectral_position == SpectralPositions.mid:
+                result[s.name] = mid_notes.pop() if mid_notes else s.spectral_position + 30
+            else:
+                result[s.name] = high_notes.pop() if high_notes else s.spectral_position + 30
+
         return result
 
 

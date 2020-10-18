@@ -342,13 +342,13 @@ class RotateSampleLeft_CommandHandler(CommandHandler):
 
 class GenerateSequence_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^(?i:surprise\sme)$')
+        self.pattern = regex.compile(r'^(?i:(surprise\sme|g))$')
 
     def get_help_string(self) -> str:
         return 'g (generates sequence)'
 
     def matches_command(self, command: str) -> bool:
-        return self.pattern.match(command) or command == 'g' or command == 'G'
+        return self.pattern.match(command)
 
     def perform(self, engine: Engine, command: str) -> str:
         engine.session_editor.generate_sequence()

@@ -2,6 +2,7 @@
 # Written by Wouter Ensink
 
 import os
+import regex
 from termcolor import colored
 from user_interface.command_handlers import *
 
@@ -18,6 +19,8 @@ from user_interface.command_handlers import *
 # The actual User Interface put together
 class ConsoleInterface:
     def __init__(self, engine: Engine):
+        self.help_pattern = regex.compile(r'^\s*(?i:help)\s*$')
+        self.exit_pattern = regex.compile(r'^\s*(?i:exit)\s*$')
         self.engine = engine
         self.feedback = 'Enter "help" to see what\'s possible'
         self.command_handlers = [
@@ -73,9 +76,9 @@ class ConsoleInterface:
             command = input('\n---> ')
             self.attempt_handling_command(command)
 
-            if command == 'exit':
+            if self.exit_pattern.match(command):
                 return
-            if command == 'help':
+            if self.help_pattern.match(command):
                 self.show_help()
 
     def attempt_handling_command(self, command):
