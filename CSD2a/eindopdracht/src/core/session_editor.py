@@ -11,6 +11,8 @@
 # where each edit is its own class with a perform and an undo method. This way the undo/redo is
 # a very trivial process of managing a couple of stacks containing session edits.
 
+import random
+import math
 from core.time_signature import TimeSignature
 from core.session import Session
 from core.event import Event
@@ -22,8 +24,6 @@ from core.utility import session_to_formatted_string, \
 from core.sample import Sample, SpectralPositions
 from copy import copy
 from core.euclidean import EuclideanRhythmGenerator
-import random
-import math
 
 
 # Base class for any session edit action that should be undoable.

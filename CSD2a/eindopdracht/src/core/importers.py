@@ -1,18 +1,19 @@
 # Written by Wouter Ensink
 
+import json
 from core.session import Session
 from core.sample import Sample, SpectralPositions
 from core.event import Event
 from core.time_signature import TimeSignature
 from core.utility import convert_dictionary_to_session
-import json
 
 
 class JsonFileSessionImporter:
     def __init__(self):
         pass
 
-    def load_session(self, file_path) -> Session:
+    @staticmethod
+    def load_session(file_path) -> Session:
         with open(file_path, 'r') as file:
             dictionary = json.loads(file.read())
             return convert_dictionary_to_session(dictionary)
@@ -20,7 +21,8 @@ class JsonFileSessionImporter:
 
 # this will just pretend to import a session
 class DummyImporter:
-    def load_session(self, file_path) -> Session:
+    @staticmethod
+    def load_session(file_path) -> Session:
         kick = Sample(name='kick', path='../../audio/kick.wav', spectral_position=SpectralPositions.low)
         perc = Sample(name='perc', path='../../audio/perc.wav', spectral_position=SpectralPositions.mid)
         hat = Sample(name='hat', path='../../audio/hat.wav', spectral_position=SpectralPositions.high)

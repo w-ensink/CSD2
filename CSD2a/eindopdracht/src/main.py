@@ -8,7 +8,7 @@ def main() -> None:
     engine = Engine()
     engine.load_session_from_json('../config/project.json')
     interface = ConsoleInterface(engine)
-    interface.enter_menu()
+    interface.start_interface()
     engine.shut_down()
 
 

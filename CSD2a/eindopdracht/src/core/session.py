@@ -2,10 +2,10 @@
 
 # A session resembles a project in the sequencer
 
+import unittest
 from core.time_signature import TimeSignature
 from core.sample import Sample, SpectralPositions
 from core.event import Event
-import unittest
 
 
 # any changed to a session ABSOLUTELY NEEDS TO go through its methods,

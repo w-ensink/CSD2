@@ -1,9 +1,9 @@
 
 # Written by Wouter Ensink
 
-from core.engine import Engine
 import regex
 import os
+from core.engine import Engine
 from os.path import isfile
 from termcolor import colored
 
@@ -16,9 +16,9 @@ from termcolor import colored
 # this design makes it really easy, fast and safe to add new commands to the system
 
 
-# subclasses of UserCommand should implement their behaviour and information in these given functions
+# subclasses of CommandHandler should implement their behaviour and information in these given functions
 # and should then be registered with the main menu
-class UserCommand:
+class CommandHandler:
     # should return whether the command the user gave mathes this one
     def matches_command(self, command: str) -> bool:
         pass
@@ -33,7 +33,7 @@ class UserCommand:
         pass
 
 
-class StartPlayback_UserCommand(UserCommand):
+class StartPlayback_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^\s*play\s*$')
 
@@ -48,7 +48,7 @@ class StartPlayback_UserCommand(UserCommand):
         return 'I started playback for you!'
 
 
-class StopPlayback_UserCommand(UserCommand):
+class StopPlayback_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^\s*stop\s*$')
 
@@ -73,7 +73,7 @@ def parse_add_remove_event_command_arguments(command: str) -> (str, int, int, in
     return tuple(result)
 
 
-class AddEvent_UserCommand(UserCommand):
+class AddEvent_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^s\s\w+\s\d+\s\d+\s\d+$')
 
@@ -89,7 +89,7 @@ class AddEvent_UserCommand(UserCommand):
         return 'I added the event you wanted, I always knew something was missing there'
 
 
-class RemoveEvent_UserCommand(UserCommand):
+class RemoveEvent_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^r\s\w+\s\d+\s\d+\s\d+$')
 
@@ -105,7 +105,7 @@ class RemoveEvent_UserCommand(UserCommand):
         return 'I removed the event you wanted, I always knew it was not supposed to be there'
 
 
-class Undo_UserCommand(UserCommand):
+class Undo_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^\s*undo\s*$')
 
@@ -120,7 +120,7 @@ class Undo_UserCommand(UserCommand):
         return 'I undid what I just did, hope you\'re happy now'
 
 
-class Redo_UserCommand(UserCommand):
+class Redo_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^\s*redo\s*$')
 
@@ -135,7 +135,7 @@ class Redo_UserCommand(UserCommand):
         return 'I redid all the work I had just undone for you, make up your mind!'
 
 
-class ClearSample_UserCommand(UserCommand):
+class ClearSample_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^\s*clear\s[a-zA-Z_]+\s*$')
         self.clear_all_pattern = regex.compile(r'^clear$')
@@ -156,7 +156,7 @@ class ClearSample_UserCommand(UserCommand):
             return 'I removed all events, now you can try to actually make something'
 
 
-class ChangeTempo_UserCommand(UserCommand):
+class ChangeTempo_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^\s*tempo\s\d+\s*$')
 
@@ -174,7 +174,7 @@ class ChangeTempo_UserCommand(UserCommand):
         return f'tempo changed to {tempo}, that should do it!'
 
 
-class SaveMidi_UserCommand(UserCommand):
+class SaveMidi_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^sm\s[a-zA-Z_/.-]+\.(mid|midi)$')
 
@@ -190,7 +190,7 @@ class SaveMidi_UserCommand(UserCommand):
         return f'I saved your beat as midi to {file_path}, please don\'t leave me :-('
 
 
-class SaveJson_UserCommand(UserCommand):
+class SaveJson_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^sj\s[a-zA-Z_/.-]+\.json$')
 
@@ -206,7 +206,7 @@ class SaveJson_UserCommand(UserCommand):
         return f'I save your session as json to {file_path}, never forget to get back to it!'
 
 
-class LoadJson_UserCommand(UserCommand):
+class LoadJson_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^lj\s[a-zA-Z_/.-]+\.json$')
 
@@ -224,7 +224,7 @@ class LoadJson_UserCommand(UserCommand):
         return f'I couldn\'t load json from {file_path}, because it doesn\'t exits :-('
 
 
-class ChangeTimeSignature_UserCommand(UserCommand):
+class ChangeTimeSignature_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^ts\s\d+/\d+$')
         self.num_pattern = regex.compile(r'\d+')
@@ -251,7 +251,7 @@ class ChangeTimeSignature_UserCommand(UserCommand):
         return int(num), int(den)
 
 
-class Euclidean_UserCommand(UserCommand):
+class Euclidean_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^euc\s[a-zA-Z]+\s\d+$')
         self.id_pattern = regex.compile(r'^[a-zA-Z]+')
@@ -270,7 +270,7 @@ class Euclidean_UserCommand(UserCommand):
         return f'Made a euclidean distribution of {arg} for {name}, enjoy!'
 
 
-class LoadSample_UserCommand(UserCommand):
+class LoadSample_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^load\s[a-zA-Z0-9_/.-]+\.wav\sas\s[a-zA-Z]+$')
         self.file_path_pattern = regex.compile(r'[a-zA-Z0-9_/.-]+\.wav')
@@ -286,7 +286,8 @@ class LoadSample_UserCommand(UserCommand):
         if not isfile(path):
             return f'hmmm, {path} doesn\'t exist :-('
         engine.session_editor.add_sample(path, name)
-        return f'I loaded {name} from {path} :-)'
+        return f'I loaded {name} from {path} :-)\n' \
+            + f'If you want to change its spectral position, type: "sp {name} <spectral_position>"'
 
     def parse_arguments(self, command: str) -> (str, str):
         path_match = self.file_path_pattern.search(command)
@@ -295,7 +296,7 @@ class LoadSample_UserCommand(UserCommand):
         return path, name
 
 
-class RemoveSample_UserCommand(UserCommand):
+class RemoveSample_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^remove\s[a-zA-Z]+$')
 
@@ -311,7 +312,7 @@ class RemoveSample_UserCommand(UserCommand):
         return f'Removed {name} from your session, I didn\'t like it either'
 
 
-class RotateSampleRight_UserCommand(UserCommand):
+class RotateSampleRight_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^rr\s[a-zA-Z]+\s\d+$')
         self.num_pattern = regex.compile(r'\d+')
@@ -330,7 +331,7 @@ class RotateSampleRight_UserCommand(UserCommand):
         return f'I rotated {name} {amount} to the right. Groovy, isn\'t it?'
 
 
-class RotateSampleLeft_UserCommand(UserCommand):
+class RotateSampleLeft_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^rl\s[a-zA-Z]+\s\d+$')
         self.num_pattern = regex.compile(r'\d+')
@@ -349,7 +350,7 @@ class RotateSampleLeft_UserCommand(UserCommand):
         return f'I rotated {name} {amount} to the left, that was a good move!'
 
 
-class GenerateSequence_UserCommand(UserCommand):
+class GenerateSequence_CommandHandler(CommandHandler):
     def __init__(self):
         self.pattern = regex.compile(r'^surprise\sme$')
 
@@ -364,7 +365,7 @@ class GenerateSequence_UserCommand(UserCommand):
         return f'I tried my best, I hope you like it!'
 
 
-class ChangeSpectralPositionForSample_UserCommand(UserCommand):
+class ChangeSpectralPositionForSample_CommandHandler(CommandHandler):
     def __init__(self):
         # sp <sample_name> <spectral_position>
         self.pattern = regex.compile(r'^sp\s[a-zA-Z]+\s(low|mid|high)$')
@@ -391,25 +392,25 @@ class ConsoleInterface:
         self.engine = engine
         self.feedback = 'Enter "help" to see what\'s possible'
         self.command_handlers = [
-            StartPlayback_UserCommand(),
-            StopPlayback_UserCommand(),
-            GenerateSequence_UserCommand(),
-            ChangeTempo_UserCommand(),
-            ChangeTimeSignature_UserCommand(),
-            LoadSample_UserCommand(),
-            RemoveSample_UserCommand(),
-            AddEvent_UserCommand(),
-            RemoveEvent_UserCommand(),
-            Undo_UserCommand(),
-            Redo_UserCommand(),
-            ClearSample_UserCommand(),
-            SaveMidi_UserCommand(),
-            SaveJson_UserCommand(),
-            LoadJson_UserCommand(),
-            Euclidean_UserCommand(),
-            RotateSampleRight_UserCommand(),
-            RotateSampleLeft_UserCommand(),
-            ChangeSpectralPositionForSample_UserCommand()
+            StartPlayback_CommandHandler(),
+            StopPlayback_CommandHandler(),
+            GenerateSequence_CommandHandler(),
+            ChangeTempo_CommandHandler(),
+            ChangeTimeSignature_CommandHandler(),
+            LoadSample_CommandHandler(),
+            RemoveSample_CommandHandler(),
+            AddEvent_CommandHandler(),
+            RemoveEvent_CommandHandler(),
+            Undo_CommandHandler(),
+            Redo_CommandHandler(),
+            ClearSample_CommandHandler(),
+            SaveMidi_CommandHandler(),
+            SaveJson_CommandHandler(),
+            LoadJson_CommandHandler(),
+            Euclidean_CommandHandler(),
+            RotateSampleRight_CommandHandler(),
+            RotateSampleLeft_CommandHandler(),
+            ChangeSpectralPositionForSample_CommandHandler()
         ]
         self.name = 'Wouter\'s Sequence Generator Deluxe XL Max Pro Premium'
         self.header = '''
@@ -432,7 +433,7 @@ class ConsoleInterface:
         else:
             os.system('cls')
 
-    def enter_menu(self):
+    def start_interface(self):
         while True:
             self.clear()
             print(colored(f'{self.header}\n{self.name}\n', 'blue'))

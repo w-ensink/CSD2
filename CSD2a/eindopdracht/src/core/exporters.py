@@ -5,11 +5,11 @@
 
 
 import mido
+import json
 from core.sample import Sample
 from core.session import Session
 from core.utility import convert_session_to_dictionary
 from core.importers import JsonFileSessionImporter
-import json
 from copy import copy
 from midiutil.MidiFile import MIDIFile
 
@@ -33,7 +33,8 @@ class MidiUtil_MidiFileSessionExporter:
         with open(file_path, 'wb') as f:
             m.writeFile(f)
 
-    def add_meta_data(self, midi_file: MIDIFile, session: Session):
+    @staticmethod
+    def add_meta_data(midi_file: MIDIFile, session: Session):
         track, time = 0, 0
         midi_file.addTrackName(track, time, 'Wouter\'s Beat Generator (tm)')
         midi_file.addTimeSignature(track, time,
@@ -42,7 +43,8 @@ class MidiUtil_MidiFileSessionExporter:
                                    session.time_signature.ticks_per_quarter_note)
         midi_file.addTempo(track, time, session.tempo_bpm)
 
-    def distribute_midi_notes(self, samples: [Sample]):
+    @staticmethod
+    def distribute_midi_notes(samples: [Sample]):
         result = {}
         note = 60
         for s in samples:
@@ -53,7 +55,8 @@ class MidiUtil_MidiFileSessionExporter:
 
 # This one doesn't work...
 class Mido_MidiFileSessionExporter:
-    def distribute_midi_notes(self, samples: [Sample]):
+    @staticmethod
+    def distribute_midi_notes(samples: [Sample]):
         result = {}
         note = 60
         for s in samples:
@@ -76,7 +79,8 @@ class Mido_MidiFileSessionExporter:
 
         midi.save(filename=file_path)
 
-    def add_events_to_track(self, events, track, notes):
+    @staticmethod
+    def add_events_to_track(events, track, notes):
         for i in range(len(events)):
             if i != 0:
                 track.append(mido.Message('note_on',
@@ -88,7 +92,8 @@ class Mido_MidiFileSessionExporter:
 
 
 class JsonFileSessionExporter:
-    def store_session(self, session: Session, file_path: str) -> None:
+    @staticmethod
+    def store_session(session: Session, file_path: str) -> None:
         dictionary = convert_session_to_dictionary(session)
         json_string = json.dumps(dictionary, indent=4)
         with open(file_path, 'w') as file:

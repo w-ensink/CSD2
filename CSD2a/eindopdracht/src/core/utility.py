@@ -3,11 +3,11 @@
 # this file contains some utility functions that don't really belong to any class
 # but are still useful
 
+import unittest
 from core.time_signature import TimeSignature
 from core.event import Event
 from core.session import Session
 from core.sample import Sample, SpectralPositions
-import unittest
 
 
 def find_highest_time_stamp_in_event_list(events: [Event]) -> int:

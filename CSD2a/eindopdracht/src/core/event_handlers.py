@@ -1,9 +1,9 @@
 
 # Written by Wouter Ensink
 
+import simpleaudio as sa
 from core.sample import Sample
 from core.event import Event
-import simpleaudio as sa
 
 
 # base class for the different types of event handlers
