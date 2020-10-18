@@ -18,7 +18,7 @@ from midiutil.MidiFile import MIDIFile
 class MidiUtil_MidiFileSessionExporter:
     def store_session(self, session: Session, file_path: str):
         midi_file = MIDIFile(1)
-        track, channel = 0, 0
+        track, channel = 0, 9
 
         self.add_session_meta_data_to_midi_file(midi_file, session)
         notes = self.distribute_midi_notes(session.samples)

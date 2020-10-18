@@ -25,7 +25,7 @@ class CommandHandler:
 
 class StartPlayback_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^\s*play\s*$')
+        self.pattern = regex.compile(r'^\s*(?i:play)\s*$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -40,7 +40,7 @@ class StartPlayback_CommandHandler(CommandHandler):
 
 class StopPlayback_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^\s*stop\s*$')
+        self.pattern = regex.compile(r'^\s*(?i:stop)\s*$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -65,7 +65,7 @@ def parse_add_remove_event_command_arguments(command: str) -> (str, int, int, in
 
 class AddEvent_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^s\s\w+\s\d+\s\d+\s\d+$')
+        self.pattern = regex.compile(r'^(?i:s)\s\w+\s\d+\s\d+\s\d+$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -81,7 +81,7 @@ class AddEvent_CommandHandler(CommandHandler):
 
 class RemoveEvent_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^r\s\w+\s\d+\s\d+\s\d+$')
+        self.pattern = regex.compile(r'^(?i:r)\s\w+\s\d+\s\d+\s\d+$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -97,7 +97,7 @@ class RemoveEvent_CommandHandler(CommandHandler):
 
 class Undo_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^\s*undo\s*$')
+        self.pattern = regex.compile(r'^\s*(?i:undo)\s*$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -112,7 +112,7 @@ class Undo_CommandHandler(CommandHandler):
 
 class Redo_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^\s*redo\s*$')
+        self.pattern = regex.compile(r'^\s*(?i:redo)\s*$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -127,8 +127,8 @@ class Redo_CommandHandler(CommandHandler):
 
 class ClearSample_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^\s*clear\s[a-zA-Z_]+\s*$')
-        self.clear_all_pattern = regex.compile(r'^clear$')
+        self.pattern = regex.compile(r'^\s*(?i:clear)\s[a-zA-Z_]+\s*$')
+        self.clear_all_pattern = regex.compile(r'^(?i:clear)$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command) or self.clear_all_pattern.match(command)
@@ -148,7 +148,7 @@ class ClearSample_CommandHandler(CommandHandler):
 
 class ChangeTempo_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^\s*tempo\s\d+\s*$')
+        self.pattern = regex.compile(r'^\s*(?i:tempo)\s\d+\s*$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -166,7 +166,7 @@ class ChangeTempo_CommandHandler(CommandHandler):
 
 class SaveMidi_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^sm\s[a-zA-Z_/.-]+\.(mid|midi)$')
+        self.pattern = regex.compile(r'^(?i:sm)\s[a-zA-Z_/.-]+\.(mid|midi)$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -182,7 +182,7 @@ class SaveMidi_CommandHandler(CommandHandler):
 
 class SaveJson_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^sj\s[a-zA-Z_/.-]+\.json$')
+        self.pattern = regex.compile(r'^(?i:sj)\s[a-zA-Z_/.-]+\.json$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -198,7 +198,7 @@ class SaveJson_CommandHandler(CommandHandler):
 
 class LoadJson_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^lj\s[a-zA-Z_/.-]+\.json$')
+        self.pattern = regex.compile(r'^(?i:lj)\s[a-zA-Z_/.-]+\.json$')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -216,7 +216,7 @@ class LoadJson_CommandHandler(CommandHandler):
 
 class ChangeTimeSignature_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^ts\s\d+/\d+$')
+        self.pattern = regex.compile(r'^(?i:ts)\s\d+/\d+$')
         self.num_pattern = regex.compile(r'\d+')
         self.den_pattern = regex.compile(r'/\d+')
 
@@ -243,7 +243,7 @@ class ChangeTimeSignature_CommandHandler(CommandHandler):
 
 class Euclidean_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^euc\s[a-zA-Z]+\s\d+$')
+        self.pattern = regex.compile(r'^(?i:euc)\s[a-zA-Z]+\s\d+$')
         self.id_pattern = regex.compile(r'^[a-zA-Z]+')
         self.num_pattern = regex.compile(r'\d+')
 
@@ -262,7 +262,7 @@ class Euclidean_CommandHandler(CommandHandler):
 
 class LoadSample_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^load\s[a-zA-Z0-9_/.-]+\.wav\sas\s[a-zA-Z]+$')
+        self.pattern = regex.compile(r'^(?i:load)\s[a-zA-Z0-9_/.-]+\.wav\s(?i:as)\s[a-zA-Z]+$')
         self.file_path_pattern = regex.compile(r'[a-zA-Z0-9_/.-]+\.wav')
 
     def get_help_string(self) -> str:
@@ -288,7 +288,7 @@ class LoadSample_CommandHandler(CommandHandler):
 
 class RemoveSample_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^remove\s[a-zA-Z]+$')
+        self.pattern = regex.compile(r'^(?i:remove)\s[a-zA-Z]+$')
 
     def get_help_string(self) -> str:
         return 'remove <sample_name> (removes sample with given name from session)'
@@ -304,7 +304,7 @@ class RemoveSample_CommandHandler(CommandHandler):
 
 class RotateSampleRight_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^rr\s[a-zA-Z]+\s\d+$')
+        self.pattern = regex.compile(r'^(?i:rr)\s[a-zA-Z]+\s\d+$')
         self.num_pattern = regex.compile(r'\d+')
         self.name_pattern = regex.compile(r'[a-zA-Z]+')
 
@@ -323,7 +323,7 @@ class RotateSampleRight_CommandHandler(CommandHandler):
 
 class RotateSampleLeft_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^rl\s[a-zA-Z]+\s\d+$')
+        self.pattern = regex.compile(r'^(?i:rl)\s[a-zA-Z]+\s\d+$')
         self.num_pattern = regex.compile(r'\d+')
         self.name_pattern = regex.compile(r'[a-zA-Z]+')
 
@@ -342,13 +342,13 @@ class RotateSampleLeft_CommandHandler(CommandHandler):
 
 class GenerateSequence_CommandHandler(CommandHandler):
     def __init__(self):
-        self.pattern = regex.compile(r'^surprise\sme$')
+        self.pattern = regex.compile(r'^(?i:surprise\sme)$')
 
     def get_help_string(self) -> str:
         return 'g (generates sequence)'
 
     def matches_command(self, command: str) -> bool:
-        return self.pattern.match(command) or command == 'g'
+        return self.pattern.match(command) or command == 'g' or command == 'G'
 
     def perform(self, engine: Engine, command: str) -> str:
         engine.session_editor.generate_sequence()
@@ -358,9 +358,9 @@ class GenerateSequence_CommandHandler(CommandHandler):
 class ChangeSpectralPositionForSample_CommandHandler(CommandHandler):
     def __init__(self):
         # sp <sample_name> <spectral_position>
-        self.pattern = regex.compile(r'^sp\s[a-zA-Z]+\s(low|mid|high)$')
+        self.pattern = regex.compile(r'^(?i:sp)\s[a-zA-Z]+\s(?i:(low|mid|high))$')
         self.sample_name_pattern = regex.compile(r'[a-zA-Z]+')
-        self.spectral_pattern = regex.compile(r'(low|mid|high)')
+        self.spectral_pattern = regex.compile(r'(?i:(low|mid|high))')
 
     def matches_command(self, command: str) -> bool:
         return self.pattern.match(command)
@@ -370,6 +370,6 @@ class ChangeSpectralPositionForSample_CommandHandler(CommandHandler):
 
     def perform(self, engine: Engine, command: str) -> str:
         sample_name = self.sample_name_pattern.search(command[3:]).group()
-        spectral_position = self.spectral_pattern.search(command).group()
+        spectral_position = self.spectral_pattern.search(command).group().lower()
         engine.session_editor.change_spectral_position_for_sample(sample_name, spectral_position)
         return f'Deep down I always knew {sample_name} was supposed to be {spectral_position}'
