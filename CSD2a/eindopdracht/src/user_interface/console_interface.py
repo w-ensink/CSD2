@@ -27,7 +27,8 @@ class UserCommand:
     def get_help_string(self) -> str:
         pass
 
-    # should perform the command on the engine
+    # should perform the command on the engine and return a response string to be
+    # displayed on the interface
     def perform(self, engine: Engine, command: str) -> str:
         pass
 
@@ -435,6 +436,8 @@ class ConsoleInterface:
         while True:
             self.clear()
             print(colored(f'{self.header}\n{self.name}\n', 'blue'))
+            play_state = 'playing' if self.engine.sequencer.is_playing() else 'stopped'
+            print(f'play state: {play_state}')
             print(self.engine.session_editor.get_session_as_string())
             print(f'\n{self.feedback}')
             command = input('\n---> ')

@@ -8,7 +8,7 @@ import mido
 from core.sample import Sample
 from core.session import Session
 from core.utility import convert_session_to_dictionary
-from importers import JsonFileSessionImporter
+from core.importers import JsonFileSessionImporter
 import json
 from copy import copy
 from midiutil.MidiFile import MIDIFile
@@ -97,5 +97,5 @@ class JsonFileSessionExporter:
 
 # running a test for making a midi file from a session
 if __name__ == '__main__':
-    test_session = JsonFileSessionImporter().load_session('../config/project.json')
+    test_session = JsonFileSessionImporter().load_session('../../config/project.json')
     MidiUtil_MidiFileSessionExporter().store_session(test_session, '../midi/midi_test.mid')

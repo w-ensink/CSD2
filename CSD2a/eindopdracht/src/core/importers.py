@@ -21,9 +21,9 @@ class JsonFileSessionImporter:
 # this will just pretend to import a session
 class DummyImporter:
     def load_session(self, file_path) -> Session:
-        kick = Sample(name='kick', path='../audio/kick.wav', spectral_position=SpectralPositions.low)
-        perc = Sample(name='perc', path='../audio/perc.wav', spectral_position=SpectralPositions.mid)
-        hat = Sample(name='hat', path='../audio/hat.wav', spectral_position=SpectralPositions.high)
+        kick = Sample(name='kick', path='../../audio/kick.wav', spectral_position=SpectralPositions.low)
+        perc = Sample(name='perc', path='../../audio/perc.wav', spectral_position=SpectralPositions.mid)
+        hat = Sample(name='hat', path='../../audio/hat.wav', spectral_position=SpectralPositions.high)
 
         session = Session()
         session.add_sample(kick)

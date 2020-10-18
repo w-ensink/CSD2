@@ -21,7 +21,7 @@ from core.utility import session_to_formatted_string, \
     spectral_position_from_string
 from core.sample import Sample, SpectralPositions
 from copy import copy
-from generators.euclidean import EuclideanRhythmGenerator
+from core.euclidean import EuclideanRhythmGenerator
 import random
 import math
 
