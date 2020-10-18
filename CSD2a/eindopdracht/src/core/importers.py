@@ -9,9 +9,6 @@ from core.utility import convert_dictionary_to_session
 
 
 class JsonFileSessionImporter:
-    def __init__(self):
-        pass
-
     @staticmethod
     def load_session(file_path) -> Session:
         with open(file_path, 'r') as file:

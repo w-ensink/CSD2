@@ -14,27 +14,28 @@ from copy import copy
 from midiutil.MidiFile import MIDIFile
 
 
+# session exporter that exports to midi using the midiutil module
 class MidiUtil_MidiFileSessionExporter:
     def store_session(self, session: Session, file_path: str):
-        m = MIDIFile(1)
+        midi_file = MIDIFile(1)
         track, channel = 0, 0
 
-        self.add_meta_data(m, session)
+        self.add_session_meta_data_to_midi_file(midi_file, session)
         notes = self.distribute_midi_notes(session.samples)
 
         for e in session.events:
-            m.addNote(track,
-                      channel,
-                      notes[e.sample.name],
-                      e.time_stamp / session.time_signature.ticks_per_quarter_note,
-                      e.duration,
-                      e.velocity)
+            midi_file.addNote(track,
+                              channel,
+                              notes[e.sample.name],
+                              e.time_stamp / session.time_signature.ticks_per_quarter_note,
+                              e.duration,
+                              e.velocity)
 
         with open(file_path, 'wb') as f:
-            m.writeFile(f)
+            midi_file.writeFile(f)
 
     @staticmethod
-    def add_meta_data(midi_file: MIDIFile, session: Session):
+    def add_session_meta_data_to_midi_file(midi_file: MIDIFile, session: Session):
         track, time = 0, 0
         midi_file.addTrackName(track, time, 'Wouter\'s Beat Generator (tm)')
         midi_file.addTimeSignature(track, time,
@@ -53,6 +54,7 @@ class MidiUtil_MidiFileSessionExporter:
         return result
 
 
+# Session exporter that exports midi using the mido module
 # This one doesn't work...
 class Mido_MidiFileSessionExporter:
     @staticmethod
@@ -85,12 +87,13 @@ class Mido_MidiFileSessionExporter:
             if i != 0:
                 track.append(mido.Message('note_on',
                                           note=notes[events[i].sample.name],
-                                          time=events[i].time_stamp - events[i-1].time_stamp))
+                                          time=events[i].time_stamp - events[i - 1].time_stamp))
             else:
                 track.append(mido.Message('note_on', note=notes[events[i].sample.name], time=events[i].time_stamp))
             track.append(mido.Message('note_off', note=events[i].duration, time=1))
 
 
+# Session exporter that exports to a json file
 class JsonFileSessionExporter:
     @staticmethod
     def store_session(session: Session, file_path: str) -> None:

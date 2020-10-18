@@ -1,7 +1,5 @@
 
-# what does it need to do?
-# - find the greatest common divisor
-
+# Written by Wouter Ensink
 
 import unittest
 import math
