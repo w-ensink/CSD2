@@ -34,6 +34,8 @@ class StartPlayback_CommandHandler(CommandHandler):
         return 'play (starts playback)'
 
     def perform(self, engine: Engine, command: str) -> str:
+        if engine.sequencer.is_playing():
+            return 'Play command ignored: sequencer was already playing'
         engine.sequencer.start_playback()
         return 'I started playback for you!'
 
@@ -49,8 +51,10 @@ class StopPlayback_CommandHandler(CommandHandler):
         return 'stop (stops playback)'
 
     def perform(self, engine: Engine, command: str) -> str:
+        if not engine.sequencer.is_playing():
+            return 'Stop command ignored: sequencer was already stopped'
         engine.sequencer.stop_playback()
-        return 'I stopped playback for you'
+        return 'Stopped playback for you'
 
 
 # finds the 3 numeric arguments (bar, beat, tick) of a set or reset command and the sample name
@@ -76,7 +80,7 @@ class AddEvent_CommandHandler(CommandHandler):
     def perform(self, engine: Engine, command: str) -> str:
         name, bar, beat, tick = parse_add_remove_event_command_arguments(command)
         engine.session_editor.add_event(name, bar, beat, tick)
-        return 'I added the event you wanted, I always knew something was missing there'
+        return f'Added event ({name} {bar}:{beat}:{tick})'
 
 
 class RemoveEvent_CommandHandler(CommandHandler):
@@ -92,7 +96,7 @@ class RemoveEvent_CommandHandler(CommandHandler):
     def perform(self, engine: Engine, command: str) -> str:
         name, bar, beat, tick = parse_add_remove_event_command_arguments(command)
         engine.session_editor.remove_event(name, bar, beat, tick)
-        return 'I removed the event you wanted, I always knew it was not supposed to be there'
+        return f'Removed event ({name} {bar}:{beat}:{tick})'
 
 
 class Undo_CommandHandler(CommandHandler):
@@ -107,7 +111,7 @@ class Undo_CommandHandler(CommandHandler):
 
     def perform(self, engine: Engine, command: str) -> str:
         engine.session_editor.undo()
-        return 'I undid what I just did, hope you\'re happy now'
+        return 'Undone last edit'
 
 
 class Redo_CommandHandler(CommandHandler):
@@ -122,7 +126,7 @@ class Redo_CommandHandler(CommandHandler):
 
     def perform(self, engine: Engine, command: str) -> str:
         engine.session_editor.redo()
-        return 'I redid all the work I had just undone for you, make up your mind!'
+        return 'Redone last undone edit'
 
 
 class ClearSample_CommandHandler(CommandHandler):
@@ -140,10 +144,10 @@ class ClearSample_CommandHandler(CommandHandler):
         if self.pattern.match(command):
             sample_name = command.strip()[6:]
             engine.session_editor.remove_all_events_with_sample(sample_name)
-            return f'I removed all events for {sample_name}'
+            return f'Removed all events using {sample_name} from session'
         else:
             engine.session_editor.remove_all_events()
-            return 'I removed all events, now you can try to actually make something'
+            return 'Removed all events from session'
 
 
 class ChangeTempo_CommandHandler(CommandHandler):
@@ -159,9 +163,9 @@ class ChangeTempo_CommandHandler(CommandHandler):
     def perform(self, engine: Engine, command: str) -> str:
         tempo = int(command.strip()[6:])
         if tempo == 0:
-            return '0bpm is not a valid tempo, tempo change ignored :-('
+            return '0 bpm is not a valid tempo, tempo change ignored'
         engine.session_editor.change_tempo(tempo)
-        return f'tempo changed to {tempo}, that should do it!'
+        return f'Tempo changed to {tempo} bpm'
 
 
 class SaveMidi_CommandHandler(CommandHandler):
@@ -177,7 +181,7 @@ class SaveMidi_CommandHandler(CommandHandler):
     def perform(self, engine: Engine, command: str) -> str:
         file_path = command[3:]
         engine.export_session_to_midi(file_path)
-        return f'I saved your beat as midi to {file_path}, please don\'t leave me :-('
+        return f'Saved session as midi to {file_path}'
 
 
 class SaveJson_CommandHandler(CommandHandler):
@@ -193,7 +197,7 @@ class SaveJson_CommandHandler(CommandHandler):
     def perform(self, engine: Engine, command: str) -> str:
         file_path = command[3:]
         engine.export_session_to_json(file_path)
-        return f'I save your session as json to {file_path}, never forget to get back to it!'
+        return f'Saved session as json to {file_path}'
 
 
 class LoadJson_CommandHandler(CommandHandler):
@@ -210,8 +214,8 @@ class LoadJson_CommandHandler(CommandHandler):
         file_path = command[3:]
         if isfile(file_path):
             engine.load_session_from_json(file_path)
-            return f'I loaded a json session from {file_path}, what a beat!'
-        return f'I couldn\'t load json from {file_path}, because it doesn\'t exits :-('
+            return f'Loaded json session from {file_path}'
+        return f'Couldn\'t load json from {file_path}, because it the file does not exits'
 
 
 class ChangeTimeSignature_CommandHandler(CommandHandler):
@@ -229,11 +233,11 @@ class ChangeTimeSignature_CommandHandler(CommandHandler):
     def perform(self, engine: Engine, command: str) -> str:
         numerator, denominator = self.parse_command_arguments(command)
         if denominator not in [2, 4, 8, 16, 32]:
-            return f'{denominator} is not a valid denominator, try 2, 4, 8, 16 or 32 instead ;-)'
+            return f'{denominator} is not a valid denominator, try 2, 4, 8 or 16 instead'
         if numerator <= 0:
-            return f'{numerator} is not a valid numerator, try positive numbers ;-)'
+            return f'{numerator} is not a valid numerator, try a positive number'
         engine.session_editor.change_time_signature(numerator, denominator, 4)
-        return f'I changed your time signature to {numerator}/{denominator}, good choice!'
+        return f'Changed time signature to {numerator}/{denominator}'
 
     def parse_command_arguments(self, command) -> (int, int):
         num = self.num_pattern.search(command).group()
@@ -257,7 +261,7 @@ class Euclidean_CommandHandler(CommandHandler):
         name = self.id_pattern.search(command[4:]).group()
         arg = int(self.num_pattern.search(command).group())
         engine.session_editor.euclidean_for_sample(name, arg)
-        return f'Made a euclidean distribution of {arg} for {name}, enjoy!'
+        return f'Made a euclidean distribution of {arg} for {name}'
 
 
 class LoadSample_CommandHandler(CommandHandler):
@@ -276,7 +280,7 @@ class LoadSample_CommandHandler(CommandHandler):
         if not isfile(path):
             return f'hmmm, {path} doesn\'t exist :-('
         engine.session_editor.add_sample(path, name)
-        return f'I loaded {name} from {path} :-)\n' \
+        return f'Loaded {name} from {path}\n' \
             + f'If you want to change its spectral position, type: "sp {name} <spectral_position>"'
 
     def parse_arguments(self, command: str) -> (str, str):
@@ -299,7 +303,7 @@ class RemoveSample_CommandHandler(CommandHandler):
     def perform(self, engine: Engine, command: str) -> str:
         name = command[7:]
         engine.session_editor.remove_sample(command[7:])
-        return f'Removed {name} from your session, I didn\'t like it either'
+        return f'Removed {name} and all its events from session'
 
 
 class RotateSampleRight_CommandHandler(CommandHandler):
@@ -318,7 +322,7 @@ class RotateSampleRight_CommandHandler(CommandHandler):
         amount = int(self.num_pattern.search(command).group())
         name = self.name_pattern.search(command[2:]).group()
         engine.session_editor.rotate_all_events_with_sample(name, amount)
-        return f'I rotated {name} {amount} to the right. Groovy, isn\'t it?'
+        return f'Rotated {name} {amount} to the right'
 
 
 class RotateSampleLeft_CommandHandler(CommandHandler):
@@ -337,7 +341,7 @@ class RotateSampleLeft_CommandHandler(CommandHandler):
         amount = int(self.num_pattern.search(command).group())
         name = self.name_pattern.search(command[2:]).group()
         engine.session_editor.rotate_all_events_with_sample(name, -amount)
-        return f'I rotated {name} {amount} to the left, that was a good move!'
+        return f'Rotated {name} {amount} to the left'
 
 
 class GenerateSequence_CommandHandler(CommandHandler):
@@ -352,7 +356,7 @@ class GenerateSequence_CommandHandler(CommandHandler):
 
     def perform(self, engine: Engine, command: str) -> str:
         engine.session_editor.generate_sequence()
-        return f'I tried my best, I hope you like it!'
+        return f'Generated Rhythm!'
 
 
 class ChangeSpectralPositionForSample_CommandHandler(CommandHandler):
@@ -372,4 +376,4 @@ class ChangeSpectralPositionForSample_CommandHandler(CommandHandler):
         sample_name = self.sample_name_pattern.search(command[3:]).group()
         spectral_position = self.spectral_pattern.search(command).group().lower()
         engine.session_editor.change_spectral_position_for_sample(sample_name, spectral_position)
-        return f'Deep down I always knew {sample_name} was supposed to be {spectral_position}'
+        return f'Changed spectral position of {sample_name} to {spectral_position}'

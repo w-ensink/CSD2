@@ -91,7 +91,9 @@ def wrap(value, wrapping_point) -> int:
     return value
 
 
-# I hate this function
+# returns a formatted string of all the events in a session that use a given sample
+# it does this completely aware of the time signature used in the session, eg:
+# |x...|..x..|...x|....|
 def all_events_with_sample_to_string(session: Session, sample: Sample) -> str:
     max_time_stamp = int(find_highest_time_stamp_in_event_list(session.events))
     num_ticks = int(find_looping_point_for_time_signature(max_time_stamp, session.time_signature))
@@ -144,7 +146,7 @@ def spectral_position_from_string(spectral_position: str) -> int or None:
 # <sample_name_1>(<spectral_position>) |x... .x..|
 # <sample_name_n>(<spectral_position>) |..x. ..x.|
 def session_to_formatted_string(session: Session) -> str:
-    time_info = f'tempo: {session.tempo_bpm}\n'
+    time_info = f'tempo: {session.tempo_bpm} bpm\n'
     time_info += f'time signature: {session.time_signature.numerator}/{session.time_signature.denominator}\n\n'
     return time_info + '\n'.join((s.name + spectral_position_to_string(s.spectral_position)).ljust(8)
                                  + all_events_with_sample_to_string(session, s)

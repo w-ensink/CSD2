@@ -55,7 +55,7 @@ class ConsoleInterface:
 
     def __del__(self):
         self.clear()
-        print(colored(self.header, 'blue'))
+        print(self.header)
         print(f'\nThank you for using\n{self.name} :-)\n\n\n')
 
     @staticmethod
@@ -68,7 +68,7 @@ class ConsoleInterface:
     def start_interface(self):
         while True:
             self.clear()
-            print(colored(f'{self.header}\n{self.name}\n', 'blue'))
+            print(f'{self.header}\n{self.name}\n')
             play_state = 'playing' if self.engine.sequencer.is_playing() else 'stopped'
             print(f'play state: {play_state}')
             print(self.engine.session_editor.get_session_as_string())

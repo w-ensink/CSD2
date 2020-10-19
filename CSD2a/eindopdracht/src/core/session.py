@@ -13,6 +13,8 @@ from core.event import Event
 # update it's playback.
 # reading data from the session can be done through the data fields, as long as it's reading only
 class Session:
+    # subclasses of Listener can subscribe to a Session object, so they get notified when a change
+    # is made to the Session object.
     class Listener:
         def sample_added_to_session(self, sample: Sample, session) -> None:
             pass
