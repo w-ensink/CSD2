@@ -37,7 +37,7 @@ Below is a list of valid commands. It will probably be extended in the future.
 |```sm <file_path>```|saves current session as midi (file_path must end with ```.mid``` or ```.midi```) |
 |```sj <file_path>```|saves current session as json (file_path must end with ```.json```)|
 |```lj <file_path>``` | loads session from json (file_path must end with ```.json```)|
-|```sp <sample_name> <low|mid|high>```|sets the spectral position for given sample (important for generation and midi saving)|
+|```sp <sample_name> <low, mid, high>```|sets the spectral position for given sample (pick low, mid or high)|
 |```tempo <tempo_bpm>``` | sets the tempo to the given argument|
 |```ts <numerator>/<denominator>```| sets the time signature |
 |```undo``` | undoes the last edit to the session|
@@ -78,7 +78,7 @@ Since any action that derives from ```UndoableSessionEdit``` can be used, adding
 
 ### User Interface
 The engine is, as said before, completely independent of the UI. The UI, however, is dependent on the engine. It's not too bad here, because the UI is specific to the engine anyway. 
-The UI uses almost the same pattern as the session editor, but without the saving of state (without the Memento part). The main ```ConsoleInterface``` class contains a bunch of command handlers. Each command handler is derived from ```CommandHandler```. Each derived class must implement ```matches_command()``` (which hould return if it can handle a given command), ```perform()``` (which should execute a given command) and ```get_help_string()``` (which should return a user readable string with info about the command). Again, this makes adding new commands very clean and self contained. 
+The UI uses almost the same pattern as the session editor, but without the saving of state (without the Memento part). The main ```ConsoleInterface``` class contains a bunch of command handlers. Each command handler is derived from ```CommandHandler```. Each derived class must implement ```matches_command()``` (which should return if it can handle a given command), ```perform()``` (which should execute a given command) and ```get_help_string()``` (which should return a user readable string with info about the command). Again, this makes adding new commands very clean and self contained. 
 
 ## Rhythm Generation Algorithm
 The algorithm used to generate rhythms makes heavy use of euclidean distributions. It picks the number of events it wants the lowest element to play randomly between 0 and (num_ticks_per_bar)/4 but it does it in a way that it has almost always have a kick, since it uses ceil to round the distribution. 
@@ -93,7 +93,7 @@ This first quarter of CSD, I've mainly focussed on the design and architecture o
 * Strategy Pattern
 * Facade Pattern
 
-My intention is to study and use all 23 of commonly used design pattern from the [design patterns book](https://en.wikipedia.org/wiki/Design_Patterns).
+My intention is to study and use all 23 of the commonly used design pattern from the [design patterns book](https://en.wikipedia.org/wiki/Design_Patterns).
 
 Further more, I've experimented a little bit with Test Driven Development. I've only done this on a couple of parts in the system. Earlier with one of the previous assignments, I've used it for the ```PlayHead``` and ```TimeSignature``` classes, and more recently I've used it on the ```Session``` class. The tests for that last one are still in the session.py file. The reason I've not yet done it on the full project, is because you need to have quite a bit of experience with it in order to scale it to big projects, and I didn't feel like I was there yet. As Uncle Bob said in his talk, you need to do a lot of small projects before you can really use TDD without messing up the whole structure of your program.
 
