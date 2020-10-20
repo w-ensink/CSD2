@@ -55,7 +55,7 @@ The system consists of two main parts: the user interface and the engine. The en
 ### Engine
 The main class of the engine is called ```Engine```. This class' main purpose it to combine all elements that make up the sequencer, editor, exporter and importer functionalities. This class also contains the ```Session``` object, which contains the session information: the tempo, time signature, samples and events.
 
-Other classes can listen to a Session object by registering themselves as a listener (Observer Pattern). To be able to register themselves properly, they must inherit from ```Session.Listener```.
+Other classes can listen to a ```Session``` object by registering themselves as a listener (<ins>Observer Pattern</ins>). To be able to register themselves properly, they must inherit from ```Session.Listener```.
 The only class in the system, for now, that needs to listen to the session, is the ```Sequencer```. This is because, as the session is altered by the user, the sequencer needs to update in realtime.
 
 The user interface also needs to know about the changes, but since it is always redrawn after a command has been given by the user, it will find the changes anyway, so listening to the session is not needed.
@@ -69,15 +69,32 @@ The sequencer runs in its own thread, which gets started in its constructor. The
 The ```PlayHead``` class is responsible for keeping track of the play head/current time stamp and the looping of the sequence. 
 The ```Clock``` class knows how long to wait (tick time) and how long it has been since the last tick, so every time the events get handled is spot on. 
 
-The sequencer also has a member called the event_handler, this can be set from the outside (dependency injection). Any class that derives from ```EventHandler``` can be used as the event handler. This means that, without changing anything else in the system, we could add event handlers that use midi or send event signals to Max via OSC. This is another great feature of the design that makes it really flexible. 
+The sequencer also has a member called the event_handler, this can be set from the outside (dependency injection). Any class that derives from ```EventHandler``` can be used as the event handler. This means that, without changing anything else in the system, we could add event handlers that use midi or send event signals to Max via OSC. This is another great feature of the design that makes it really flexible and is an example of the <ins>Strategy Pattern</ins>.
 
-Editing the engine's session object happens (only) via the ```SessionEditor```. The reason to keep this all in one place, is to keep all mutations at one location. That makes debugging way easier. 
+Editing the engine's session object happens (only) via the ```SessionEditor```. The reason to keep this all in one place, is to keep all mutations at one location. That makes debugging way easier. This class uses the <ins>Facade Pattern</ins> to make a simplified editing interface for any UI class.
 
-Now this is where the real fun begins. Every possible edit to the session is its own class. All of these classes derive from ```UndoableSessionEdit```. As the name suggest, these classes all have a "do" (in the code called "perform()") and an "undo" method. Everytime an edit is made, it gets pushed onto the undo stack in the ```SessionEditManager```. When the undo() method on this manager gets called, the manager pops it off the undo stack, calls the undo method and pushes it onto the redo stack. When redo() gets called, it pops it of the redo stack, calls perform() and pushes it back on the undo stack. 
-Since any action that derives from ```UndoableSessionEdit``` can be used, adding new edit options is trivial. Another feature that makes the system even more powerful and adaptive. The design is a combination of the Memento Pattern and the Command Pattern.
+Now this is where the real fun begins. Every possible edit to the session is its own class. All of these classes derive from ```UndoableSessionEdit```. As the name suggest, these classes all have a "do" (in the code called ```perform()```) and an "undo" method. Everytime an edit is made, it gets pushed onto the undo stack in the ```SessionEditManager```. When the ```undo_last_edit()``` method on this manager gets called, the manager pops it off the undo stack, calls the ```undo()``` method of the edit class and pushes it onto the redo stack. When ```redo_last_undone_edit()``` gets called, it pops it of the redo stack, calls ```perform()``` and pushes it back on the undo stack. 
+Since any action that derives from ```UndoableSessionEdit``` can be used, adding new edit options is trivial. Another feature that makes the system even more powerful and adaptive. The design is a combination of the <ins>Memento Pattern</ins> and the <ins>Command Pattern</ins>.
 
 ### User Interface
 The engine is, as said before, completely independent of the UI. The UI, however, is dependent on the engine. It's not too bad here, because the UI is specific to the engine anyway. 
-The UI uses almost the same pattern as the session editor, but without the saving of state (without the Memento part). The main ```ConsoleInterface``` class contains a bunch of command handlers. Each command handler is derived from ```CommandHandler```. Each derived class must implement ```matched_command()``` (which hould return if it can handle a given command), ```perform()``` (which should execute a given command) and ```get_help_string()``` (which should return a user readable string with info about the command). Again, this makes adding new commands very clean and self contained. 
+The UI uses almost the same pattern as the session editor, but without the saving of state (without the Memento part). The main ```ConsoleInterface``` class contains a bunch of command handlers. Each command handler is derived from ```CommandHandler```. Each derived class must implement ```matches_command()``` (which hould return if it can handle a given command), ```perform()``` (which should execute a given command) and ```get_help_string()``` (which should return a user readable string with info about the command). Again, this makes adding new commands very clean and self contained. 
+
+## Rhythm Generation Algorithm
+The algorithm used to generate rhythms makes heavy use of euclidean distributions. It picks the number of events it wants the lowest element to play randomly between 0 and (num_ticks_per_bar)/4 but it does it in a way that it has almost always have a kick, since it uses ceil to round the distribution. 
+It does the same thing with the other instruments, but with different distribution probabilities. In addition to that, all instruments/except the kick also get rotated by some amount to make it more like a real beat (to avoid all instruments playing the 1 everytime).
+The implementation can be found in ```session_editor.py``` as the ```GenerateSequence_SessionEdit```.
 
 ## Reflection
+This first quarter of CSD, I've mainly focussed on the design and architecture of software. I though this was the area where I could improve the most. I've studied a bunch of design patterns, watched talks about best practices (one particularly good one is this [6 part series of clean code and clean architecture by Robert C. Martin (Uncle Bob)](https://www.youtube.com/watch?v=7EmboKQH8lM)) and spent a lot of time actually thinking about the design instead of just going to my keyboard and typing endlessly. This really helped me a lot. It surprised me how few bugs I've encountered in my program over the development time. It also feels like I was done quicker than you would expect with such a rich set of features. As described in the architecture part, I've used the following patterns in my code:
+* Memento Pattern
+* Command Pattern
+* Observer Pattern
+* Strategy Pattern
+* Facade Pattern
+
+My intention is to study and use all 23 of commonly used design pattern from the [design patterns book](https://en.wikipedia.org/wiki/Design_Patterns).
+
+Further more, I've experimented a little bit with Test Driven Development. I've only done this on a couple of parts in the system. Earlier with one of the previous assignments, I've used it for the ```PlayHead``` and ```TimeSignature``` classes, and more recently I've used it on the ```Session``` class. The tests for that last one are still in the session.py file. The reason I've not yet done it on the full project, is because you need to have quite a bit of experience with it in order to scale it to big projects, and I didn't feel like I was there yet. As Uncle Bob said in his talk, you need to do a lot of small projects before you can really use TDD without messing up the whole structure of your program.
+
+I found the experience of using TDD really satisfying and I want to get into it more during CSD2b. The feeling of being done when you're done is very nice. I don't have to waste my time debugging anything, since every single thing I wrote has already been tested when I'm done writing the code. Also getting that little shot of dopamine every time the test passes is great and refactoring is a breeze, since you don't have to worry about breaking the code. The tests will tell you immediately when you do so. If you quickly run the test after every change, you never get into big trouble.
