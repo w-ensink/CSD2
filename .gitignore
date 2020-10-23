@@ -1,5 +1,26 @@
+# standard stuff
 .DS_Store
 .idea
 .env
+
+# Python
 __pycache__
 .pytest_cache
+
+# C++ binary files
+*.o
+
+# CMake unwanted files and folders
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+# ignore build directories
+build
