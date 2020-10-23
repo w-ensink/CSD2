@@ -1,6 +1,6 @@
 # Irregular Beat Generator - Documentation
 
-This document contains all documentation regarding the Irregular Beat Generator assignment. The source code can be found in the ```src``` folder.
+This document contains all documentation regarding the Irregular Beat Generator assignment. The source code can be found in the ```../src``` folder.
 
 ---
 
@@ -17,7 +17,7 @@ The program lets you edit a sequence in realtime while also playing it back. (Al
 It can load new samples on the fly and has some useful algorithms for constructing sequences really fast. It's also fully adaptive. If you add an event that is located in a new bar (or if you change the time signature to one with fewer ticks per bar), the sequence will be extended an extra bar and the engine will adapt its looping point. 
 When that event gets removed, it will go back to its original length.
 
-Further more, you can save any session as json, so you can load it back in when you want to continue working on it. Exporting as MIDI is also possible (although it behaves a little weird at the moment).
+Further more, you can save any session as json, so you can load it back in when you want to continue working on it. Exporting as MIDI is also possible.
 
 Below is a list of valid commands. It will probably be extended in the future.
 
@@ -53,7 +53,7 @@ The system consists of two main parts: the user interface and the engine. The en
 
 
 ### Engine
-The main class of the engine is called ```Engine```. This class' main purpose it to combine all elements that make up the sequencer, editor, exporter and importer functionalities. This class also contains the ```Session``` object, which contains the session information: the tempo, time signature, samples and events.
+The main class of the engine is called ```Engine```. This class' main purpose is to combine all elements that make up the sequencer, editor, exporter and importer functionalities. This class also contains the ```Session``` object, which contains the session information: the tempo, time signature, samples and events.
 
 Other classes can listen to a ```Session``` object by registering themselves as a listener (<ins>Observer Pattern</ins>). To be able to register themselves properly, they must inherit from ```Session.Listener```.
 The only class in the system, for now, that needs to listen to the session, is the ```Sequencer```. This is because, as the session is altered by the user, the sequencer needs to update in realtime.
@@ -69,7 +69,7 @@ The sequencer runs in its own thread, which gets started in its constructor. The
 The ```PlayHead``` class is responsible for keeping track of the play head/current time stamp and the looping of the sequence. 
 The ```Clock``` class knows how long to wait (tick time) and how long it has been since the last tick, so every time the events get handled is spot on. 
 
-The sequencer also has a member called the event_handler, this can be set from the outside (dependency injection). Any class that derives from ```EventHandler``` can be used as the event handler. This means that, without changing anything else in the system, we could add event handlers that use midi or send event signals to Max via OSC. This is another great feature of the design that makes it really flexible and is an example of the <ins>Strategy Pattern</ins>.
+The sequencer also has a member called the event_handler, this can be set from the outside (dependency injection). Any class that derives from ```EventHandler``` can be used as the event handler. This means that, without changing anything else in the system, we could add event handlers that use midi or send event signals to Max via OSC. This is another great feature of the design that makes it really flexible and is an example of the <ins>Strategy Pattern</ins>. This same technique is applied to session importers and exporters.
 
 Editing the engine's session object happens (only) via the ```SessionEditor```. The reason to keep this all in one place, is to keep all mutations at one location. That makes debugging way easier. This class uses the <ins>Facade Pattern</ins> to make a simplified editing interface for any UI class.
 
@@ -95,6 +95,6 @@ This first quarter of CSD, I've mainly focussed on the design and architecture o
 
 My intention is to study and use all 23 of the commonly used design pattern from the [design patterns book](https://en.wikipedia.org/wiki/Design_Patterns).
 
-Further more, I've experimented a little bit with Test Driven Development. I've only done this on a couple of parts in the system. Earlier with one of the previous assignments, I've used it for the ```PlayHead``` and ```TimeSignature``` classes, and more recently I've used it on the ```Session``` class. The tests for that last one are still in the session.py file. The reason I've not yet done it on the full project, is because you need to have quite a bit of experience with it in order to scale it to big projects, and I didn't feel like I was there yet. As Uncle Bob said in his talk, you need to do a lot of small projects before you can really use TDD without messing up the whole structure of your program.
+Further more, I've experimented a little bit with Test Driven Development. I've only done this on a couple of parts in the system. Earlier with one of the previous assignments, I've used it for the ```PlayHead``` and ```TimeSignature``` classes, and more recently I've used it on the ```Session``` class. The tests for that last one are still in the ```session.py``` file. The reason I've not yet done it on the full project, is because you need to have quite a bit of experience with it in order to scale it to big projects, and I didn't feel like I was there yet. As Uncle Bob said in his talk, you need to do a lot of small projects before you can really use TDD without messing up the whole structure of your program.
 
 I found the experience of using TDD really satisfying and I want to get into it more during CSD2b. The feeling of being done when you're done is very nice. I don't have to waste my time debugging anything, since every single thing I wrote has already been tested when I'm done writing the code. Also getting that little shot of dopamine every time the test passes is great and refactoring is a breeze, since you don't have to worry about breaking the code. The tests will tell you immediately when you do so. If you quickly run the test after every change, you never get into big trouble.
