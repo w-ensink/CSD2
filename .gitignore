@@ -24,3 +24,4 @@ _deps
 
 # ignore build directories
 build
+bin
