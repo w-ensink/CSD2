@@ -22,3 +22,8 @@ FetchContent_MakeAvailable(Juce FmtLib)
 set(TARGET_NAME ${PROJECT_NAME})
 
 add_subdirectory(source)
+
+# if you want to build the tests, invoke CMake with -DBUILD_TESTS=true
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif(BUILD_TESTS)
