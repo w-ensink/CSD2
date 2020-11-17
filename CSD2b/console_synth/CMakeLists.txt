@@ -18,10 +18,7 @@ FetchContent_Declare(Juce
 # Make all fetched libraries available inside the CMake project
 FetchContent_MakeAvailable(Juce FmtLib)
 
-
+# give the target a name (same as project name now)
 set(TARGET_NAME ${PROJECT_NAME})
 
 add_subdirectory(source)
-
-
-

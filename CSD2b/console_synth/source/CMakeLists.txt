@@ -18,7 +18,11 @@ target_compile_definitions(${TARGET_NAME} PRIVATE JUCE_WEBBROWSER=0)
 # link the fetched libraries with our own executable
 target_link_libraries(${TARGET_NAME} PRIVATE
         fmt::fmt
-        juce::juce_core)
+        juce::juce_core
+        juce::juce_audio_basics
+        juce::juce_audio_processors
+        juce::juce_dsp
+        juce::juce_audio_devices)
 
 # set the executable output directory to ./bin from the project root
 set_target_properties(${TARGET_NAME} PROPERTIES
