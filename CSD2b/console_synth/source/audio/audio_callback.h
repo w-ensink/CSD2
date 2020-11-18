@@ -5,13 +5,14 @@
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_devices/juce_audio_devices.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_core/juce_core.h>
 
 
 class AudioCallback : public juce::AudioIODeviceCallback
 {
 public:
-    explicit AudioCallback (juce::AudioSource& source);
+    explicit AudioCallback (juce::AudioProcessor& source);
     ~AudioCallback() override = default;
 
     void audioDeviceIOCallback (const float** inputChannelData,
@@ -27,5 +28,5 @@ public:
     void audioDeviceError (const juce::String& errorMessage) override;
 
 private:
-    juce::AudioSource& audioSource;
+    juce::AudioProcessor& audioSource;
 };

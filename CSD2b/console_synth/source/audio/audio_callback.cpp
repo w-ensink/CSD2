@@ -3,10 +3,10 @@
 #include "../format.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
-#include <juce_core/juce_core.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 
 
-AudioCallback::AudioCallback (juce::AudioSource& source) : audioSource (source) {};
+AudioCallback::AudioCallback (juce::AudioProcessor& source) : audioSource (source) {};
 
 void AudioCallback::audioDeviceIOCallback (const float** inputChannelData,
                                            int numInputChannels,
@@ -15,8 +15,8 @@ void AudioCallback::audioDeviceIOCallback (const float** inputChannelData,
                                            int numSamples)
 {
     auto buffer = juce::AudioBuffer<float> (outputChannelData, numOutputChannels, numSamples);
-    auto channelInfo = juce::AudioSourceChannelInfo (&buffer, 0, numSamples);
-    audioSource.getNextAudioBlock (channelInfo);
+    auto midiBuffer = juce::MidiBuffer();
+    audioSource.processBlock (buffer, midiBuffer);
 }
 
 
@@ -31,7 +31,7 @@ void AudioCallback::audioDeviceAboutToStart (juce::AudioIODevice* device)
                 device->getCurrentBufferSizeSamples(),
                 device->getCurrentBitDepth());
 
-    audioSource.prepareToPlay (device->getCurrentBufferSizeSamples(), device->getCurrentSampleRate());
+    audioSource.prepareToPlay (device->getCurrentSampleRate(), device->getCurrentBufferSizeSamples());
 }
 
 

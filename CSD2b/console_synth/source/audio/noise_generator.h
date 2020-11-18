@@ -1,15 +1,18 @@
 
 #pragma once
 
-#include <juce_audio_basics/juce_audio_basics.h>
+#include "audio_processor_base.h"
 
-class NoiseGenerator : public juce::AudioSource
+class NoiseGenerator : public AudioProcessorBase
 {
 public:
     NoiseGenerator() = default;
+    ~NoiseGenerator() override = default;
 
-    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override;
-    void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override {}
+    void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
+
+    void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override {}
+
     void releaseResources() override {}
 
 private:

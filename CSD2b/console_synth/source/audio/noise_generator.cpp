@@ -2,16 +2,13 @@
 #include "noise_generator.h"
 
 
-void NoiseGenerator::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
+void NoiseGenerator::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    bufferToFill.clearActiveBufferRegion();
-    const auto [buffer, startSample, numSamples] = bufferToFill;
-
-    for (auto channel = 0; channel < buffer->getNumChannels(); ++channel)
+    for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
     {
-        auto* writePointer = buffer->getWritePointer (channel);
+        auto* writePointer = buffer.getWritePointer (channel);
 
-        for (auto sample = startSample; sample < numSamples + startSample; ++sample)
+        for (auto sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
             writePointer[sample] = 0.1f * random.nextFloat();
         }
