@@ -1,10 +1,10 @@
 
 // Written by Wouter Ensink
 
-#include <juce_core/juce_core.h>
-#include <juce_audio_devices/juce_audio_devices.h>
-#include <juce_audio_processors/juce_audio_processors.h>
+#pragma once
+
 #include <fmt/format.h>
+#include <juce_core/juce_core.h>
 
 
 // partial template specialization to make fmt work with juce::String

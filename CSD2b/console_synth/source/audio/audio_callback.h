@@ -12,7 +12,7 @@
 class AudioCallback : public juce::AudioIODeviceCallback
 {
 public:
-    explicit AudioCallback (juce::AudioProcessor& source);
+    explicit AudioCallback (juce::AudioSource& source);
     ~AudioCallback() override = default;
 
     void audioDeviceIOCallback (const float** inputChannelData,
@@ -28,5 +28,5 @@ public:
     void audioDeviceError (const juce::String& errorMessage) override;
 
 private:
-    juce::AudioProcessor& audioSource;
+    juce::AudioSource& audioSource;
 };
