@@ -10,7 +10,10 @@ add_library(audio_lib STATIC
 
 target_compile_features("audio_lib" PRIVATE cxx_std_17)
 
-target_include_directories("audio_lib" PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
+
+# get the parent directory to use as include directory
+get_filename_component(INCLUDE_DIR ../ ABSOLUTE)
+target_include_directories("audio_lib" PUBLIC "${INCLUDE_DIR}")
 
 
 target_link_libraries("audio_lib" PRIVATE

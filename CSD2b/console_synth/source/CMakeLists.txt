@@ -17,6 +17,7 @@ target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 target_compile_definitions(${TARGET_NAME} PRIVATE JUCE_WEBBROWSER=0)
 
 add_subdirectory(audio)
+add_subdirectory(midi)
 
 # link the fetched libraries with our own executable
 target_link_libraries(${TARGET_NAME} PRIVATE
@@ -26,9 +27,9 @@ target_link_libraries(${TARGET_NAME} PRIVATE
         juce::juce_audio_processors
         juce::juce_dsp
         juce::juce_audio_devices
-        # internal libs
+        #internal libs
         console_synth::audio_lib
-        )
+        console_synth::midi_lib)
 
 # set the executable output directory to ./bin from the project root
 set_target_properties(${TARGET_NAME} PROPERTIES

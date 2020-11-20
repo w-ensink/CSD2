@@ -2,11 +2,10 @@
 // Written by Wouter Ensink
 
 #include "format.h"
-#include <audio_callback.h>
-#include <noise_generator.h>
-#include <sine_generator.h>
-#include <unordered_map>
-
+#include <audio/audio_callback.h>
+#include <audio/noise_generator.h>
+#include <audio/sine_generator.h>
+#include <midi/midi_message_queue.h>
 
 auto startAudioPlayback()
 {
@@ -46,7 +45,7 @@ public:
         if (message.isNoteOff())
             return;
 
-        auto m = message;
+        const auto& m = message;
 
         fmt::print ("Message from: {}\n"
                     "\tnote number: {}\n"
@@ -79,35 +78,6 @@ auto getCurrentTimePoint() noexcept
 {
     return std::chrono::high_resolution_clock::now();
 }
-
-// lock free queue for midi messages
-// in the bigger picture, messages will be added from the message thread
-// and will then we handled from the audio thread
-class MidiMessageQueue
-{
-public:
-    explicit MidiMessageQueue (std::size_t size) : fifo (size), buffer (size) {}
-
-    void addMessage (const juce::MidiMessage& message)
-    {
-        fifo.write (1).forEach ([this, &message] (auto index) {
-            buffer[index] = message;
-        });
-    }
-
-    template <typename MessageHandler>
-    void handleAllPendingMessages (MessageHandler&& handler)
-    {
-        fifo.read (fifo.getNumReady()).forEach ([this, &handler] (auto index) {
-            auto message = buffer[index];
-            handler (message);
-        });
-    }
-
-private:
-    juce::AbstractFifo fifo;
-    std::vector<juce::MidiMessage> buffer;
-};
 
 
 class MidiScheduler
