@@ -10,12 +10,14 @@ class SineGenerator : public AudioProcessorBase
 public:
     void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override
     {
-
         for (auto m : midiMessages)
         {
             auto message = m.getMessage();
             if (message.isNoteOn())
+            {
+                setFrequency (juce::MidiMessage::getMidiNoteInHertz (message.getNoteNumber()));
                 amplitude = 0.1;
+            }
             else
                 amplitude = 0.0;
         }
@@ -36,6 +38,12 @@ public:
     void prepareToPlay (double sampleRate_, int maximumExpectedSamplesPerBlock) override
     {
         sampleRate = sampleRate_;
+        updateAngleDelta();
+    }
+
+    void setFrequency (double newFrequency)
+    {
+        frequency = newFrequency;
         updateAngleDelta();
     }
 

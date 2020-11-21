@@ -6,6 +6,7 @@
 #include <audio/noise_generator.h>
 #include <audio/sine_generator.h>
 #include <midi/midi_message_queue.h>
+#include <optional>
 
 auto startAudioPlayback()
 {
@@ -40,35 +41,16 @@ struct ScopedMessageThread
 class MidiCallback : public juce::MidiInputCallback
 {
 public:
-    explicit MidiCallback (MidiMessageQueue& messageDestinationQueue) : messageDestinationQueue { messageDestinationQueue } {}
+    explicit MidiCallback (juce::MidiMessageCollector& midiMessageCollector) : midiMessageCollector { midiMessageCollector } {}
 
     void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override
     {
-        messageDestinationQueue.addMessage (message);
+        midiMessageCollector.addMessageToQueue (message);
     }
 
 private:
-    MidiMessageQueue& messageDestinationQueue;
+    juce::MidiMessageCollector& midiMessageCollector;
 };
-
-
-// =====================================================
-
-struct AudioStreamInfo
-{
-    int numSamplesPerBlock;
-    int streamTimeSamples;
-    int bufferRelativeTimeSamples;
-};
-
-// when midi messages are added to this class, it converts the time
-// when it was added to streaming time.
-// it then puts it in the MidiBuffer given by the audio engine
-
-auto getCurrentTimePoint() noexcept
-{
-    return std::chrono::high_resolution_clock::now();
-}
 
 
 // =====================================================
@@ -99,16 +81,15 @@ struct AudioEngine : juce::AudioSource
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate_) override
     {
+        fmt::print("prepare to play, sample rate: {}\n", sampleRate_);
         rootProcessor.prepareToPlay (sampleRate_, samplesPerBlockExpected);
+        midiMessageCollector.reset (sampleRate_);
     }
 
     void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override
     {
         midiScratchBuffer.clear();
-
-        midiMessageQueue.handleAllPendingMessages ([this] (auto message) {
-            midiScratchBuffer.addEvent (message, 0);
-        });
+        midiMessageCollector.removeNextBlockOfMessages (midiScratchBuffer, bufferToFill.numSamples);
 
         auto& buffer = *bufferToFill.buffer;
 
@@ -122,12 +103,13 @@ struct AudioEngine : juce::AudioSource
 
 
     juce::AudioDeviceManager deviceManager {};
-    MidiMessageQueue midiMessageQueue { 1000 };
     AudioIODeviceCallback audioCallback { *this };
-    MidiCallback midiCallback { midiMessageQueue };
+
     juce::MidiBuffer midiScratchBuffer;
     AudioProcessorBase& rootProcessor;
     std::unique_ptr<juce::MidiInput> midiInputDevice = nullptr;
+    juce::MidiMessageCollector midiMessageCollector;
+    MidiCallback midiCallback { midiMessageCollector };
 };
 
 
