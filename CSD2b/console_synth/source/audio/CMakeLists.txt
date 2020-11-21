@@ -6,7 +6,10 @@ add_library(audio_lib STATIC
         audio_callback.cpp
         noise_generator.h
         noise_generator.cpp
-        sine_generator.h oscillator.h)
+        sine_generator.h
+        oscillator.h
+        audio_engine.h
+        audio_engine.cpp)
 
 target_compile_features("audio_lib" PRIVATE cxx_std_17)
 

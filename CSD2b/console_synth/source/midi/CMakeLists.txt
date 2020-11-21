@@ -1,7 +1,8 @@
 
 
 add_library(midi_lib STATIC
-        midi_message_queue.h)
+        midi_message_queue.h
+        midi_callback.h)
 
 target_link_libraries(midi_lib PRIVATE
         juce::juce_core
