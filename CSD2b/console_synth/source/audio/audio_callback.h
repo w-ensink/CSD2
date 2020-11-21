@@ -9,11 +9,11 @@
 #include <juce_core/juce_core.h>
 
 
-class AudioCallback : public juce::AudioIODeviceCallback
+class AudioIODeviceCallback : public juce::AudioIODeviceCallback
 {
 public:
-    explicit AudioCallback (juce::AudioSource& source);
-    ~AudioCallback() override = default;
+    explicit AudioIODeviceCallback (juce::AudioSource& source);
+    ~AudioIODeviceCallback() override = default;
 
     void audioDeviceIOCallback (const float** inputChannelData,
                                 int numInputChannels,

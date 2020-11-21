@@ -6,9 +6,9 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 
-AudioCallback::AudioCallback (juce::AudioSource& source) : audioSource (source) {};
+AudioIODeviceCallback::AudioIODeviceCallback (juce::AudioSource& source) : audioSource (source) {};
 
-void AudioCallback::audioDeviceIOCallback (const float** inputChannelData,
+void AudioIODeviceCallback::audioDeviceIOCallback (const float** inputChannelData,
                                            int numInputChannels,
                                            float** outputChannelData,
                                            int numOutputChannels,
@@ -20,7 +20,7 @@ void AudioCallback::audioDeviceIOCallback (const float** inputChannelData,
 }
 
 
-void AudioCallback::audioDeviceAboutToStart (juce::AudioIODevice* device)
+void AudioIODeviceCallback::audioDeviceAboutToStart (juce::AudioIODevice* device)
 {
     fmt::print ("{} about to start:\n"
                 "\tsample rate: {}\n"
@@ -35,14 +35,14 @@ void AudioCallback::audioDeviceAboutToStart (juce::AudioIODevice* device)
 }
 
 
-void AudioCallback::audioDeviceStopped()
+void AudioIODeviceCallback::audioDeviceStopped()
 {
     audioSource.releaseResources();
     fmt::print ("Audio Device Stopped\n");
 }
 
 
-void AudioCallback::audioDeviceError (const juce::String& errorMessage)
+void AudioIODeviceCallback::audioDeviceError (const juce::String& errorMessage)
 {
     fmt::print ("Audio Device Error: {}\n", errorMessage);
 }

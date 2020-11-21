@@ -10,6 +10,16 @@ class SineGenerator : public AudioProcessorBase
 public:
     void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override
     {
+
+        for (auto m : midiMessages)
+        {
+            auto message = m.getMessage();
+            if (message.isNoteOn())
+                amplitude = 0.1;
+            else
+                amplitude = 0.0;
+        }
+
         for (auto sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
             const auto value = sin (phase);
@@ -18,7 +28,7 @@ public:
             for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
             {
                 auto* writePointer = buffer.getWritePointer (channel);
-                writePointer[sample] = value;
+                writePointer[sample] = value * amplitude;
             }
         }
     }

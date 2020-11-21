@@ -40,24 +40,15 @@ struct ScopedMessageThread
 class MidiCallback : public juce::MidiInputCallback
 {
 public:
+    explicit MidiCallback (MidiMessageQueue& messageDestinationQueue) : messageDestinationQueue { messageDestinationQueue } {}
+
     void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override
     {
-        if (message.isNoteOff())
-            return;
-
-        const auto& m = message;
-
-        fmt::print ("Message from: {}\n"
-                    "\tnote number: {}\n"
-                    "\tchannel:     {}\n"
-                    "\ttime stamp:  {}\n"
-                    "\tsize in bytes {}\n",
-                    source->getName(),
-                    m.getNoteNumber(),
-                    m.getChannel(),
-                    m.getTimeStamp(),
-                    m.getRawDataSize());
+        messageDestinationQueue.addMessage (message);
     }
+
+private:
+    MidiMessageQueue& messageDestinationQueue;
 };
 
 
@@ -80,44 +71,63 @@ auto getCurrentTimePoint() noexcept
 }
 
 
-class MidiScheduler
-{
-public:
-    void addMessage (const juce::MidiMessage& message)
-    {
-        auto now = getCurrentTimePoint();
-        auto timeSinceLastBuffer = std::chrono::duration_cast<std::chrono::milliseconds> (now - lastBufferStartTime).count();
-    }
-
-    void fillMidiBuffer (juce::MidiBuffer& bufferToFill, const AudioStreamInfo& streamInfo)
-    {
-        lastBufferStartTime = getCurrentTimePoint();
-        bufferToFill.clear();
-    }
-
-    using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
-    TimePoint lastBufferStartTime;
-    double sampleRate;
-};
-
-
 // =====================================================
 
 struct AudioEngine : juce::AudioSource
 {
+    explicit AudioEngine (AudioProcessorBase& rootProcessor) : rootProcessor { rootProcessor }
+    {
+        auto numInputChannels = 0;
+        auto numOutputChannels = 2;
+        deviceManager.initialiseWithDefaultDevices (numInputChannels, numOutputChannels);
+        midiScratchBuffer.ensureSize (3000);
+
+        deviceManager.addAudioCallback (&audioCallback);
+
+        auto midiDevices = juce::MidiInput::getAvailableDevices();
+
+        fmt::print ("Opening midi device: {}\n", midiDevices[0].name);
+        midiInputDevice = juce::MidiInput::openDevice (midiDevices[0].identifier, &midiCallback);
+        midiInputDevice->start();
+    }
+
+    ~AudioEngine() override
+    {
+        midiInputDevice->stop();
+        deviceManager.closeAudioDevice();
+    }
+
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate_) override
     {
-        audioStreamInfo.streamTimeSamples = 0;
+        rootProcessor.prepareToPlay (sampleRate_, samplesPerBlockExpected);
     }
 
     void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override
     {
-        // increase the current time stamp for the next callback
-        audioStreamInfo.streamTimeSamples += bufferToFill.numSamples;
+        midiScratchBuffer.clear();
+
+        midiMessageQueue.handleAllPendingMessages ([this] (auto message) {
+            midiScratchBuffer.addEvent (message, 0);
+        });
+
+        auto& buffer = *bufferToFill.buffer;
+
+        rootProcessor.processBlock (buffer, midiScratchBuffer);
+    }
+
+    void releaseResources() override
+    {
+        rootProcessor.releaseResources();
     }
 
 
-    AudioStreamInfo audioStreamInfo;
+    juce::AudioDeviceManager deviceManager {};
+    MidiMessageQueue midiMessageQueue { 1000 };
+    AudioIODeviceCallback audioCallback { *this };
+    MidiCallback midiCallback { midiMessageQueue };
+    juce::MidiBuffer midiScratchBuffer;
+    AudioProcessorBase& rootProcessor;
+    std::unique_ptr<juce::MidiInput> midiInputDevice = nullptr;
 };
 
 
@@ -127,21 +137,11 @@ int main()
     // to enable midi and osc
     SCOPE_ENABLE_MESSAGE_THREAD;
 
-    auto devices = juce::MidiInput::getAvailableDevices();
-
-    for (auto& d : devices)
-    {
-        fmt::print ("name: {}, identifier: {}\n", d.name, d.identifier);
-    }
-
-    auto midiCallback = MidiCallback();
-    fmt::print ("opening {}\n", devices[0].identifier);
-    auto dev = juce::MidiInput::openDevice (devices[0].identifier, &midiCallback);
-    dev->start();
+    auto rootProcessor = SineGenerator();
+    auto engine = AudioEngine (rootProcessor);
 
     fmt::print ("press enter to exit... \n");
     std::cin.get();
-    dev->stop();
 
     return 0;
 }

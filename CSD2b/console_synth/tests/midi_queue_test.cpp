@@ -26,7 +26,6 @@ TEST_CASE ("single midi message")
 TEST_CASE ("multiple pushes, single go")
 {
     auto numbers = std::vector { 1, 2, 3, 4, 5, 6, 7 };
-    //auto messages = std::vector<juce::MidiMessage> (numbers.size());
     auto messages = std::vector<juce::MidiMessage>();
     messages.reserve (numbers.size());
 
@@ -51,7 +50,7 @@ TEST_CASE ("multiple pushes, single go")
 
 TEST_CASE ("multiple pushes, multiple times")
 {
-    auto noteNumbers = std::vector { 1, 2, 3, 4 };
+    auto noteNumbers = std::vector { 1, 2, 3, 4, 5, 6, 7 };
     auto messages = std::vector<juce::MidiMessage> (noteNumbers.size());
 
     for (auto num : noteNumbers)
