@@ -6,7 +6,7 @@ add_library(audio_lib STATIC
         audio_callback.cpp
         noise_generator.h
         noise_generator.cpp
-        sine_generator.h
+        sine_synthesizer.h
         oscillator.h
         audio_engine.h
         audio_engine.cpp)

@@ -2,8 +2,8 @@
 // Written by Wouter Ensink
 
 #include "format.h"
-#include <audio/sine_generator.h>
 #include <audio/audio_engine.h>
+#include <audio/sine_synthesizer.h>
 
 
 // uses RAII to start and stop the message thread
@@ -25,7 +25,7 @@ int main()
     // to enable midi and osc
     SCOPE_ENABLE_MESSAGE_THREAD;
 
-    auto rootProcessor = SineGenerator();
+    auto rootProcessor = SineSynthesizer (1);
     auto engine = AudioEngine (rootProcessor);
 
     fmt::print ("press enter to exit... \n");
