@@ -31,5 +31,4 @@ private:
     AudioProcessorBase& rootProcessor;
     std::unique_ptr<juce::MidiInput> midiInputDevice = nullptr;
     juce::MidiMessageCollector midiMessageCollector;
-    MidiCallback midiCallback { midiMessageCollector };
 };

@@ -26,7 +26,6 @@ public:
             .release = 0.1
         };
 
-
         envelope.setSampleRate (getSampleRate());
         envelope.setParameters (envParams);
     }
@@ -35,17 +34,15 @@ public:
     {
         for (auto sample = startSample; sample < numSamples + startSample; ++sample)
         {
-            const auto value = sin (phase);
+            const auto value = sin (phase) * envelope.getNextSample() * amplitude;
             phase += angleDelta;
 
             for (auto channel = 0; channel < outputBuffer.getNumChannels(); ++channel)
             {
-                auto* writePointer = outputBuffer.getWritePointer (channel);
-                writePointer[sample] = value * amplitude;
+                // addSample mixes the existing sample with the new one, so no override
+                outputBuffer.addSample (channel, sample, value);
             }
         }
-
-        envelope.applyEnvelopeToBuffer (outputBuffer, startSample, numSamples);
     }
 
     void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound* sound, int currentPitchWheelPosition) override
@@ -58,6 +55,7 @@ public:
     void stopNote (float velocity, bool allowTailOff) override
     {
         envelope.noteOff();
+        clearCurrentNote();
     }
 
     bool canPlaySound (juce::SynthesiserSound* sound) override
@@ -72,7 +70,7 @@ private:
     juce::ADSR envelope;
     double phase = 0.0;
     double angleDelta = 0.0;
-    double amplitude = 1.0;
+    double amplitude = 0.2;
     double frequency = 0.0;
 
     void setFrequency (double freq)
@@ -82,6 +80,7 @@ private:
         angleDelta = cyclesPerSample * juce::MathConstants<double>::twoPi;
     }
 };
+
 
 // ==========================================================================================================
 
@@ -112,6 +111,7 @@ public:
         synthEngine.clearSounds();
         synthEngine.clearVoices();
     }
+
 
 private:
     juce::Synthesiser synthEngine;

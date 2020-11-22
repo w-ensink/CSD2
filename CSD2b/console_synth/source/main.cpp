@@ -25,7 +25,7 @@ int main()
     // to enable midi and osc
     SCOPE_ENABLE_MESSAGE_THREAD;
 
-    auto rootProcessor = SineSynthesizer (1);
+    auto rootProcessor = SineSynthesizer (4);
     auto engine = AudioEngine (rootProcessor);
 
     fmt::print ("press enter to exit... \n");

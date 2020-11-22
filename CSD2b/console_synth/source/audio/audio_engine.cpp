@@ -15,7 +15,7 @@ AudioEngine::AudioEngine (AudioProcessorBase& rootProcessor) : rootProcessor { r
     auto midiDevices = juce::MidiInput::getAvailableDevices();
 
     fmt::print ("Opening midi device: {}\n", midiDevices[0].name);
-    midiInputDevice = juce::MidiInput::openDevice (midiDevices[0].identifier, &midiCallback);
+    midiInputDevice = juce::MidiInput::openDevice (midiDevices[0].identifier, &midiMessageCollector);
     midiInputDevice->start();
 }
 
@@ -36,12 +36,11 @@ void AudioEngine::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 
 void AudioEngine::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
+    bufferToFill.clearActiveBufferRegion();
     midiScratchBuffer.clear();
+
     midiMessageCollector.removeNextBlockOfMessages (midiScratchBuffer, bufferToFill.numSamples);
-
-    auto& buffer = *bufferToFill.buffer;
-
-    rootProcessor.processBlock (buffer, midiScratchBuffer);
+    rootProcessor.processBlock (*bufferToFill.buffer, midiScratchBuffer);
 }
 
 
