@@ -10,7 +10,7 @@ add_library(audio_lib STATIC
         oscillator.h
         audio_engine.h
         audio_engine.cpp
-        saw_synthesizer.h)
+        saw_synthesizer.h reverb.h)
 
 target_compile_features("audio_lib" PRIVATE cxx_std_17)
 
