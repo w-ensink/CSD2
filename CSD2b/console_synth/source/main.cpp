@@ -3,8 +3,8 @@
 
 #include "format.h"
 #include <audio/audio_engine.h>
+#include <audio/saw_synthesizer.h>
 #include <audio/sine_synthesizer.h>
-
 
 // uses RAII to start and stop the message thread
 struct ScopedMessageThread
@@ -25,8 +25,9 @@ int main()
     // to enable midi and osc
     SCOPE_ENABLE_MESSAGE_THREAD;
 
-    auto rootProcessor = SineSynthesizer (4);
-    auto engine = AudioEngine (rootProcessor);
+    //auto rootProcessor = SineSynthesizer (4);
+    auto rootAudioSource = SawSynthesizer (4);
+    auto engine = AudioEngine (rootAudioSource);
 
     fmt::print ("press enter to exit... \n");
     std::cin.get();
