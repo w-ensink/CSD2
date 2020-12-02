@@ -24,7 +24,8 @@ function(add_unit_test NAME SOURCE)
             juce::juce_audio_processors
             juce::juce_dsp
             juce::juce_audio_devices
-            Catch2WithMain)
+            Catch2WithMain
+            console_synth_lib)
 
     # set the executable output directory to ./bin from the project root
     set_target_properties(${NAME} PROPERTIES
@@ -36,3 +37,5 @@ add_unit_test(cli_test cli_test.cpp)
 
 # add midi message queue unit test (and link with internal midi lib)
 add_unit_test(midi_message_queue_test midi_queue_test.cpp)
+
+add_unit_test(melody_generator_test melody_generator_test.cpp)

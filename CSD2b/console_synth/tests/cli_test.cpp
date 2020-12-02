@@ -1,6 +1,7 @@
 
 // Written by Wouter Ensink
 
+/*
 #include "../source/console_interface.h"
 #include <catch2/catch_all.hpp>
 
@@ -17,3 +18,4 @@ TEST_CASE ("CliTest", "Setup")
 
     dispatcher.dispatch ("freq");
 }
+ */

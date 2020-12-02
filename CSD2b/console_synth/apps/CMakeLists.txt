@@ -15,7 +15,7 @@ target_compile_definitions(${TARGET_NAME} PRIVATE JUCE_WEBBROWSER=0)
 target_link_libraries(${TARGET_NAME} PRIVATE
         fmt::fmt
         juce::juce_core
-        console_synth)
+        console_synth_lib)
 
 # set the executable output directory to ./bin from the project root
 set_target_properties(${TARGET_NAME} PROPERTIES

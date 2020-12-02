@@ -1,7 +1,7 @@
 
 
 #include <catch2/catch_all.hpp>
-#include <midi/midi_message_queue.h>
+#include <console_synth/midi/midi_message_queue.h>
 
 
 TEST_CASE ("single midi message")
