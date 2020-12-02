@@ -36,4 +36,3 @@ add_unit_test(cli_test cli_test.cpp)
 
 # add midi message queue unit test (and link with internal midi lib)
 add_unit_test(midi_message_queue_test midi_queue_test.cpp)
-target_link_libraries(midi_message_queue_test PRIVATE console_synth::midi_lib)

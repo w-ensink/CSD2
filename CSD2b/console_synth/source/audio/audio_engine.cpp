@@ -1,6 +1,6 @@
 
 
-#include "audio_engine.h"
+#include <console_synth/audio/audio_engine.h>
 
 
 AudioEngine::AudioEngine (AudioProcessorBase& rootProcessor) : rootProcessor { rootProcessor }

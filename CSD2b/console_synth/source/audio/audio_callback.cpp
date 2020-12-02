@@ -1,7 +1,6 @@
 
-#include "audio_callback.h"
-#include "../format.h"
-
+#include <console_synth/audio/audio_callback.h>
+#include <console_synth/format.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 
 

@@ -1,5 +1,5 @@
 
-#include "noise_generator.h"
+#include <console_synth/audio/noise_generator.h>
 
 
 void NoiseGenerator::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)

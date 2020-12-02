@@ -3,6 +3,7 @@
 
 #pragma once
 
+/*
 #include "format.h"
 
 struct CommandHandlerBase
@@ -74,3 +75,4 @@ private:
 
     OwnedVector<CommandHandlerBase> handlers;
 };
+ */

@@ -1,10 +1,10 @@
 
 // Written by Wouter Ensink
 
-#include "format.h"
-#include <audio/audio_engine.h>
-#include <audio/reverb.h>
-#include <audio/saw_synthesizer.h>
+#include <console_synth/format.h>
+#include <console_synth/audio/audio_engine.h>
+#include <console_synth/audio/reverb.h>
+#include <console_synth/audio/saw_synthesizer.h>
 
 // uses RAII to start and stop the message thread
 struct ScopedMessageThread

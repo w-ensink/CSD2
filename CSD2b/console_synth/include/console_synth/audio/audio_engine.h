@@ -1,13 +1,13 @@
 
 #pragma once
 
-#include "audio_processor_base.h"
-#include "audio_callback.h"
-#include "../format.h"
+#include <console_synth/audio/audio_processor_base.h>
+#include <console_synth/audio/audio_callback.h>
+#include <console_synth//format.h>
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_devices/juce_audio_devices.h>
-#include <midi/midi_callback.h>
+#include <console_synth/midi/midi_callback.h>
 
 
 class AudioEngine : public juce::AudioSource
