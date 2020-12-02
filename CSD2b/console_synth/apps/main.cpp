@@ -1,10 +1,11 @@
 
 // Written by Wouter Ensink
 
-#include <console_synth/format.h>
 #include <console_synth/audio/audio_engine.h>
 #include <console_synth/audio/reverb.h>
 #include <console_synth/audio/saw_synthesizer.h>
+#include <console_synth/format.h>
+#include <console_synth/console_interface/console_interface.h>
 
 // uses RAII to start and stop the message thread
 struct ScopedMessageThread
@@ -61,13 +62,16 @@ private:
 };
 
 
+
+
+
 int main()
 {
     // keep the juce message thread alive during the whole main function
     // to enable midi and osc
     SCOPE_ENABLE_MESSAGE_THREAD;
 
-    //auto rootProcessor = SineSynthesizer (4);
+    /*
     auto rootAudioSource = SawSynthesizer (4);
     auto reverb = std::make_unique<Reverb>();
 
@@ -78,6 +82,19 @@ int main()
 
     fmt::print ("press enter to exit... \n");
     std::cin.get();
+     */
+
+    for (;;)
+    {
+        auto input = fetchUserInput (" -> ");
+
+        if (isQuitCommand (input))
+            break;
+
+        if (auto d = attemptSetMidiCommand (input))
+            fmt::print ("setting midi device to {}\n", *d);
+    }
+
 
     return 0;
 }

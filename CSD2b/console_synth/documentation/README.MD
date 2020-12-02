@@ -27,9 +27,20 @@ cmake --build build -j <num_desired_threads>
 This project uses the following C++ libraries:
 - [JUCE](https://github.com/juce-framework/JUCE)
 - [{fmt}](https://github.com/fmtlib/fmt)
+- [CTRE](https://github.com/hanickadot/compile-time-regular-expressions)
 - [Catch2](https://github.com/catchorg/Catch2)
+
 
 All of them will be fetched from github automatically during the build process.
 There might be some warning generated during the compilation process. On macOS Big Sur, 
 all of them were related to JUCE's transition to CMake. None of them had any impact on the 
 final build.
+
+---
+## Design
+
+The general design consists of the following parts:
+- Audio Playback (including synths)
+- Sequencer (which takes a sequence and generates midi messages)
+- Melody Generator
+- Console Interface
