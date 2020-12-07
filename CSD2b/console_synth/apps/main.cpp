@@ -6,17 +6,7 @@
 #include <console_synth/audio/saw_synthesizer.h>
 #include <console_synth/format.h>
 #include <console_synth/console_interface/console_interface.h>
-
-// uses RAII to start and stop the message thread
-struct ScopedMessageThread
-{
-    ScopedMessageThread() { juce::initialiseJuce_GUI(); }
-    ~ScopedMessageThread() { juce::shutdownJuce_GUI(); }
-};
-
-#define SCOPE_ENABLE_MESSAGE_THREAD \
-    ScopedMessageThread smt
-
+#include <console_synth/utility.h>
 
 // ==============================================================
 

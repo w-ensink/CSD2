@@ -41,3 +41,5 @@ add_unit_test(midi_message_queue_test midi_queue_test.cpp)
 add_unit_test(melody_generator_test melody_generator_test.cpp)
 
 add_unit_test(time_signature_test time_signature_test.cpp)
+
+add_unit_test(midi_output_device_creation_test midi_output_device_creation_test.cpp)
