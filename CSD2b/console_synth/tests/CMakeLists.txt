@@ -37,9 +37,7 @@ add_unit_test(cli_test cli_test.cpp)
 
 # add midi message queue unit test (and link with internal midi lib)
 add_unit_test(midi_message_queue_test midi_queue_test.cpp)
-
 add_unit_test(melody_generator_test melody_generator_test.cpp)
-
 add_unit_test(time_signature_test time_signature_test.cpp)
-
 add_unit_test(midi_output_device_creation_test midi_output_device_creation_test.cpp)
+add_unit_test(playhead_test playhead_test.cpp)

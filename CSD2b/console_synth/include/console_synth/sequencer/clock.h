@@ -15,7 +15,7 @@ public:
 
     void start() noexcept
     {
-        startTime = std::chrono::high_resolution_clock::now();
+        startTime = ClockType::now();
         targetTime = startTime + tickTimeMs;
     }
 
