@@ -20,6 +20,4 @@ TEST_CASE ("basic setup", "[sequencer]")
     auto sequencer = Sequencer();
     auto clock = std::make_unique<TestClock>();
     sequencer.setCustomClock (std::move (clock));
-
-
 }
