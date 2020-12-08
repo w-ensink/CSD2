@@ -4,27 +4,39 @@
 #include <chrono>
 #include <thread>
 
+
+class SequencerClockBase
+{
+public:
+    virtual ~SequencerClockBase() = default;
+    virtual void start() = 0;
+    virtual void setTickTimeMs (std::chrono::milliseconds) = 0;
+    virtual void blockUntilNextTick() = 0;
+};
+
+// =====================================================
+
 using namespace std::chrono_literals;
 
-class Clock
+class Clock : public SequencerClockBase
 {
 public:
     Clock() = delete;
 
-    Clock (std::chrono::milliseconds tickTimeMs) : tickTimeMs (tickTimeMs) {}
+    explicit Clock (std::chrono::milliseconds tickTimeMs) : tickTimeMs (tickTimeMs) {}
 
-    void start() noexcept
+    void start() noexcept override
     {
         startTime = ClockType::now();
         targetTime = startTime + tickTimeMs;
     }
 
-    void setTickTimeMs (std::chrono::milliseconds newTickTimeMs) noexcept
+    void setTickTimeMs (std::chrono::milliseconds newTickTimeMs) noexcept override
     {
         tickTimeMs = newTickTimeMs;
     }
 
-    void blockUntilNextTick()
+    void blockUntilNextTick() override
     {
         while (ClockType::now() < targetTime)
         {
