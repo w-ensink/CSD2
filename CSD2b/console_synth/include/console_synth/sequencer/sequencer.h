@@ -12,44 +12,28 @@
 #include <console_synth/sequencer/playhead.h>
 
 
-class Sequencer : public juce::Thread
+class Sequencer
 {
 public:
-    Sequencer() : juce::Thread { "Sequencer Thread" } {}
 
-
-    void startPlayback()
+    void setSampleRate(double sampleRate)
     {
-        playState = PlayState::playing;
-        clock->start();
+
     }
 
-    void stopPlayback()
+    void setTempoBpm(double bpm)
     {
-        playState = PlayState::stopped;
+
     }
-
-
-    // the reason for this function, is to inject a different clock
-    // during testing you don't want the tests to take forever for example
-    void setCustomClock (std::unique_ptr<SequencerClockBase> customClock)
-    {
-        clock = std::move (customClock);
-    }
-
-    void run() override
-    {
-    }
-
 
 private:
     enum struct PlayState
     {
         playing,
-        stopped
+        stopped,
+        recording
     };
 
-    std::unique_ptr<SequencerClockBase> clock = std::make_unique<Clock> (0ms);
     PlayHead playHead;
     PlayState playState = PlayState::stopped;
 };

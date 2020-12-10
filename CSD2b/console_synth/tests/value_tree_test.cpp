@@ -45,13 +45,55 @@ TEST_CASE ("value tree test", "[value tree]")
     {
         auto additionNoted = false;
 
-        listener.onValueTreeChildAdded = [&additionNoted] (auto parent, auto newChild) {
-            additionNoted = true;
-        };
+        listener.onValueTreeChildAdded = [&additionNoted] (auto, auto) { additionNoted = true; };
 
         auto note = makeNote (60, 0, 2, 127);
         melody.addChild (note, 0, nullptr);
 
         REQUIRE (additionNoted);
+    }
+
+    SECTION ("add multiple notes")
+    {
+        auto addCount = 0;
+        listener.onValueTreeChildAdded = [&addCount] (auto, auto) { addCount += 1; };
+
+        melody.addChild (makeNote (60, 0, 2, 127), -1, nullptr);
+        melody.addChild (makeNote (62, 2, 2, 127), -1, nullptr);
+
+        REQUIRE (addCount == 2);
+    }
+
+    SECTION ("edit note")
+    {
+        auto note = makeNote (60, 0, 2, 127);
+        melody.addChild (note, -1, nullptr);
+
+        auto changeNoted = false;
+        listener.onValueTreePropertyHasChanged = [&changeNoted] (auto, auto) {
+            changeNoted = true;
+        };
+
+        note.setProperty ("number", 50, nullptr);
+
+        REQUIRE (changeNoted);
+    }
+
+    SECTION ("child list retrieval")
+    {
+        auto noteOne = makeNote (60, 0, 2, 127);
+        auto noteTwo = makeNote (62, 2, 2, 127);
+
+        melody.addChild (noteOne, -1, nullptr);
+        melody.addChild (noteTwo, -1, nullptr);
+
+        for (auto note : melody)
+        {
+            if (note.getType() == juce::Identifier { "note" })
+            {
+                auto num = (int) note.getProperty ("number");
+                REQUIRE ((num == 60 || num == 62));
+            }
+        }
     }
 }
