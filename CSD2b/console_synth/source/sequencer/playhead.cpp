@@ -7,10 +7,7 @@
     return loopingRange.has_value();
 }
 
-[[nodiscard]] uint64_t PlayHead::getPositionInTicks() const noexcept
-{
-    return currentTick;
-}
+
 
 void PlayHead::setLooping (juce::Range<uint64_t> range) noexcept
 {
