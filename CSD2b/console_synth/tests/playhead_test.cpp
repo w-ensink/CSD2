@@ -6,11 +6,14 @@
 
 TEST_CASE ("play head start from 0")
 {
-    auto playHead = PlayHead {
-        .tickTimeMs = 1.0,
-        .blockDurationMs = 100.0,
-        .startTick = 0,
-    };
+    const auto tickTimeMs = 1.0;
+    const auto audioDeviceCallbackDuration = 100.0;
+    const auto startTick = 0;
+
+    auto playHead = PlayHead();
+    playHead.setTickTimeMs (tickTimeMs);
+    playHead.setDeviceCallbackDurationMs (audioDeviceCallbackDuration);
+    playHead.setPositionInTicks (startTick);
 
     auto count = 0;
     auto firstTick = 5235;
@@ -33,11 +36,14 @@ TEST_CASE ("play head start from 0")
 
 TEST_CASE ("play head start from 1")
 {
-    auto playHead = PlayHead {
-        .tickTimeMs = 1.0,
-        .blockDurationMs = 100.0,
-        .startTick = 1,
-    };
+    const auto tickTimeMs = 1.0;
+    const auto audioDeviceCallbackDuration = 100.0;
+    const auto startTick = 1;
+
+    auto playHead = PlayHead();
+    playHead.setTickTimeMs (tickTimeMs);
+    playHead.setDeviceCallbackDurationMs (audioDeviceCallbackDuration);
+    playHead.setPositionInTicks (startTick);
 
     auto timeStampsIntoBufferMs = std::vector<double>();
     auto ticks = std::vector<uint64_t>();
@@ -59,12 +65,15 @@ TEST_CASE ("play head start from 1")
 // at time 0.7ms into the current buffer
 TEST_CASE ("play head complex timing")
 {
-    auto playHead = PlayHead {
-        .tickTimeMs = 1.0,
-        .timeSinceLastTickMs = 0.3,
-        .blockDurationMs = 100.0,
-        .startTick = 50,
-    };
+    const auto tickTimeMs = 1.0;
+    const auto audioDeviceCallbackDuration = 100.0;
+    const auto startTick = 50;
+
+    auto playHead = PlayHead();
+    playHead.setTickTimeMs (tickTimeMs);
+    playHead.setDeviceCallbackDurationMs (audioDeviceCallbackDuration);
+    playHead.setPositionInTicks (startTick);
+    playHead.setTimeSinceLastTickMs (0.3);
 
     auto timeStampsIntoBufferMs = std::vector<double>();
     auto ticks = std::vector<uint64_t>();
@@ -83,12 +92,15 @@ TEST_CASE ("play head complex timing")
 
 TEST_CASE ("play head, multiple callbacks")
 {
-    auto playHead = PlayHead {
-        .tickTimeMs = 0.3,
-        .timeSinceLastTickMs = 0.4,
-        .blockDurationMs = 100.0,
-        .startTick = 50,
-    };
+    const auto tickTimeMs = 0.3;
+    const auto audioDeviceCallbackDuration = 100.0;
+    const auto startTick = 50;
+
+    auto playHead = PlayHead();
+    playHead.setTickTimeMs (tickTimeMs);
+    playHead.setDeviceCallbackDurationMs (audioDeviceCallbackDuration);
+    playHead.setPositionInTicks (startTick);
+    playHead.setTimeSinceLastTickMs (0.4);
 
     auto lastTicksBufferTime = 0.0;
 
@@ -99,23 +111,25 @@ TEST_CASE ("play head, multiple callbacks")
     // advances the play head one io device callback buffer
     playHead.advanceDeviceBuffer();
 
-    auto timeSinceLastTick = playHead.blockDurationMs - lastTicksBufferTime;
+    auto timeSinceLastTick = playHead.getDeviceCallbackDurationMs() - lastTicksBufferTime;
 
-    REQUIRE (playHead.timeSinceLastTickMs == timeSinceLastTick);
+    REQUIRE (playHead.getTimeSinceLastTickMs() == timeSinceLastTick);
 }
 
 
 TEST_CASE ("play head basic looping")
 {
-    auto playHead = PlayHead {
-        .tickTimeMs = 1.0,
-        .timeSinceLastTickMs = 0.0,
-        .blockDurationMs = 100.0,
-        .startTick = 0,
-    };
+    const auto tickTimeMs = 1.0;
+    const auto audioDeviceCallbackDuration = 100.0;
+    const auto startTick = 0;
 
-    // loop from tick 5 to 55 (including), so 5-56 exclusive
-    playHead.setLooping (5, 55);
+    auto playHead = PlayHead();
+    playHead.setTickTimeMs (tickTimeMs);
+    playHead.setDeviceCallbackDurationMs (audioDeviceCallbackDuration);
+    playHead.setPositionInTicks (startTick);
+
+    // loop from tick 5 to 49 (including), so 5-50 exclusive
+    playHead.setLooping (5, 49);
     REQUIRE (playHead.isLooping());
 
     auto timeStampsIntoBufferMs = std::vector<double>();
@@ -133,8 +147,15 @@ TEST_CASE ("play head basic looping")
     REQUIRE (ticks[0] == 5);
     REQUIRE (ticks[1] == 6);
 
-    // after tick 55, it should wrap back to 5...
-    // so tick
-    REQUIRE (ticks[50] == 55);
-    REQUIRE (ticks[51] == 5);
+    // after tick 49, it should wrap back to 5...
+    REQUIRE (ticks[44] == 49);
+    REQUIRE (ticks[45] == 5);
+
+    playHead.advanceDeviceBuffer();
+    // after 100 ticks it should be at tick 15
+    REQUIRE (playHead.getCurrentTick() == 15);
+
+    playHead.advanceDeviceBuffer();
+    // another 100 ticks later it should be at tick 25
+    REQUIRE (playHead.getCurrentTick() == 25);
 }
