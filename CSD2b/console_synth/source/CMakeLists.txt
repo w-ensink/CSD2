@@ -4,8 +4,7 @@ add_library(console_synth_lib STATIC
         audio/audio_engine.cpp
         audio/noise_generator.cpp
         # sequencer
-        sequencer/time_signature.cpp
-        sequencer/playhead.cpp)
+        sequencer/time_signature.cpp)
 
 target_link_libraries(console_synth_lib PRIVATE
         fmt::fmt
