@@ -83,10 +83,10 @@ TEST_CASE ("play head complex timing")
         timeStampsIntoBufferMs.push_back (timeIntoBufferMs);
     });
 
-    REQUIRE (ticks.size() == 100);
-    REQUIRE (ticks[0] == 50);
-    REQUIRE (ticks[1] == 51);
-    REQUIRE_THAT (timeStampsIntoBufferMs[0], Catch::Matchers::WithinAbs (0.7, 0.001));
+    CHECK (ticks.size() == 100);
+    CHECK (ticks[0] == 50);
+    CHECK (ticks[1] == 51);
+    CHECK_THAT (timeStampsIntoBufferMs[0], Catch::Matchers::WithinAbs (0.7, 0.001));
 }
 
 
@@ -111,7 +111,7 @@ TEST_CASE ("play head, multiple callbacks")
     // advances the play head one io device callback buffer
     playHead.advanceDeviceBuffer();
 
-    auto timeSinceLastTick = playHead.getDeviceCallbackDurationMs() - lastTicksBufferTime;
+    auto timeSinceLastTick = audioDeviceCallbackDuration - lastTicksBufferTime;
 
     REQUIRE (playHead.getTimeSinceLastTickMs() == timeSinceLastTick);
 }
@@ -140,6 +140,7 @@ TEST_CASE ("play head basic looping")
         timeStampsIntoBufferMs.push_back (timeIntoBufferMs);
     });
 
+
     // after 100ms (block duration), we should have had 100 ticks
     REQUIRE (ticks.size() == 100);
 
@@ -151,11 +152,77 @@ TEST_CASE ("play head basic looping")
     REQUIRE (ticks[44] == 49);
     REQUIRE (ticks[45] == 5);
 
+    CHECK(ticks.back() == 14);
+
     playHead.advanceDeviceBuffer();
     // after 100 ticks it should be at tick 15
-    REQUIRE (playHead.getCurrentTick() == 15);
+    CHECK(playHead.getCurrentTick() == 15);
 
     playHead.advanceDeviceBuffer();
     // another 100 ticks later it should be at tick 25
-    REQUIRE (playHead.getCurrentTick() == 25);
+    CHECK(playHead.getCurrentTick() == 25);
+}
+
+
+TEST_CASE ("play head realistic scenario")
+{
+    auto playHead = PlayHead();
+
+    auto sampleRate = 44100.0;
+    auto blockSizeSamples = 512;
+    auto blockDurationMs = (blockSizeSamples / sampleRate) * 1000.0;
+
+    playHead.setDeviceCallbackDurationMs (blockDurationMs);
+    playHead.setPositionInTicks (0);
+
+    auto eventTimeStampTicks = 100;
+
+    auto tempoBpm = 100;
+    auto ticksPerQuarterNote = 48;
+
+    auto ticksPerMinute = tempoBpm * ticksPerQuarterNote;
+    auto msPerMinute = 60'000.0;
+    auto msPerTick = msPerMinute / ticksPerMinute;
+
+    playHead.setTickTimeMs (msPerTick);
+
+    // according to this example, the tick time is 12.5ms
+    // the block duration is 11.61ms
+    // the 100th tick should come at 1250ms
+    // that is the 1250 / 11.61 = 107.67th buffer
+
+    auto eventHandled = false;
+    auto eventTimeStampBuffer = -1.0;
+    auto bufferCount = 0;
+
+    auto tickTimeStamps = std::vector<double>();
+    auto tickNumbers = std::vector<uint64_t>();
+
+    auto lastTick = -1;
+    auto prevTimeSinceLastTick = 0.0;
+
+    while (! eventHandled)
+    {
+        bufferCount++;
+        forEachTick (playHead, [&] (uint64_t tick, double timeIntoBufferMs) {
+            tickTimeStamps.push_back (timeIntoBufferMs);
+            tickNumbers.push_back (tick);
+
+            if (tick == eventTimeStampTicks)
+            {
+                eventTimeStampBuffer = timeIntoBufferMs;
+                eventHandled = true;
+            }
+
+            prevTimeSinceLastTick = playHead.getTimeSinceLastTickMs();
+            lastTick = tick;
+        });
+
+        playHead.advanceDeviceBuffer();
+    }
+
+
+    CHECK (tickTimeStamps.size() == 101);
+    CHECK (tickNumbers.size() == 101);
+    CHECK (bufferCount == 108);
 }

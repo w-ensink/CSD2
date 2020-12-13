@@ -105,21 +105,21 @@ public:
     // this will also take into account the ticks that were scheduled during that device callback
     void advanceDeviceBuffer()
     {
-        auto timePoint = 0.0;
+        auto timePoint = -timeSinceLastTickMs;
         auto tick = currentTick;
 
-        if (timeSinceLastTickMs > 0.0)
-            timePoint = tickTimeMs - timeSinceLastTickMs;
+        if (timePoint < 0.0)
+            timePoint += tickTimeMs;
 
-        while (timePoint < blockDurationMs - tickTimeMs)
+        while (timePoint < blockDurationMs)
         {
             timePoint += tickTimeMs;
             tick = getTickAfter (tick);
         }
 
-        timeSinceLastTickMs = blockDurationMs - timePoint;
+        timeSinceLastTickMs = blockDurationMs - (timePoint - tickTimeMs);
         // tick now represents the last tick in the current buffer, so it should be one after that
-        currentTick = getTickAfter (tick);
+        currentTick = tick;
     }
 
     uint64_t getTickAfter (uint64_t tick) const
@@ -136,12 +136,11 @@ public:
 template <typename Function>
 auto forEachTick (const PlayHead& playHead, Function&& function)
 {
-    const auto timeSinceLastTick = playHead.getTimeSinceLastTickMs();
     auto currentTick = playHead.getCurrentTick();
-    auto timePointMs = 0.0;
+    auto timePointMs = -playHead.getTimeSinceLastTickMs();
 
-    if (timeSinceLastTick > 0.0)
-        timePointMs = playHead.getTickTimeMs() - timeSinceLastTick;
+    if (timePointMs < 0.0)
+        timePointMs += playHead.getTickTimeMs();
 
     while (timePointMs < playHead.getDeviceCallbackDurationMs())
     {
