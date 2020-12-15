@@ -13,7 +13,7 @@
 class AudioEngine : public juce::AudioSource
 {
 public:
-    explicit AudioEngine (AudioProcessorBase& rootProcessor);
+    explicit AudioEngine (juce::AudioSource& rootAudioSource);
 
     ~AudioEngine() override;
 
@@ -26,9 +26,5 @@ public:
 private:
     juce::AudioDeviceManager deviceManager {};
     AudioIODeviceCallback audioCallback { *this };
-
-    juce::MidiBuffer midiScratchBuffer;
-    AudioProcessorBase& rootProcessor;
-    std::unique_ptr<juce::MidiInput> midiInputDevice = nullptr;
-    juce::MidiMessageCollector midiMessageCollector;
+    juce::AudioSource& rootAudioSource;
 };

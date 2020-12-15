@@ -14,10 +14,10 @@
 #include <console_synth/sequencer/track.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 
-class Sequencer
+class Sequencer : public juce::AudioSource
 {
 public:
-    explicit Sequencer(AudioProcessorBase& processor)  : processor {processor}
+    explicit Sequencer (AudioProcessorBase& processor) : processor { processor }
     {
         track.getMelody().notes.push_back (Note {
             .midiNoteNumber = 60,
@@ -38,6 +38,10 @@ public:
         midiSource = std::make_unique<TrackPlayerMidiSource> (track);
     }
 
+    void prepareToPlay (int samplesPerBlockExpected, double newSampleRate) override
+    {
+        setSampleRate (newSampleRate);
+    }
 
     void setSampleRate (double rate)
     {
@@ -52,20 +56,22 @@ public:
         playHead.setTickTimeMs (msPerTick);
     }
 
-    void audioDeviceCallback (juce::AudioBuffer<float>& bufferToFill)
+    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override
     {
         midiBuffer.clear();
 
-        const auto callbackDurationMs = (double) (bufferToFill.getNumSamples() / sampleRate) * 1000;
+        const auto callbackDurationMs = (double) (bufferToFill.numSamples / sampleRate) * 1000;
 
         if (callbackDurationMs != playHead.getDeviceCallbackDurationMs())
             playHead.setDeviceCallbackDurationMs (callbackDurationMs);
 
-        midiSource->fillNextMidiBuffer (playHead, midiBuffer, bufferToFill.getNumSamples());
+        midiSource->fillNextMidiBuffer (playHead, midiBuffer, bufferToFill.numSamples);
 
-        processor.processBlock (bufferToFill, midiBuffer);
+        processor.processBlock (*bufferToFill.buffer, midiBuffer);
+        playHead.advanceDeviceBuffer();
     }
 
+    void releaseResources() override {}
 
 private:
     enum struct PlayState

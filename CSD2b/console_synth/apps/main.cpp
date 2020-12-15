@@ -8,9 +8,8 @@
 #include <console_synth/format.h>
 #include <console_synth/utility.h>
 
+#include <console_synth/sequencer/sequencer.h>
 // ==============================================================
-
-
 
 
 int main()
@@ -31,6 +30,12 @@ int main()
     fmt::print ("press enter to exit... \n");
     std::cin.get();
      */
+
+    auto synth = SawSynthesizer { 4 };
+    auto sequencer = Sequencer { synth };
+    sequencer.setTempoBpm(100);
+
+    auto engine = AudioEngine { sequencer };
 
     for (;;)
     {
