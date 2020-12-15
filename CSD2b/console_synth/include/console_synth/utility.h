@@ -3,6 +3,8 @@
 
 #include <juce_events/juce_events.h>
 
+namespace details
+{
 // uses RAII to start and stop the message thread
 struct ScopedMessageThread
 {
@@ -11,4 +13,16 @@ struct ScopedMessageThread
 };
 
 #define SCOPE_ENABLE_MESSAGE_THREAD \
-    ScopedMessageThread smt
+    auto smt = details::ScopedMessageThread {}
+
+}  // namespace details
+
+
+template <typename T>
+inline constexpr T modulo (T dividend, const T divisor) noexcept
+{
+    while (dividend >= divisor)
+        dividend -= divisor;
+
+    return dividend;
+}
