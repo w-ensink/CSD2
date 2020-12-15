@@ -21,6 +21,7 @@ public:
     void setTickTimeMs (double tickTime)
     {
         tickTimeMs = tickTime;
+        timeSinceLastTickMs = tickTime;
     }
 
     void setDeviceCallbackDurationMs (double duration)
@@ -108,8 +109,7 @@ public:
         auto timePoint = -timeSinceLastTickMs;
         auto tick = currentTick;
 
-        if (timePoint < 0.0)
-            timePoint += tickTimeMs;
+        timePoint += tickTimeMs;
 
         while (timePoint < blockDurationMs)
         {
@@ -139,8 +139,7 @@ auto forEachTick (const PlayHead& playHead, Function&& function)
     auto currentTick = playHead.getCurrentTick();
     auto timePointMs = -playHead.getTimeSinceLastTickMs();
 
-    if (timePointMs < 0.0)
-        timePointMs += playHead.getTickTimeMs();
+    timePointMs += playHead.getTickTimeMs();
 
     while (timePointMs < playHead.getDeviceCallbackDurationMs())
     {
