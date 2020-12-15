@@ -101,27 +101,13 @@ TEST_CASE ("value tree test", "[value tree]")
 
 
 template <typename T>
-class Property : juce::ValueTree::Listener
+class Property final : private juce::ValueTree::Listener
 {
 public:
-    Property (juce::ValueTree& tree, juce::Identifier id, juce::UndoManager* undoManager)
-        : tree { tree }, identifier { std::move (id) }, undoManager { undoManager }
+    Property (juce::ValueTree& tree, juce::Identifier id, juce::UndoManager* undoManager, T initialValue = {})
+        : tree { tree }, identifier { std::move (id) }, undoManager { undoManager }, cachedValue { initialValue }
     {
         tree.addListener (this);
-    }
-
-    Property (juce::ValueTree& tree, const juce::Identifier& id, juce::UndoManager* undoManager, T initialValue)
-        : Property { tree, id, undoManager }, cachedValue { initialValue }
-    {
-    }
-
-    void valueTreePropertyChanged (juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property) override
-    {
-        if (treeWhosePropertyHasChanged == tree && property == identifier)
-        {
-            cachedValue = treeWhosePropertyHasChanged[identifier];
-            onChange (cachedValue);
-        }
     }
 
     Property& operator= (T newValue)
@@ -138,7 +124,7 @@ public:
     void setValue (T newValue)
     {
         cachedValue = newValue;
-        tree.setPropertyExcludingListener (this, identifier, newValue, undoManager);
+        tree.setPropertyExcludingListener (this, identifier, juce::VariantConverter<T>::toVar (newValue), undoManager);
     }
 
     [[nodiscard]] T getValue() const
@@ -152,8 +138,17 @@ private:
     juce::ValueTree tree;
     const juce::Identifier identifier;
     juce::UndoManager* undoManager {};
-
     T cachedValue;
+
+
+    void valueTreePropertyChanged (juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property) override
+    {
+        if (treeWhosePropertyHasChanged == tree && property == identifier)
+        {
+            cachedValue = juce::VariantConverter<T>::fromVar (treeWhosePropertyHasChanged[identifier]);
+            onChange (cachedValue);
+        }
+    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Property);
 };
@@ -196,4 +191,124 @@ TEST_CASE ("property")
     frequency = 7.0;
     CHECK_THAT (frequency.getValue(), Catch::Matchers::WithinAbs (7.0, 0.001));
     CHECK_THAT (callbackValue, Catch::Matchers::WithinAbs (5.0, 0.001));
+}
+
+// ========================================================================================
+// below a test that incorporates the whole project structure in a simple
+// example to verify that it will work as planned
+
+
+enum class SynthType
+{
+    sine,
+    square,
+    saw
+};
+
+
+template <>
+struct juce::VariantConverter<SynthType>
+{
+    static SynthType fromVar (const juce::var& value)
+    {
+        return static_cast<SynthType> ((int) value);
+    }
+
+    static juce::var toVar (SynthType type)
+    {
+        return static_cast<int> (type);
+    }
+};
+
+
+struct Synth
+{
+    explicit Synth (juce::ValueTree& tree, SynthType type) : type { type },
+                                                             state ("synth"),
+                                                             amplitude (state, "amplitude", nullptr, 0.0),
+                                                             frequency (state, "frequency", nullptr, 440)
+    {
+        tree.addChild (state, -1, nullptr);
+
+        frequency.onChange = [this] (auto freq) {
+            phaseDelta = freq / sampleRate;
+        };
+    }
+
+    SynthType type;
+    juce::ValueTree state;
+    Property<double> amplitude;
+    Property<double> frequency;
+    double phase = 0.0;
+    double sampleRate = 44100;
+    double phaseDelta = 0.0;
+};
+
+
+struct Engine
+{
+    explicit Engine (juce::ValueTree tree) : synthType { state, "synth_type", nullptr, SynthType::sine }
+    {
+        possibleSynths.push_back (std::make_unique<Synth> (state, SynthType::sine));
+        possibleSynths.push_back (std::make_unique<Synth> (state, SynthType::square));
+        possibleSynths.push_back (std::make_unique<Synth> (state, SynthType::saw));
+
+        tree.addChild (state, -1, nullptr);
+
+        synthType.onChange = [this] (auto type) {
+            state.removeChild (state.getChildWithName ("synth"), nullptr);
+
+            for (auto&& s : possibleSynths)
+                if (s->type == type)
+                    currentSynth = s.get();
+        };
+
+        currentSynth = possibleSynths[0].get();
+    }
+
+    juce::ValueTree state { "engine" };
+    Property<SynthType> synthType;
+    std::vector<std::unique_ptr<Synth>> possibleSynths {};
+    Synth* currentSynth = nullptr;
+};
+
+
+struct ConsoleInterface
+{
+    template <SynthType type>
+    void changeSynthTypeTo()
+    {
+        state.getChildWithName ("engine")
+            .setProperty ("synth_type", juce::VariantConverter<SynthType>::toVar (type), nullptr);
+    }
+
+    void setAmplitude (double amp) const
+    {
+        auto e = state.getChildWithName ("engine");
+
+        for (auto c : e)
+            if (c.hasType ("synth"))
+                c.setProperty ("amplitude", amp, nullptr);
+    }
+
+    juce::ValueTree state;
+};
+
+
+TEST_CASE ("general project structure")
+{
+    auto rootTree = juce::ValueTree { "root" };
+    auto engine = Engine { rootTree };
+    auto consoleInterface = ConsoleInterface { rootTree };
+
+    CHECK (engine.currentSynth->type == SynthType::sine);
+
+    // now when changing the synth type via the console interface, it should automatically sync with the engine
+    consoleInterface.changeSynthTypeTo<SynthType::saw>();
+
+    CHECK (engine.currentSynth->type == SynthType::saw);
+
+    consoleInterface.setAmplitude (10.0);
+
+    CHECK_THAT (((double) engine.currentSynth->amplitude), Catch::Matchers::WithinAbs (10.0, 0.001));
 }
