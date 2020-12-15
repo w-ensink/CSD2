@@ -40,7 +40,7 @@ add_unit_test(midi_message_queue_test midi_queue_test.cpp)
 add_unit_test(melody_generator_test melody_generator_test.cpp)
 add_unit_test(time_signature_test time_signature_test.cpp)
 add_unit_test(midi_output_device_creation_test midi_output_device_creation_test.cpp)
-add_unit_test(playhead_test playhead_test.cpp)
+add_unit_test(play_head_test play_head_test.cpp)
 add_unit_test(sequencer_test sequencer_test.cpp)
 
 add_unit_test(value_tree_test value_tree_test.cpp)

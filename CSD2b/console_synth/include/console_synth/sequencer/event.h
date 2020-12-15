@@ -27,7 +27,7 @@ struct Note
     uint64_t timeStampTicks;
     uint64_t lengthInTicks;
 
-    auto getSequencerEvents() const noexcept -> std::pair<Event, Event>
+    [[nodiscard]] auto getSequencerEvents() const noexcept -> std::pair<Event, Event>
     {
         return {
             Event {
@@ -47,10 +47,12 @@ struct Note
 
 struct Melody
 {
+    Melody() : timeSignature { 4, 4, 48 } {}
+
     std::vector<Note> notes;
     TimeSignature timeSignature;
 
-    std::vector<Event> getSequencerEvents() const
+    [[nodiscard]] std::vector<Event> getSequencerEvents() const
     {
         auto result = std::vector<Event> (notes.size() * 2);
 

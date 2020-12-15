@@ -1,7 +1,7 @@
 
 
 #include <catch2/catch_all.hpp>
-#include <console_synth/sequencer/playhead.h>
+#include <console_synth/sequencer/play_head.h>
 
 
 TEST_CASE ("play head start from 0")

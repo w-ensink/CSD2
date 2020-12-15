@@ -7,7 +7,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_templated.hpp>
 
-#include <console_synth/sequencer/playhead.h>
+#include <console_synth/sequencer/play_head.h>
 
 auto makeZeroedBufferOfSize (int size)
 {
