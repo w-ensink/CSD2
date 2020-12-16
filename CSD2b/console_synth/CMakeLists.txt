@@ -16,7 +16,8 @@ FetchContent_Declare(Juce
         GIT_TAG "df3b49fbd35655ed2530e77e005034d87987c765")
 
 FetchContent_Declare(Ctre
-        GIT_REPOSITORY https://github.com/hanickadot/compile-time-regular-expressions.git)
+        GIT_REPOSITORY "https://github.com/hanickadot/compile-time-regular-expressions.git"
+        GIT_TAG "9a37e550f1f2879b51582fba79a8bd7ba12cb5b0")
 
 # Make all fetched libraries available inside the CMake project
 FetchContent_MakeAvailable(Juce FmtLib Ctre)

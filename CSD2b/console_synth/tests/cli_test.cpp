@@ -1,21 +1,13 @@
 
-// Written by Wouter Ensink
-
-/*
-#include "../source/console_interface.h"
 #include <catch2/catch_all.hpp>
+#include <console_synth/console_interface/console_interface.h>
 
-// the cli works by providing commands with callbacks
-// the command handler is separate from the rest
 
-TEST_CASE ("CliTest", "Setup")
+TEST_CASE ("change tempo command")
 {
-    auto dispatcher = CommandDispatcher();
-    dispatcher.addCommandHandler ("freq", [] (juce::String cmd) {
-        REQUIRE (cmd == "freq");
-        return cmd;
-    });
+    auto handler = ChangeTempoCommand();
 
-    dispatcher.dispatch ("freq");
+    CHECK (handler.canHandleCommand ("tempo 100"));
+    CHECK (! handler.canHandleCommand ("temp 50"));
+    CHECK (! handler.canHandleCommand (" tempo 50"));
 }
- */

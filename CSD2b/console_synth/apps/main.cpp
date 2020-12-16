@@ -18,24 +18,12 @@ int main()
     // to enable midi and osc
     SCOPE_ENABLE_MESSAGE_THREAD;
 
-    /*
-    auto rootAudioSource = SawSynthesizer (4);
-    auto reverb = std::make_unique<Reverb>();
 
-    auto processorChain = ProcessorChain (rootAudioSource);
-    processorChain.addEffectToChain (std::move (reverb));
+    auto root = juce::ValueTree { "root" };
 
-    auto engine = AudioEngine (processorChain);
+    auto engine = Engine { root };
 
-    fmt::print ("press enter to exit... \n");
-    std::cin.get();
-     */
-
-    auto synth = SawSynthesizer { 4 };
-    auto sequencer = Sequencer { synth };
-    sequencer.setTempoBpm(100);
-
-    auto engine = AudioEngine { sequencer };
+    auto handler = ChangeTempoCommand {};
 
     for (;;)
     {
@@ -43,6 +31,13 @@ int main()
 
         if (isQuitCommand (input))
             break;
+
+        if (handler.canHandleCommand (input))
+        {
+            auto feedback = handler.handleCommand (engine, input);
+
+            fmt::print ("handled command {} with answer: {}\n", input, feedback);
+        }
 
         if (auto d = attemptSetMidiCommand (input))
             fmt::print ("setting midi device to {}\n", *d);

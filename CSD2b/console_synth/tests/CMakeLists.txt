@@ -25,6 +25,7 @@ function(add_unit_test NAME SOURCE)
             juce::juce_dsp
             juce::juce_audio_devices
             Catch2WithMain
+            ctre::ctre
             console_synth_lib)
 
     # set the executable output directory to ./bin from the project root

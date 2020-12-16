@@ -1,6 +1,7 @@
 
 
 #include <catch2/catch_all.hpp>
+#include <console_synth/property.h>
 #include <juce_data_structures/juce_data_structures.h>
 #include <utility>
 
@@ -98,60 +99,6 @@ TEST_CASE ("value tree test", "[value tree]")
         }
     }
 }
-
-
-template <typename T>
-class Property final : private juce::ValueTree::Listener
-{
-public:
-    Property (juce::ValueTree& tree, juce::Identifier id, juce::UndoManager* undoManager, T initialValue = {})
-        : tree { tree }, identifier { std::move (id) }, undoManager { undoManager }, cachedValue { initialValue }
-    {
-        tree.addListener (this);
-    }
-
-    Property& operator= (T newValue)
-    {
-        setValue (newValue);
-        return *this;
-    }
-
-    explicit operator T()
-    {
-        return cachedValue;
-    }
-
-    void setValue (T newValue)
-    {
-        cachedValue = newValue;
-        tree.setPropertyExcludingListener (this, identifier, juce::VariantConverter<T>::toVar (newValue), undoManager);
-    }
-
-    [[nodiscard]] T getValue() const
-    {
-        return cachedValue;
-    }
-
-    std::function<void (T)> onChange = [] (T) {};
-
-private:
-    juce::ValueTree tree;
-    const juce::Identifier identifier;
-    juce::UndoManager* undoManager {};
-    T cachedValue;
-
-
-    void valueTreePropertyChanged (juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property) override
-    {
-        if (treeWhosePropertyHasChanged == tree && property == identifier)
-        {
-            cachedValue = juce::VariantConverter<T>::fromVar (treeWhosePropertyHasChanged[identifier]);
-            onChange (cachedValue);
-        }
-    }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Property);
-};
 
 
 TEST_CASE ("property")
@@ -256,8 +203,6 @@ struct Engine
         tree.addChild (state, -1, nullptr);
 
         synthType.onChange = [this] (auto type) {
-            state.removeChild (state.getChildWithName ("synth"), nullptr);
-
             for (auto&& s : possibleSynths)
                 if (s->type == type)
                     currentSynth = s.get();
@@ -279,19 +224,18 @@ struct ConsoleInterface
     void changeSynthTypeTo()
     {
         state.getChildWithName ("engine")
-            .setProperty ("synth_type", juce::VariantConverter<SynthType>::toVar (type), nullptr);
+            .setProperty ("synth_type", juce::VariantConverter<SynthType>::toVar (type), &undoManager);
     }
 
     void setAmplitude (double amp) const
     {
-        auto e = state.getChildWithName ("engine");
-
-        for (auto c : e)
+        for (auto c : state.getChildWithName ("engine"))
             if (c.hasType ("synth"))
-                c.setProperty ("amplitude", amp, nullptr);
+                c.setProperty ("amplitude", amp, const_cast<juce::UndoManager*> (&undoManager));
     }
 
     juce::ValueTree state;
+    juce::UndoManager undoManager;
 };
 
 
@@ -311,4 +255,10 @@ TEST_CASE ("general project structure")
     consoleInterface.setAmplitude (10.0);
 
     CHECK_THAT (((double) engine.currentSynth->amplitude), Catch::Matchers::WithinAbs (10.0, 0.001));
+
+    consoleInterface.undoManager.undo();
+    CHECK_THAT (((double) engine.currentSynth->amplitude), Catch::Matchers::WithinAbs (0.0, 0.001));
+
+    consoleInterface.undoManager.undo();
+    CHECK (engine.currentSynth->type == SynthType::sine);
 }

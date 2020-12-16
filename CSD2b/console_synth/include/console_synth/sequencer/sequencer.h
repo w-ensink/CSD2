@@ -10,14 +10,16 @@
 
 #include <console_synth/audio/audio_processor_base.h>
 #include <console_synth/midi/midi_source.h>
+#include <console_synth/property.h>
 #include <console_synth/sequencer/play_head.h>
+#include <console_synth/sequencer/time_signature.h>
 #include <console_synth/sequencer/track.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 
 class Sequencer : public juce::AudioSource
 {
 public:
-    explicit Sequencer (AudioProcessorBase& processor) : processor { processor }
+    explicit Sequencer (AudioProcessorBase& processor, juce::ValueTree& parent) : processor { processor }
     {
         track.getMelody().notes.push_back (Note {
             .midiNoteNumber = 60,
@@ -36,6 +38,13 @@ public:
         playHead.setLooping (0, 48 * 2);
 
         midiSource = std::make_unique<TrackPlayerMidiSource> (track);
+        setTempoBpm (tempoBpm.getValue());
+
+        parent.addChild (sequencerState, -1, nullptr);
+
+        tempoBpm.onChange = [this] (auto newTempo) {
+            setTempoBpm (newTempo);
+        };
     }
 
     void prepareToPlay (int samplesPerBlockExpected, double newSampleRate) override
@@ -51,7 +60,7 @@ public:
 
     void setTempoBpm (double bpm)
     {
-        auto ticksPerMinute = bpm * ticksPerQuarterNote;
+        auto ticksPerMinute = bpm * timeSignature.getTicksPerQuarterNote();
         auto msPerTick = 60'000 / ticksPerMinute;
         playHead.setTickTimeMs (msPerTick);
     }
@@ -81,7 +90,9 @@ private:
         recording
     };
 
-    const uint64_t ticksPerQuarterNote = 48;
+    juce::ValueTree sequencerState { IDs::sequencer };
+    Property<double> tempoBpm { sequencerState, IDs::tempo, nullptr, 100 };
+    TimeSignature timeSignature { 4, 4, 48 };
     double sampleRate = 0;
     PlayHead playHead;
     PlayState playState = PlayState::stopped;
