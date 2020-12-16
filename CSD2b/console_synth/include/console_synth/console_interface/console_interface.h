@@ -17,6 +17,7 @@ std::optional<std::string_view> attemptSetMidiCommand (std::string_view s) noexc
     return std::nullopt;
 }
 
+// =================================================================================================
 
 struct CommandHandler
 {
@@ -26,10 +27,11 @@ struct CommandHandler
     [[nodiscard]] virtual std::string_view getHelpString() const noexcept = 0;
 };
 
+// =================================================================================================
 
-struct ChangeTempoCommand : public CommandHandler
+struct ChangeTempoCommandHandler : public CommandHandler
 {
-    ~ChangeTempoCommand() override = default;
+    ~ChangeTempoCommandHandler() override = default;
 
     bool canHandleCommand (std::string_view command) noexcept override
     {
@@ -52,21 +54,57 @@ private:
     static constexpr auto pattern = ctll::fixed_string { "^tempo\\s([0-9]+)$" };
 };
 
+// =================================================================================================
+
+struct ListAudioDevicesCommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto deviceNames = engine.getAvailableAudioDevices();
+
+        auto nameList = std::string { "\n" };
+
+        for (auto& name : deviceNames)
+            nameList += fmt::format (" - {}\n", name);
+
+        return nameList;
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "ls audio devices (gives list of all available audio devices)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^ls\\saudio\\sdevices$" };
+};
+
+// =================================================================================================
 
 struct ConsoleInterface
 {
-    explicit ConsoleInterface (Engine& engineToControl) : engine { engineToControl } {}
+    explicit ConsoleInterface (Engine& engineToControl) : engine { engineToControl }
+    {
+        commandHandlers.push_back (std::make_unique<ChangeTempoCommandHandler>());
+        commandHandlers.push_back (std::make_unique<ListAudioDevicesCommandHandler>());
+    }
 
-    void handleCommand (std::string_view command)
+    bool handleCommand (std::string_view command)
     {
         for (auto&& handler : commandHandlers)
         {
             if (handler->canHandleCommand (command))
             {
                 feedback = handler->handleCommand (engine, command);
-                return;
+                return true;
             }
         }
+        return false;
     }
 
     [[nodiscard]] std::string getCurrentFeedback() const
@@ -78,11 +116,10 @@ private:
     Engine& engine;
     std::string feedback { "type 'help' to see what's possible" };
 
-    std::vector<std::unique_ptr<CommandHandler>> commandHandlers {
-
-    };
+    std::vector<std::unique_ptr<CommandHandler>> commandHandlers {};
 };
 
+// =================================================================================================
 
 auto isQuitCommand (std::string_view s) noexcept
 {

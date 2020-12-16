@@ -23,7 +23,7 @@ int main()
 
     auto engine = Engine { root };
 
-    auto handler = ChangeTempoCommand {};
+    auto consoleInterface = ConsoleInterface { engine };
 
     for (;;)
     {
@@ -32,12 +32,8 @@ int main()
         if (isQuitCommand (input))
             break;
 
-        if (handler.canHandleCommand (input))
-        {
-            auto feedback = handler.handleCommand (engine, input);
-
-            fmt::print ("handled command {} with answer: {}\n", input, feedback);
-        }
+        if (consoleInterface.handleCommand (input))
+            fmt::print ("handled '{}': {}", input, consoleInterface.getCurrentFeedback());
 
         if (auto d = attemptSetMidiCommand (input))
             fmt::print ("setting midi device to {}\n", *d);

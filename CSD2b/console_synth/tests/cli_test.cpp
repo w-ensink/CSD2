@@ -5,7 +5,7 @@
 
 TEST_CASE ("change tempo command")
 {
-    auto handler = ChangeTempoCommand();
+    auto handler = ChangeTempoCommandHandler();
 
     CHECK (handler.canHandleCommand ("tempo 100"));
     CHECK (! handler.canHandleCommand ("temp 50"));
