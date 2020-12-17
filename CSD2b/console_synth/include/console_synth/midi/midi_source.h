@@ -4,7 +4,7 @@
 
 #include <console_synth/sequencer/play_head.h>
 #include <juce_audio_basics/juce_audio_basics.h>
-#include <console_synth/sequencer/track.h>
+#include <console_synth/sequencer/event.h>
 
 class MidiSource
 {
@@ -13,20 +13,19 @@ public:
 };
 
 
-
-class TrackPlayerMidiSource : public MidiSource
+class MelodyPlayerMidiSource : public MidiSource
 {
 public:
-    TrackPlayerMidiSource (Track& track) : track { track } {}
-
-    Track& getTrack() { return track; }
-    void setTrack (Track& track_) { track = track_; }
+    explicit MelodyPlayerMidiSource (Melody* melody) : melody { melody } {}
 
 
     void fillNextMidiBuffer (const PlayHead& playHead, juce::MidiBuffer& buffer, int numSamples) override
     {
+        if (melody == nullptr)
+            return;
+
         auto bufferDuration = playHead.getDeviceCallbackDurationMs();
-        auto&& events = track.getMelody().getSequencerEvents();
+        auto&& events = melody->getSequencerEvents();
 
         forEachTick (playHead, [&] (uint64_t tick, double timeStampRelativeToBuffer) {
             for (auto&& e : events)
@@ -46,5 +45,5 @@ public:
     }
 
 private:
-    Track& track;
+    Melody* melody;
 };

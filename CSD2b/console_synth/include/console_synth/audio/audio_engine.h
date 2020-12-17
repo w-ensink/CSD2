@@ -47,7 +47,7 @@ private:
 
     // for now the calling of prepare & release resources is in handled by sequencer (should move this around anyway)
     std::unique_ptr<AudioProcessorBase> rootProcessor { std::make_unique<SawSynthesizer>(4)};
-    Sequencer sequencer { *rootProcessor, engineState };
+    Sequencer sequencer { engineState };
     juce::AudioDeviceManager deviceManager {};
     AudioIODeviceCallback audioCallback { *this };
 };

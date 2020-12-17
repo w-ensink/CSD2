@@ -16,103 +16,16 @@
 #include <console_synth/sequencer/track.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 
-
-enum struct PlayState
-{
-    playing,
-    stopped,
-    recording
-};
-
-
-struct RenderContext final
-{
-public:
-    RenderContext (juce::AudioBuffer<float>& audioBuffer,
-                   const juce::MidiBuffer& externalMidi,
-                   const PlayHead& playHead,
-                   PlayState playState,
-                   double sampleRate,
-                   juce::Range<double> deviceStreamTimeSpanMs,
-                   const TimeSignature& timeSignature)
-        : destinationAudioBuffer { audioBuffer },
-          externalMidi { externalMidi },
-          playHead { playHead },
-          playState { playState },
-          sampleRate { sampleRate },
-          deviceStreamTimeSpan { deviceStreamTimeSpanMs },
-          timeSignature { timeSignature }
-    {
-    }
-
-    [[nodiscard]] const PlayHead& getPlayHead() const noexcept { return playHead; }
-
-    void addToAudioBuffer (int channel, int sample, float value)
-    {
-        destinationAudioBuffer.addSample (channel, sample, value);
-    }
-
-    [[nodiscard]] bool isRecording() const noexcept { return playState == PlayState::recording; }
-    [[nodiscard]] bool isPlaying() const noexcept { return playState == PlayState::playing; }
-    [[nodiscard]] bool isStopped() const noexcept { return playState == PlayState::stopped; }
-
-    [[nodiscard]] double getSampleRate() const noexcept { return sampleRate; }
-
-    [[nodiscard]] const juce::MidiBuffer& getExternalMidi() const noexcept { return externalMidi; }
-
-    juce::AudioBuffer<float>& getAudioBuffer() noexcept { return destinationAudioBuffer; }
-
-    [[nodiscard]] const TimeSignature& getTimeSignature() const noexcept { return timeSignature; }
-
-private:
-    juce::AudioBuffer<float>& destinationAudioBuffer;
-    const juce::MidiBuffer& externalMidi;
-    const PlayHead& playHead;
-    PlayState playState;
-    double sampleRate;
-    juce::Range<double> deviceStreamTimeSpan;
-    const TimeSignature& timeSignature;
-};
-
-
-namespace dev
-{
-struct Track
-{
-    void renderNextBlock (RenderContext& renderContext) {}
-
-    // has melody
-    // has processor chain
-    // has bool record enabled
-    // has a way to record external midi messages from the render context into the melody
-    // has a name
-};
-
-}  // namespace dev
+#include <console_synth/sequencer/render_context.h>
 
 
 class Sequencer : public juce::AudioSource
 {
 public:
-    explicit Sequencer (AudioProcessorBase& processor, juce::ValueTree& parent) : processor { processor }
+    explicit Sequencer (juce::ValueTree& parent)
     {
-        track.getMelody().notes.push_back (Note {
-            .midiNoteNumber = 60,
-            .velocity = 100,
-            .timeStampTicks = 0,
-            .lengthInTicks = 48,
-        });
-
-        track.getMelody().notes.push_back (Note {
-            .midiNoteNumber = 62,
-            .velocity = 100,
-            .timeStampTicks = 48,
-            .lengthInTicks = 48,
-        });
-
         playHead.setLooping (0, 48 * 2);
 
-        midiSource = std::make_unique<TrackPlayerMidiSource> (track);
         setTempoBpm (tempoBpm.getValue());
 
         parent.addChild (sequencerState, -1, nullptr);
@@ -125,6 +38,7 @@ public:
     void prepareToPlay (int samplesPerBlockExpected, double newSampleRate) override
     {
         setSampleRate (newSampleRate);
+        track.prepareToPlay (sampleRate, samplesPerBlockExpected);
     }
 
 
@@ -140,6 +54,7 @@ public:
         midiBuffer.clear();
 
         // fetch the incoming midi messages from external midi
+        //midiSource->fillNextMidiBuffer (playHead, midiBuffer, bufferToFill.numSamples);
 
         // prepare the render context for the current render pass
         auto renderContext = RenderContext {
@@ -153,8 +68,7 @@ public:
         };
 
         // render over all tracks...
-        midiSource->fillNextMidiBuffer (playHead, midiBuffer, bufferToFill.numSamples);
-        processor.processBlock (*bufferToFill.buffer, midiBuffer);
+        track.renderNextBlock (renderContext);
 
         // move play head one block ahead to prepare for the next callback
         playHead.advanceDeviceBuffer();
@@ -168,11 +82,10 @@ private:
     TimeSignature timeSignature { 4, 4, 48 };
     double sampleRate = 0;
     PlayHead playHead;
-    PlayState playState = PlayState::stopped;
+    PlayState playState = PlayState::playing;
     Track track;
     std::unique_ptr<MidiSource> midiSource;
     juce::MidiBuffer midiBuffer;
-    AudioProcessorBase& processor;
 
 
     void setTempoBpm (double bpm)
@@ -186,6 +99,5 @@ private:
     void setSampleRate (double rate)
     {
         sampleRate = rate;
-        processor.prepareToPlay (sampleRate, 512);
     }
 };

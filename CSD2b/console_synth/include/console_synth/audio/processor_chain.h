@@ -13,7 +13,7 @@ public:
     {
         rootInstrument.prepareToPlay (sampleRate, maximumExpectedSamplesPerBlock);
 
-        std::for_each (effects.begin(), effects.end(), [&] (auto e) {
+        std::for_each (effects.begin(), effects.end(), [&] (auto& e) {
             e->prepareToPlay (sampleRate, maximumExpectedSamplesPerBlock);
         });
     }
@@ -22,7 +22,7 @@ public:
     {
         rootInstrument.processBlock (buffer, midiMessages);
 
-        std::for_each (effects.begin(), effects.end(), [&] (auto e) {
+        std::for_each (effects.begin(), effects.end(), [&] (auto& e) {
             e->processBlock (buffer, midiMessages);
         });
     }
@@ -31,7 +31,7 @@ public:
     {
         rootInstrument.releaseResources();
 
-        std::for_each (effects.begin(), effects.end(), [&] (auto e) {
+        std::for_each (effects.begin(), effects.end(), [] (auto& e) {
             e->releaseResources();
         });
     }
