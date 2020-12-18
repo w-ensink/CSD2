@@ -20,9 +20,9 @@ public:
     OscillatorSynthesizerVoice()
     {
         auto envParams = juce::ADSR::Parameters {
-            .attack = 0.01,
-            .decay = 0.2,
-            .sustain = 0.1,
+            .attack = 0,
+            .decay = 0.5,
+            .sustain = 0.6,
             .release = 0.2
         };
 

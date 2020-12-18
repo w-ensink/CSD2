@@ -9,15 +9,15 @@
 #pragma once
 
 #include <console_synth/audio/audio_processor_base.h>
+#include <console_synth/identifiers.h>
 #include <console_synth/midi/midi_source.h>
 #include <console_synth/property.h>
 #include <console_synth/sequencer/play_head.h>
+#include <console_synth/sequencer/render_context.h>
 #include <console_synth/sequencer/time_signature.h>
 #include <console_synth/sequencer/track.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_devices/juce_audio_devices.h>
-#include <console_synth/sequencer/render_context.h>
-#include <console_synth/identifiers.h>
 
 
 class Sequencer : public juce::AudioSource
@@ -76,7 +76,8 @@ public:
         track.renderNextBlock (renderContext);
 
         // move play head one block ahead to prepare for the next callback
-        playHead.advanceDeviceBuffer();
+        if (playState != PlayState::stopped)
+            playHead.advanceDeviceBuffer();
     }
 
     void releaseResources() override
@@ -88,7 +89,7 @@ public:
     {
         for (auto& d : juce::MidiInput::getAvailableDevices())
         {
-            if (d.name == name)
+            if (d.name.equalsIgnoreCase (name))
             {
                 if (auto newInput = juce::MidiInput::openDevice (d.identifier, &midiMessageCollector))
                 {
@@ -105,13 +106,23 @@ public:
         return false;
     }
 
+    void stopPlayback()
+    {
+        playState = PlayState::stopped;
+    }
+
+    void startPlayback()
+    {
+        playState = PlayState::playing;
+    }
+
 private:
     juce::ValueTree sequencerState { IDs::sequencer };
     Property<double> tempoBpm { sequencerState, IDs::tempo, nullptr, 100 };
     TimeSignature timeSignature { 4, 4, 48 };
     double sampleRate = 0;
     PlayHead playHead;
-    PlayState playState = PlayState::playing;
+    PlayState playState = PlayState::stopped;
     Track track;
     juce::MidiMessageCollector midiMessageCollector;
     std::unique_ptr<juce::MidiInput> currentMidiInput = nullptr;

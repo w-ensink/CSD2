@@ -23,13 +23,13 @@ int main()
 
     for (;;)
     {
-        auto input = fetchUserInput (" -> ");
+        auto input = fetchUserInput (" --> ");
 
         if (isQuitCommand (input))
             break;
 
         if (consoleInterface.handleCommand (input))
-            fmt::print ("handled '{}': {}\n", input, consoleInterface.getCurrentFeedback());
+            fmt::print ("{}\n", consoleInterface.getCurrentFeedback());
 
         if (auto d = attemptSetMidiCommand (input))
             fmt::print ("setting midi device to {}\n", *d);

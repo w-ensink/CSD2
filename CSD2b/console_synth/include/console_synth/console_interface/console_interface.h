@@ -146,10 +146,60 @@ private:
 
 // =================================================================================================
 
+struct StopPlayback_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        engine.getSequencer().stopPlayback();
+        return "stopped playback";
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "stop (stops playback)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^stop$" };
+};
+
+// =================================================================================================
+
+struct StartPlayback_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        engine.getSequencer().startPlayback();
+        return "started playback";
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "start (start playback)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^start$" };
+};
+
+// =================================================================================================
+
 struct ConsoleInterface
 {
     explicit ConsoleInterface (Engine& engineToControl) : engine { engineToControl }
     {
+        commandHandlers.push_back (std::make_unique<StartPlayback_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<StopPlayback_CommandHandler>());
         commandHandlers.push_back (std::make_unique<ChangeTempoCommandHandler>());
         commandHandlers.push_back (std::make_unique<ListAudioDevicesCommandHandler>());
         commandHandlers.push_back (std::make_unique<ListMidiDevicesCommandHandler>());
