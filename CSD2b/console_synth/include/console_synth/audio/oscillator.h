@@ -4,7 +4,7 @@
 #pragma once
 
 #include <butterworth/Butterworth.h>
-#include <juce_audio_processors/juce_audio_processors.h>
+#include <array>
 
 template <typename T>
 inline constexpr T wrap (T dividend, const T divisor) noexcept
@@ -100,27 +100,27 @@ struct SquareWaveOscillator
 {
     SquareWaveOscillator() = default;
 
-    void setSampleRate (double rate)
+    void setSampleRate (double rate) noexcept
     {
         sampleRate = rate;
         recalculateDeltaPhase();
     }
 
-    void setFrequency (double freq)
+    void setFrequency (double freq) noexcept
     {
         frequency = freq;
         recalculateDeltaPhase();
     }
 
 
-    void advance()
+    void advance() noexcept
     {
         normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
         currentSample = normalizedPhase < 0.5 ? 1.0 : -1.0;
     }
 
 
-    float getSample()
+    [[nodiscard]] float getSample() const noexcept
     {
         return currentSample;
     }
@@ -140,37 +140,51 @@ protected:
 
 
 template <typename OscillatorType, int OversamplingIndex>
-struct AntiAliasedOscillator : private OscillatorType
+struct AntiAliasedOscillator : public OscillatorType
 {
 public:
     AntiAliasedOscillator() = default;
 
-    void setSampleRate (double rate)
+    void setSampleRate (double rate) noexcept
     {
         OscillatorType::setSampleRate (rate * OversamplingIndex);
         biquadCoefficients.reserve (4);
-        auto validFilter = Butterworth().loPass (rate * OversamplingIndex, rate / 2, 0, 8, biquadCoefficients, filterGain);
+        auto nyquist = rate / 2.0;
+        auto filterOrder = 8;
+        auto validFilter = Butterworth().loPass (rate * OversamplingIndex,
+                                                 nyquist,
+                                                 0,
+                                                 filterOrder,
+                                                 biquadCoefficients,
+                                                 filterGain);
         jassert (validFilter);
         butterworthFilter.resize (4);
     }
 
-    void setFrequency (double frequency)
+    void setFrequency (double frequency) noexcept
     {
         OscillatorType::setFrequency (frequency);
     }
 
-    void advance()
+    void advance() noexcept
     {
         for (auto i = 0; i < OversamplingIndex; ++i)
         {
             OscillatorType::advance();
-            signalBuffer[i] = OscillatorType::getSample() * filterGain;
+            signalBuffer[i] = OscillatorType::getSample();
         }
 
-        butterworthFilter.processBiquad (signalBuffer.data(), filteredSignalBuffer.data(), 1, OversamplingIndex, biquadCoefficients.data());
+        butterworthFilter.processBiquad (signalBuffer.data(),
+                                         filteredSignalBuffer.data(),
+                                         1,
+                                         OversamplingIndex,
+                                         biquadCoefficients.data());
+
+        for (auto& sample : filteredSignalBuffer)
+            sample *= filterGain;
     }
 
-    float getSample()
+    [[nodiscard]] float getSample() const noexcept
     {
         return filteredSignalBuffer[0];
     }

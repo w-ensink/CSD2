@@ -7,7 +7,6 @@
 #include <console_synth/sequencer/sequencer.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_devices/juce_audio_devices.h>
-#include <console_synth/audio/saw_synthesizer.h>
 
 class Engine : private juce::AudioSource
 {
@@ -23,11 +22,6 @@ public:
 
     ~Engine() override;
 
-    void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
-
-    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override;
-
-    void releaseResources() override;
 
     Sequencer& getSequencer() { return sequencer; }
 
@@ -46,10 +40,16 @@ private:
     juce::ValueTree engineState { IDs::engine };
 
     // for now the calling of prepare & release resources is in handled by sequencer (should move this around anyway)
-    std::unique_ptr<AudioProcessorBase> rootProcessor { std::make_unique<SawSynthesizer>(4)};
     Sequencer sequencer { engineState };
     juce::AudioDeviceManager deviceManager {};
     AudioIODeviceCallback audioCallback { *this };
+
+
+    void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
+
+    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override;
+
+    void releaseResources() override;
 };
 
 

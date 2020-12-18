@@ -2,7 +2,7 @@
 #pragma once
 
 #include <console_synth/audio/processor_chain.h>
-#include <console_synth/audio/saw_synthesizer.h>
+#include <console_synth/audio/synthesizer.h>
 #include <console_synth/midi/midi_source.h>
 #include <console_synth/sequencer/event.h>
 #include <console_synth/sequencer/render_context.h>
@@ -13,14 +13,14 @@ struct Track
     Track()
     {
         melody->notes.push_back (Note {
-            .midiNoteNumber = 60,
+            .midiNoteNumber = 60 + 36,
             .velocity = 100,
             .timeStampTicks = 0,
             .lengthInTicks = 48,
         });
 
         melody->notes.push_back (Note {
-            .midiNoteNumber = 62,
+            .midiNoteNumber = 62 + 36,
             .velocity = 100,
             .timeStampTicks = 48,
             .lengthInTicks = 48,
@@ -88,7 +88,7 @@ struct Track
     }
 
 private:
-    SawSynthesizer synth { 4 };
+    Synthesizer synth { 4 };
     ProcessorChain processorChain { synth };
     std::bitset<128> activeMidiNotes { 0 };
     std::unique_ptr<Melody> melody = std::make_unique<Melody>();
