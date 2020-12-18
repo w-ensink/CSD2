@@ -18,11 +18,7 @@ int main()
     // to enable midi and osc
     SCOPE_ENABLE_MESSAGE_THREAD;
 
-
-    auto root = juce::ValueTree { "root" };
-
-    auto engine = Engine { root };
-
+    auto engine = Engine {};
     auto consoleInterface = ConsoleInterface { engine };
 
     for (;;)
@@ -33,7 +29,7 @@ int main()
             break;
 
         if (consoleInterface.handleCommand (input))
-            fmt::print ("handled '{}': {}", input, consoleInterface.getCurrentFeedback());
+            fmt::print ("handled '{}': {}\n", input, consoleInterface.getCurrentFeedback());
 
         if (auto d = attemptSetMidiCommand (input))
             fmt::print ("setting midi device to {}\n", *d);

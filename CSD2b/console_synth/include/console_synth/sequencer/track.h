@@ -71,6 +71,7 @@ struct Track
         }
 
         processorChain.processBlock (renderContext.getAudioBuffer(), midiScratchBuffer);
+        previousPlayState = renderContext.getPlayState();
     }
 
     void addMidiOffMessagesForActiveMidiNotes()

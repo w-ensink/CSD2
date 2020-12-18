@@ -14,15 +14,15 @@ public:
 
 
 template <typename OscillatorType>
-class SynthesizerVoice : public juce::SynthesiserVoice
+class OscillatorSynthesizerVoice : public juce::SynthesiserVoice
 {
 public:
-    SynthesizerVoice()
+    OscillatorSynthesizerVoice()
     {
         auto envParams = juce::ADSR::Parameters {
             .attack = 0.01,
-            .decay = 0.5,
-            .sustain = 0.6,
+            .decay = 0.2,
+            .sustain = 0.1,
             .release = 0.2
         };
 
@@ -87,7 +87,7 @@ public:
     {
         for (auto i = 0; i < numVoices; ++i)
         {
-            auto* oscVoice = new SynthesizerVoice<AntiAliasedOscillator<SquareWaveOscillator, 8>>();
+            auto* oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SquareWaveOscillator>>();
             synthEngine.addVoice (oscVoice);
         }
 

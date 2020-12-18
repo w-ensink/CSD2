@@ -86,12 +86,74 @@ private:
 
 // =================================================================================================
 
+struct ListMidiDevicesCommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto deviceNames = Engine::getAvailableMidiDevices();
+
+        auto nameList = std::string { "\n" };
+
+        for (auto& name : deviceNames)
+            nameList += fmt::format (" - {}\n", name);
+
+        return nameList;
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "ls midi devices (gives a list of available midi input devices)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^ls\\smidi\\sdevices$" };
+};
+
+// =================================================================================================
+
+
+struct OpenMidiInputDevice_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto name = ctre::match<pattern> (command).get<1>().to_string();
+
+        if (engine.getSequencer().openMidiInputDevice (name))
+            return fmt::format ("Successfully opened midi input device '{}'", name);
+
+        return fmt::format ("Failed to open '{}'", name);
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "open midi <midi_input_name> (attemts to open midi input device)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^open\\smidi\\s([a-zA-Z0-9\\s]+)$" };
+};
+
+
+// =================================================================================================
+
 struct ConsoleInterface
 {
     explicit ConsoleInterface (Engine& engineToControl) : engine { engineToControl }
     {
         commandHandlers.push_back (std::make_unique<ChangeTempoCommandHandler>());
         commandHandlers.push_back (std::make_unique<ListAudioDevicesCommandHandler>());
+        commandHandlers.push_back (std::make_unique<ListMidiDevicesCommandHandler>());
+        commandHandlers.push_back (std::make_unique<OpenMidiInputDevice_CommandHandler>());
     }
 
     bool handleCommand (std::string_view command)

@@ -139,19 +139,21 @@ protected:
 };
 
 
-template <typename OscillatorType, int OversamplingIndex>
+template <typename OscillatorType, int OversamplingFactor = 16>
 struct AntiAliasedOscillator : public OscillatorType
 {
 public:
+    static_assert (OversamplingFactor % 2 == 0, "oversampling factor needs to be multiple of 2");
+
     AntiAliasedOscillator() = default;
 
     void setSampleRate (double rate) noexcept
     {
-        OscillatorType::setSampleRate (rate * OversamplingIndex);
-        biquadCoefficients.reserve (4);
         auto nyquist = rate / 2.0;
+        OscillatorType::setSampleRate (nyquist * OversamplingFactor);
+        biquadCoefficients.reserve (4);
         auto filterOrder = 8;
-        auto validFilter = Butterworth().loPass (rate * OversamplingIndex,
+        auto validFilter = Butterworth().loPass (nyquist * OversamplingFactor,
                                                  nyquist,
                                                  0,
                                                  filterOrder,
@@ -168,16 +170,17 @@ public:
 
     void advance() noexcept
     {
-        for (auto i = 0; i < OversamplingIndex; ++i)
+        for (auto i = 0; i < OversamplingFactor / 2; ++i)
         {
             OscillatorType::advance();
             signalBuffer[i] = OscillatorType::getSample();
         }
 
+        constexpr auto stride = 1;
         butterworthFilter.processBiquad (signalBuffer.data(),
                                          filteredSignalBuffer.data(),
-                                         1,
-                                         OversamplingIndex,
+                                         stride,
+                                         OversamplingFactor / 2,
                                          biquadCoefficients.data());
 
         for (auto& sample : filteredSignalBuffer)
@@ -190,8 +193,8 @@ public:
     }
 
 private:
-    std::array<float, OversamplingIndex> signalBuffer;
-    std::array<float, OversamplingIndex> filteredSignalBuffer;
+    std::array<float, OversamplingFactor / 2> signalBuffer;
+    std::array<float, OversamplingFactor / 2> filteredSignalBuffer;
     BiquadChain butterworthFilter;
     std::vector<Biquad> biquadCoefficients;
     double filterGain = 1.0;

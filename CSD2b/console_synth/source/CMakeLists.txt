@@ -14,7 +14,6 @@ target_link_libraries(console_synth_lib PRIVATE
         juce::juce_audio_devices
         juce::juce_audio_processors)
 
-
 target_include_directories(console_synth_lib PUBLIC "../include")
 
 target_compile_features(console_synth_lib PRIVATE cxx_std_17)

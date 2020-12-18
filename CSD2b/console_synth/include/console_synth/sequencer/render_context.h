@@ -56,6 +56,8 @@ public:
 
     [[nodiscard]] const TimeSignature& getTimeSignature() const noexcept { return timeSignature; }
 
+    [[nodiscard]] PlayState getPlayState() const noexcept { return playState; }
+
 private:
     juce::AudioBuffer<float>& destinationAudioBuffer;
     const juce::MidiBuffer& externalMidi;

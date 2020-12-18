@@ -15,8 +15,9 @@
 #include <console_synth/sequencer/time_signature.h>
 #include <console_synth/sequencer/track.h>
 #include <juce_audio_basics/juce_audio_basics.h>
-
+#include <juce_audio_devices/juce_audio_devices.h>
 #include <console_synth/sequencer/render_context.h>
+#include <console_synth/identifiers.h>
 
 
 class Sequencer : public juce::AudioSource
@@ -33,12 +34,16 @@ public:
         tempoBpm.onChange = [this] (auto newTempo) {
             setTempoBpm (newTempo);
         };
+
+
+        midiMessageCollector.ensureStorageAllocated (256);
     }
 
     void prepareToPlay (int samplesPerBlockExpected, double newSampleRate) override
     {
         setSampleRate (newSampleRate);
         track.prepareToPlay (sampleRate, samplesPerBlockExpected);
+        midiMessageCollector.reset (sampleRate);
     }
 
 
@@ -54,7 +59,7 @@ public:
         midiBuffer.clear();
 
         // fetch the incoming midi messages from external midi
-        //midiSource->fillNextMidiBuffer (playHead, midiBuffer, bufferToFill.numSamples);
+        midiMessageCollector.removeNextBlockOfMessages (midiBuffer, bufferToFill.numSamples);
 
         // prepare the render context for the current render pass
         auto renderContext = RenderContext {
@@ -74,7 +79,31 @@ public:
         playHead.advanceDeviceBuffer();
     }
 
-    void releaseResources() override {}
+    void releaseResources() override
+    {
+        track.releaseResources();
+    }
+
+    bool openMidiInputDevice (const juce::String& name)
+    {
+        for (auto& d : juce::MidiInput::getAvailableDevices())
+        {
+            if (d.name == name)
+            {
+                if (auto newInput = juce::MidiInput::openDevice (d.identifier, &midiMessageCollector))
+                {
+                    if (currentMidiInput != nullptr)
+                        currentMidiInput->stop();
+
+                    currentMidiInput = std::move (newInput);
+                    currentMidiInput->start();
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
 private:
     juce::ValueTree sequencerState { IDs::sequencer };
@@ -84,7 +113,8 @@ private:
     PlayHead playHead;
     PlayState playState = PlayState::playing;
     Track track;
-    std::unique_ptr<MidiSource> midiSource;
+    juce::MidiMessageCollector midiMessageCollector;
+    std::unique_ptr<juce::MidiInput> currentMidiInput = nullptr;
     juce::MidiBuffer midiBuffer;
 
 
