@@ -27,7 +27,7 @@
  
  */
 
-
+#pragma once
 #include <vector>
 #include <complex>
 

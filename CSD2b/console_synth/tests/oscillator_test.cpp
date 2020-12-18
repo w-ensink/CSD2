@@ -13,8 +13,8 @@ auto getDataDirectoryPath()
 TEST_CASE ("oversampling test")
 {
     auto sampleRate = 44'100.0;
-    auto frequency = 10'000.0;
-    auto duration = 200;  // samples
+    auto frequency = 10000.0;
+    auto duration = 100;  // samples
 
     auto squareOscillator = SquareWaveOscillator();
     squareOscillator.setSampleRate (sampleRate);
@@ -94,5 +94,36 @@ TEST_CASE ("oversampling test")
     for (auto& sample : buffer)
     {
         antiAliasedOutputStream.writeText (fmt::format ("{}\n", sample), false, false, nullptr);
+    }
+}
+
+
+TEST_CASE ("oversampling oscillator template class test")
+{
+    // anti aliased oscillator with 4x oversampling
+    auto overSamplingSquareOscillator = AntiAliasedOscillator<SquareWaveOscillator, 4>();
+
+    auto duration = 100;
+    auto buffer = std::vector<float> (duration);
+    auto sampleRate = 44100.0;
+    auto frequency = 10000;
+
+    overSamplingSquareOscillator.setSampleRate (sampleRate);
+    overSamplingSquareOscillator.setFrequency (frequency);
+
+    for (auto& sample : buffer)
+    {
+        overSamplingSquareOscillator.advance();
+        sample = overSamplingSquareOscillator.getSample();
+    }
+
+    auto outputFile = juce::File { fmt::format ("{}/square_templated_aa.csv", getDataDirectoryPath()) };
+    outputFile.deleteFile();
+
+    auto outputStream = juce::FileOutputStream { outputFile };
+
+    for (auto sample : buffer)
+    {
+        outputStream.writeText (fmt::format ("{}\n", sample), false, false, nullptr);
     }
 }

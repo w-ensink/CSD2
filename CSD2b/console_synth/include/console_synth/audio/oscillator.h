@@ -1,6 +1,9 @@
 
 // Written by Wouter Ensink
 
+#pragma once
+
+#include <butterworth/Butterworth.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 
 template <typename T>
@@ -103,7 +106,6 @@ struct SquareWaveOscillator
         recalculateDeltaPhase();
     }
 
-
     void setFrequency (double freq)
     {
         frequency = freq;
@@ -123,7 +125,7 @@ struct SquareWaveOscillator
         return currentSample;
     }
 
-private:
+protected:
     float currentSample = 1.0;
     double sampleRate = 0;
     double normalizedPhase = 0;
@@ -134,4 +136,49 @@ private:
     {
         deltaPhase = frequency / sampleRate;
     }
+};
+
+
+template <typename OscillatorType, int OversamplingIndex>
+struct AntiAliasedOscillator : private OscillatorType
+{
+public:
+    AntiAliasedOscillator() = default;
+
+    void setSampleRate (double rate)
+    {
+        OscillatorType::setSampleRate (rate * OversamplingIndex);
+        biquadCoefficients.reserve (4);
+        auto validFilter = Butterworth().loPass (rate * OversamplingIndex, rate / 2, 0, 8, biquadCoefficients, filterGain);
+        jassert (validFilter);
+        butterworthFilter.resize (4);
+    }
+
+    void setFrequency (double frequency)
+    {
+        OscillatorType::setFrequency (frequency);
+    }
+
+    void advance()
+    {
+        for (auto i = 0; i < OversamplingIndex; ++i)
+        {
+            OscillatorType::advance();
+            signalBuffer[i] = OscillatorType::getSample() * filterGain;
+        }
+
+        butterworthFilter.processBiquad (signalBuffer.data(), filteredSignalBuffer.data(), 1, OversamplingIndex, biquadCoefficients.data());
+    }
+
+    float getSample()
+    {
+        return filteredSignalBuffer[0];
+    }
+
+private:
+    std::array<float, OversamplingIndex> signalBuffer;
+    std::array<float, OversamplingIndex> filteredSignalBuffer;
+    BiquadChain butterworthFilter;
+    std::vector<Biquad> biquadCoefficients;
+    double filterGain = 1.0;
 };
