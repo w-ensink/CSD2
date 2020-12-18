@@ -25,6 +25,7 @@ FetchContent_MakeAvailable(Juce FmtLib Ctre)
 # give the target a name (same as project name now)
 set(TARGET_NAME ${PROJECT_NAME})
 
+add_subdirectory(external/butterworth)
 add_subdirectory(source)
 add_subdirectory(apps)
 

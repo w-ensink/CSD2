@@ -29,12 +29,15 @@ This project uses the following C++ libraries:
 - [{fmt}](https://github.com/fmtlib/fmt)
 - [CTRE](https://github.com/hanickadot/compile-time-regular-expressions)
 - [Catch2](https://github.com/catchorg/Catch2)
+- [Butterworth-Filter-Design](https://github.com/ruohoruotsi/Butterworth-Filter-Design)
 
 
-All of them will be fetched from github automatically during the build process.
+Almost all of them will be fetched from github automatically during the build process.
 There might be some warning generated during the compilation process. On macOS Big Sur, 
 all of them were related to JUCE's transition to CMake. None of them had any impact on the 
 final build.
+The Butterworth-Filter-Design library is included directly into the ```external``` directory, because it doesn't have CMake support by itself.
+To incorporate it into this project correctly I needed to do some extra CMake configuration to build it as a static library.
 
 ---
 ## Design

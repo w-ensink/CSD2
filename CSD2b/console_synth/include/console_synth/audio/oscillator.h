@@ -3,6 +3,15 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
+template <typename T>
+inline constexpr T wrap (T dividend, const T divisor) noexcept
+{
+    while (dividend >= divisor)
+        dividend -= divisor;
+
+    return dividend;
+}
+
 // a RenderPass is a unique token for a render cycle, it is used to
 // tell an oscillator which cycle it's in, this is essential for knowing if it needs to render
 // if the render pass the oscillator has saved is not the same as the render pass it's provided,
@@ -41,6 +50,7 @@ public:
         auto index0 = (int) std::floor (index);
         auto index1 = (int) std::ceil (index);
         auto sample0 = table[index0];
+        return 0.0;
     }
 
 private:
@@ -79,4 +89,49 @@ private:
 
 class FmRenderer
 {
+};
+
+
+// just produces naive square wave
+struct SquareWaveOscillator
+{
+    SquareWaveOscillator() = default;
+
+    void setSampleRate (double rate)
+    {
+        sampleRate = rate;
+        recalculateDeltaPhase();
+    }
+
+
+    void setFrequency (double freq)
+    {
+        frequency = freq;
+        recalculateDeltaPhase();
+    }
+
+
+    void advance()
+    {
+        normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
+        currentSample = normalizedPhase < 0.5 ? 1.0 : -1.0;
+    }
+
+
+    float getSample()
+    {
+        return currentSample;
+    }
+
+private:
+    float currentSample = 1.0;
+    double sampleRate = 0;
+    double normalizedPhase = 0;
+    double frequency = 0;
+    double deltaPhase = 0;
+
+    void recalculateDeltaPhase()
+    {
+        deltaPhase = frequency / sampleRate;
+    }
 };

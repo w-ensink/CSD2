@@ -7,6 +7,7 @@ add_library(console_synth_lib STATIC
         sequencer/time_signature.cpp)
 
 target_link_libraries(console_synth_lib PRIVATE
+        butterworth_filter
         fmt::fmt
         juce::juce_core
         juce::juce_audio_basics

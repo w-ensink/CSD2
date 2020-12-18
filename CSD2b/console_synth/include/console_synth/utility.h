@@ -18,11 +18,3 @@ struct ScopedMessageThread
 }  // namespace details
 
 
-template <typename T>
-inline constexpr T modulo (T dividend, const T divisor) noexcept
-{
-    while (dividend >= divisor)
-        dividend -= divisor;
-
-    return dividend;
-}

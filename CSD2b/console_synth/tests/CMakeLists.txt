@@ -26,7 +26,8 @@ function(add_unit_test NAME SOURCE)
             juce::juce_audio_devices
             Catch2WithMain
             ctre::ctre
-            console_synth_lib)
+            console_synth_lib
+            butterworth_filter)
 
     # set the executable output directory to ./bin from the project root
     set_target_properties(${NAME} PROPERTIES
@@ -43,5 +44,6 @@ add_unit_test(time_signature_test time_signature_test.cpp)
 add_unit_test(midi_output_device_creation_test midi_output_device_creation_test.cpp)
 add_unit_test(play_head_test play_head_test.cpp)
 add_unit_test(sequencer_test sequencer_test.cpp)
+add_unit_test(oscillator_test oscillator_test.cpp)
 
 add_unit_test(value_tree_test value_tree_test.cpp)
