@@ -165,8 +165,8 @@ TEST_CASE ("fm render test")
 {
     auto outputFile = juce::File { fmt::format ("{}/fm_dual_sine_render.csv", getDataDirectoryPath()) };
     auto fmOscillator = FmOscillator<SineWaveOscillator, SineWaveOscillator>();
-    fmOscillator.setRatio (2.0);
-    fmOscillator.setModulationIndex (1);
+    fmOscillator.setRatios ({ 2.0 });
+    fmOscillator.setModulationIndices ({ 1 });
 
     auto renderSpec = RenderSpec {
         .numSamples = 1000,
@@ -175,4 +175,21 @@ TEST_CASE ("fm render test")
     };
 
     makeOscillatorRender (fmOscillator, outputFile, renderSpec);
+}
+
+TEST_CASE ("multi fm render test")
+{
+    auto outputFile = juce::File { fmt::format ("{}/fm_quad_sine_render.csv", getDataDirectoryPath()) };
+    auto oscillator = FmOscillator<SineWaveOscillator, SineWaveOscillator, SineWaveOscillator, SineWaveOscillator>();
+
+    oscillator.setRatios ({ 0.5, 2.0, 4.0 });
+    oscillator.setModulationIndices ({ 1.0, 1.0, 1.0 });
+
+    auto renderSpec = RenderSpec {
+        .numSamples = 1000,
+        .sampleRate = 44100.0,
+        .frequency = 500
+    };
+
+    makeOscillatorRender (oscillator, outputFile, renderSpec);
 }

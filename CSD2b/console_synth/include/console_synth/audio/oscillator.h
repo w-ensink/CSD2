@@ -6,6 +6,9 @@
 #include <array>
 #include <butterworth/Butterworth.h>
 #include <juce_core/juce_core.h>
+#include <tuple>
+
+// ===================================================================================================
 
 template <typename T>
 inline constexpr T wrap (T dividend, const T divisor) noexcept
@@ -15,6 +18,8 @@ inline constexpr T wrap (T dividend, const T divisor) noexcept
 
     return dividend;
 }
+
+// ===================================================================================================
 
 // should represent one cycle of a waveform
 class WaveTable
@@ -34,24 +39,23 @@ private:
     std::vector<float> table;
 };
 
+// ===================================================================================================
 
 template <typename CarrierType, typename ModulatorType>
-struct FmOscillator
+struct AmOscillator
 {
-public:
-    FmOscillator() = default;
-    ~FmOscillator() = default;
+    AmOscillator() = default;
+    ~AmOscillator() = default;
 
     void setRatio (double newRatio)
     {
         ratio = newRatio;
     }
 
-    void setSampleRate (double newRate)
+    void setSampleRate (double rate)
     {
-        sampleRate = newRate;
-        carrier.setSampleRate (sampleRate);
-        modulator.setSampleRate (sampleRate);
+        carrier.setSampleRate (rate);
+        modulator.setSampleRate (rate);
     }
 
     void setModulationIndex (double index)
@@ -59,24 +63,96 @@ public:
         modulationIndex = index;
     }
 
-    void setFrequency (double freq)
+private:
+    CarrierType carrier;
+    ModulatorType modulator;
+    double ratio = 1.0;
+    double modulationIndex = 1.0;
+};
+
+// ===================================================================================================
+
+
+namespace details
+{
+template <typename Tuple, typename Functor, size_t Index = 0>
+inline constexpr auto forEachTupleItem (Tuple& tuple, Functor&& function) noexcept
+{
+    function (std::get<Index> (tuple), Index);
+
+    if constexpr (Index + 1 < std::tuple_size_v<Tuple>)
+        forEachTupleItem<Tuple, Functor, Index + 1> (tuple, std::forward<Functor> (function));
+}
+}  // namespace details
+
+
+// FM oscillator with multiple modulating oscillators
+template <typename CarrierType, typename... ModulatorTypes>
+struct FmOscillator
+{
+    void setRatio (int modulator, double ratio)
     {
-        frequency = freq;
-        carrier.setFrequency (freq);
-        modulator.setFrequency (freq * ratio);
+        ratios[modulator] = ratio;
+    }
+
+    void setRatios (const std::array<double, sizeof...(ModulatorTypes)>& newRatios)
+    {
+        ratios = newRatios;
+    }
+
+    void setModulationIndex (int modulator, double modIndex)
+    {
+        modulationIndices[modulator] = modIndex;
+    }
+
+    void setModulationIndices (const std::array<double, sizeof...(ModulatorTypes)>& indices)
+    {
+        modulationIndices = indices;
+    }
+
+    constexpr auto getNumModulators() noexcept
+    {
+        return sizeof...(ModulatorTypes);
     }
 
     void advance()
     {
-        modulator.advance();
-        carrier.setFrequency (frequency + modulator.getSample() * (modulationIndex * frequency * ratio));
+        auto carrierFreq = frequency;
+
+        details::forEachTupleItem (modulators, [this, &carrierFreq] (auto& modulator, auto index) {
+            modulator.advance();
+            carrierFreq += modulator.getSample() * frequency * ratios[index] * modulationIndices[index];
+        });
+
+        carrier.setFrequency (carrierFreq);
         carrier.advance();
         currentSample = carrier.getSample();
     }
 
-    [[nodiscard]] float getSample() const noexcept
+    void setFrequency (double freq)
     {
-        return currentSample;
+        frequency = freq;
+
+        details::forEachTupleItem (modulators, [this] (auto& modulator, auto index) {
+            modulator.setFrequency (ratios[index] * frequency);
+        });
+
+        carrier.setFrequency (frequency);
+    }
+
+    void setSampleRate (double rate)
+    {
+        details::forEachTupleItem (modulators, [rate] (auto& modulator, auto index) {
+            modulator.setSampleRate (rate);
+        });
+
+        carrier.setSampleRate (rate);
+    }
+
+    template <size_t ModIndex>
+    auto& getModulator()
+    {
+        return std::get<ModIndex> (modulators);
     }
 
     auto& getCarrier()
@@ -84,21 +160,18 @@ public:
         return carrier;
     }
 
-    auto& getModulator()
-    {
-        return modulator;
-    }
+    [[nodiscard]] float getSample() const noexcept { return currentSample; }
 
 private:
     CarrierType carrier;
-    ModulatorType modulator;
-    double ratio = 0.5;
-    double modulationIndex = 0.5;
-    double sampleRate = 0;
+    std::tuple<ModulatorTypes...> modulators;
+    std::array<double, sizeof...(ModulatorTypes)> ratios;
+    std::array<double, sizeof...(ModulatorTypes)> modulationIndices;
     double frequency = 0;
-    float currentSample = 0.0f;
+    float currentSample = 0.0;
 };
 
+// ===================================================================================================
 
 struct SineWaveOscillator
 {
@@ -141,11 +214,12 @@ private:
     }
 };
 
-
+// ===================================================================================================
 // just produces naive square wave
 struct SquareWaveOscillator
 {
     SquareWaveOscillator() = default;
+    ~SquareWaveOscillator() = default;
 
     void setSampleRate (double rate) noexcept
     {
@@ -183,6 +257,50 @@ protected:
     }
 };
 
+// ===================================================================================================
+
+struct SawWaveOscillator
+{
+    SawWaveOscillator() = default;
+    ~SawWaveOscillator() = default;
+
+    void setSampleRate (double rate) noexcept
+    {
+        sampleRate = rate;
+        recalculateDeltaPhase();
+    }
+
+    void setFrequency (double freq) noexcept
+    {
+        frequency = freq;
+        recalculateDeltaPhase();
+    }
+
+    void advance() noexcept
+    {
+        normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
+        currentSample = (float) ((normalizedPhase * 2.0) - 1.0);
+    }
+
+    [[nodiscard]] float getSample() const noexcept
+    {
+        return currentSample;
+    }
+
+protected:
+    float currentSample = 1.0;
+    double sampleRate = 0;
+    double normalizedPhase = 0;
+    double frequency = 0;
+    double deltaPhase = 0;
+
+    void recalculateDeltaPhase()
+    {
+        deltaPhase = frequency / sampleRate;
+    }
+};
+
+// ===================================================================================================
 
 template <typename OscillatorType, int OversamplingFactor = 8>
 struct AntiAliasedOscillator : public OscillatorType
@@ -241,3 +359,15 @@ private:
     std::vector<Biquad> biquadCoefficients;
     double filterGain = 1.0;
 };
+
+// ===================================================================================================
+
+/*
+template <typename OscillatorType>
+struct OscillatorController {
+    juce::StringArray getAvailableParameters()
+    {
+
+    }
+};
+ */

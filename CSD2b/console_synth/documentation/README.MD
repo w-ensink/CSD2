@@ -40,10 +40,45 @@ The Butterworth-Filter-Design library is included directly into the ```external`
 To incorporate it into this project correctly I needed to do some extra CMake configuration to build it as a static library.
 
 ---
-## Design
+## Oscillator Design
+The oscillator library I made is heavily templated. This makes it really modular,
+while giving the compiler a lot to work with. The library is centered around one 
+simple interface that should be the same for any oscillator. The main reason to make 
+the oscillators compile time polymorphic, is performance. Since for any oscillator the 
+advance() method gets called for every new sample, the overhead of virtual dispatch can be pretty high. 
+With the compiler knowing the entire flow at compile time, it can inline anything it wants and therefore 
+do way more optimisation.
 
-The general design consists of the following parts:
-- Audio Playback (including synths)
-- Sequencer (which takes a sequence and generates midi messages)
-- Melody Generator
-- Console Interface
+There are a couple of primitive naive oscillator (square, saw, sine, triangle, noise, pulse...),
+that can then be wrapped inside a higher level 'shell' to add functionality. 
+
+```cpp
+// simple, naive square wave oscillator (with heavy aliasing)
+auto osc = SquareWaveOscillator();
+
+// anti aliased square wave oscillator with 8x oversampling
+auto osc = AntiAliasedOscillator<SquareWaveOscillator, 8>();
+
+// fm oscillator with sine carrier and saw modulator
+auto osc = FmOscillator<SineWaveOscillator, SawWaveOscillator>();
+
+// anti aliased Fm oscillator (8x oversampling) with sine carrier, one triangle modulator 
+// and one anti aliased square modulator with 4x oversampling
+auto osc = AntiAliasedOscillator<FmOscillator<SineWaveOscillator,
+                                              TriangleWaveOscillator,
+                                              AntiAliasedOscillator<SquareWaveOscillator, 4>>, 8>();
+                                                  
+```
+
+The types of primitives currently available are:
+* SineWaveOscillator
+* SawWaveOscillator
+* SquareWaveOscillator
+* NoiseOscillator
+* TriangleWaveOscillator
+
+The types of 'shells' currently available are:
+* AntiAliasedOscillator
+* FmOscillator
+* AmOscillator
+* RmOscillator

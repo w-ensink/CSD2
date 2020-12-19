@@ -71,6 +71,12 @@ public:
         return oscillator;
     }
 
+    // oscillator controller will be a templated class,
+    // with partial specialization for each different type of oscillator
+    auto getOscillatorController()
+    {
+    }
+
 private:
     OscillatorType oscillator;
     juce::ADSR envelope;
@@ -92,9 +98,19 @@ public:
         for (auto i = 0; i < numVoices; ++i)
         {
             //auto* oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SquareWaveOscillator>>();
-            auto* oscVoice = new OscillatorSynthesizerVoice<FmOscillator<SineWaveOscillator, SineWaveOscillator>>();
-            oscVoice->getOscillator().setModulationIndex(4.0);
-            oscVoice->getOscillator().setRatio(0.5);
+            //auto* oscVoice = new OscillatorSynthesizerVoice<FmOscillator<SineWaveOscillator, SineWaveOscillator>>();
+            //auto oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SineWaveOscillator>>();
+
+            auto* oscVoice = new OscillatorSynthesizerVoice<
+                AntiAliasedOscillator<
+                    FmOscillator<AntiAliasedOscillator<SawWaveOscillator, 8>,
+                                 SineWaveOscillator,
+                                 SineWaveOscillator,
+                                 SineWaveOscillator>, 4>>();
+
+            oscVoice->getOscillator().setRatios ({ 0.5, 2.0, 4.0 });
+            oscVoice->getOscillator().setModulationIndices ({ 1.0, 1.0, 1.0 });
+
             synthEngine.addVoice (oscVoice);
         }
 
