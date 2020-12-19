@@ -9,14 +9,14 @@ auto getDataDirectoryPath()
 {
     return fmt::format ("{}/tests/data", std::filesystem::current_path().parent_path().parent_path().string());
 }
-
+/*
 TEST_CASE ("oversampling test")
 {
     auto sampleRate = 44'100.0;
     auto frequency = 10000.0;
     auto duration = 100;  // samples
 
-    auto squareOscillator = SquareWaveOscillator();
+    auto squareOscillator = SquareWaveOscillator<float>();
     squareOscillator.setSampleRate (sampleRate);
     squareOscillator.setFrequency (frequency);
 
@@ -101,7 +101,7 @@ TEST_CASE ("oversampling test")
 TEST_CASE ("oversampling oscillator template class test")
 {
     // anti aliased oscillator with 4x oversampling
-    auto overSamplingSquareOscillator = AntiAliasedOscillator<SquareWaveOscillator, 4>();
+    auto overSamplingSquareOscillator = AntiAliasedOscillator<float, SquareWaveOscillator, 4>();
 
     auto duration = 100;
     auto buffer = std::vector<float> (duration);
@@ -159,12 +159,12 @@ void makeOscillatorRender (OscillatorType& oscillator, const juce::File& outputF
         outputStream.writeText (fmt::format ("{}\n", sample), false, false, nullptr);
     }
 }
-
-
+*/
+/*
 TEST_CASE ("fm render test")
 {
     auto outputFile = juce::File { fmt::format ("{}/fm_dual_sine_render.csv", getDataDirectoryPath()) };
-    auto fmOscillator = FmOscillator<SineWaveOscillator, SineWaveOscillator>();
+    auto fmOscillator = FmOscillator<SineWaveOscillator<float>, SineWaveOscillator<float>>();
     fmOscillator.setRatios ({ 2.0 });
     fmOscillator.setModulationIndices ({ 1 });
 
@@ -192,4 +192,21 @@ TEST_CASE ("multi fm render test")
     };
 
     makeOscillatorRender (oscillator, outputFile, renderSpec);
+}*/
+
+
+TEST_CASE ("heavy templated")
+{
+
+}
+
+void lol()
+{
+
+
+    auto b = FmOsc<float,
+                   SineOsc<float>::type,
+                   AAOsc<float, SquareOsc>::type>();
+
+    auto c = AAOsc<float, FmOsc<float, SineOsc, SquareOsc>::type>();
 }

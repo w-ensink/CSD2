@@ -100,18 +100,13 @@ public:
             //auto* oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SquareWaveOscillator>>();
             //auto* oscVoice = new OscillatorSynthesizerVoice<FmOscillator<SineWaveOscillator, SineWaveOscillator>>();
             //auto oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SineWaveOscillator>>();
+/*
+            auto* oscVoice = new OscillatorSynthesizerVoice<RmOscillator<float, SineWaveOscillator, SineWaveOscillator, SineWaveOscillator>>();
 
-            auto* oscVoice = new OscillatorSynthesizerVoice<
-                AntiAliasedOscillator<
-                    FmOscillator<AntiAliasedOscillator<SawWaveOscillator, 8>,
-                                 SineWaveOscillator,
-                                 SineWaveOscillator,
-                                 SineWaveOscillator>, 4>>();
+            oscVoice->getOscillator().setRatios ({ 0.25, 0.5 });
+            oscVoice->getOscillator().setModulationIndices ({ 1.0, 1.0 });
 
-            oscVoice->getOscillator().setRatios ({ 0.5, 2.0, 4.0 });
-            oscVoice->getOscillator().setModulationIndices ({ 1.0, 1.0, 1.0 });
-
-            synthEngine.addVoice (oscVoice);
+            synthEngine.addVoice (oscVoice);*/
         }
 
         synthEngine.addSound (new GeneralSynthesizerVoice());

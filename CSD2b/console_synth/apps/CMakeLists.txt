@@ -5,6 +5,8 @@ juce_add_console_app(${TARGET_NAME} PRODUCT_NAME synth VERSION 1.0)
 # add source code to the target
 target_sources(${TARGET_NAME} PRIVATE main.cpp)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+
 # set the used C++ standard to C++17
 target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 

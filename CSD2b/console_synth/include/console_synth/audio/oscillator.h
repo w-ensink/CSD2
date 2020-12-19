@@ -10,17 +10,6 @@
 
 // ===================================================================================================
 
-template <typename T>
-inline constexpr T wrap (T dividend, const T divisor) noexcept
-{
-    while (dividend >= divisor)
-        dividend -= divisor;
-
-    return dividend;
-}
-
-// ===================================================================================================
-
 // should represent one cycle of a waveform
 class WaveTable
 {
@@ -39,35 +28,119 @@ private:
     std::vector<float> table;
 };
 
+
 // ===================================================================================================
 
-template <typename CarrierType, typename ModulatorType>
-struct AmOscillator
+template <typename T>
+inline constexpr T wrap (T dividend, const T divisor) noexcept
 {
-    AmOscillator() = default;
-    ~AmOscillator() = default;
+    while (dividend >= divisor)
+        dividend -= divisor;
 
-    void setRatio (double newRatio)
+    return dividend;
+}
+
+
+template <typename FloatType>
+struct PrimitiveOscillatorBase
+{
+    void setSampleRate (double rate) noexcept
     {
-        ratio = newRatio;
+        sampleRate = rate;
+        recalculateDeltaPhase();
     }
 
-    void setSampleRate (double rate)
+    void setFrequency (double freq) noexcept
     {
-        carrier.setSampleRate (rate);
-        modulator.setSampleRate (rate);
+        frequency = freq;
+        recalculateDeltaPhase();
     }
 
-    void setModulationIndex (double index)
+
+    [[nodiscard]] FloatType getSample() const noexcept
     {
-        modulationIndex = index;
+        return currentSample;
+    }
+
+protected:
+    FloatType currentSample = 1.0;
+    double sampleRate = 0;
+    double normalizedPhase = 0;
+    double frequency = 0;
+    double deltaPhase = 0;
+
+    void recalculateDeltaPhase()
+    {
+        deltaPhase = frequency / sampleRate;
+    }
+
+    void advancePhase() noexcept
+    {
+        normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
+    }
+};
+
+
+// ===================================================================================================
+template <typename FloatType>
+struct SineOsc : public PrimitiveOscillatorBase<FloatType>
+{
+    SineOsc() = default;
+    ~SineOsc() = default;
+
+    template <typename T>
+    using type = SineOsc<T>;
+
+
+    void advance() noexcept
+    {
+        Base::advancePhase();
+        Base::currentSample = (FloatType) std::sin (Base::normalizedPhase * juce::MathConstants<double>::twoPi);
     }
 
 private:
-    CarrierType carrier;
-    ModulatorType modulator;
-    double ratio = 1.0;
-    double modulationIndex = 1.0;
+    using Base = PrimitiveOscillatorBase<FloatType>;
+};
+
+// ===================================================================================================
+// just produces naive square wave
+template <typename FloatType>
+struct SquareOsc : public PrimitiveOscillatorBase<FloatType>
+{
+    SquareOsc() = default;
+    ~SquareOsc() = default;
+
+    template <typename T>
+    using type = SquareOsc<T>;
+
+    void advance() noexcept
+    {
+        Base::advancePhase();
+        Base::currentSample = Base::normalizedPhase < 0.5 ? 1.0 : -1.0;
+    }
+
+private:
+    using Base = PrimitiveOscillatorBase<FloatType>;
+};
+// ===================================================================================================
+
+template <typename FloatType>
+struct SawOsc : public PrimitiveOscillatorBase<FloatType>
+{
+    SawOsc() = default;
+    ~SawOsc() = default;
+
+    template <typename T>
+    using type = SawOsc<T>;
+
+    void advance() noexcept
+    {
+        Base::advancePhase();
+        Base::currentSample = (FloatType) ((Base::normalizedPhase * 2.0) - 1.0);
+    }
+
+private:
+    using Base = PrimitiveOscillatorBase<FloatType>;
 };
 
 // ===================================================================================================
@@ -83,12 +156,16 @@ inline constexpr auto forEachTupleItem (Tuple& tuple, Functor&& function) noexce
     if constexpr (Index + 1 < std::tuple_size_v<Tuple>)
         forEachTupleItem<Tuple, Functor, Index + 1> (tuple, std::forward<Functor> (function));
 }
+
 }  // namespace details
 
 
-// FM oscillator with multiple modulating oscillators
-template <typename CarrierType, typename... ModulatorTypes>
-struct FmOscillator
+// ===================================================================================================
+
+template <typename FloatType,
+          template <typename> typename CarrierType,
+          template <typename> typename... ModulatorTypes>
+struct ModulationOscillatorBase
 {
     void setRatio (int modulator, double ratio)
     {
@@ -113,20 +190,6 @@ struct FmOscillator
     constexpr auto getNumModulators() noexcept
     {
         return sizeof...(ModulatorTypes);
-    }
-
-    void advance()
-    {
-        auto carrierFreq = frequency;
-
-        details::forEachTupleItem (modulators, [this, &carrierFreq] (auto& modulator, auto index) {
-            modulator.advance();
-            carrierFreq += modulator.getSample() * frequency * ratios[index] * modulationIndices[index];
-        });
-
-        carrier.setFrequency (carrierFreq);
-        carrier.advance();
-        currentSample = carrier.getSample();
     }
 
     void setFrequency (double freq)
@@ -155,16 +218,13 @@ struct FmOscillator
         return std::get<ModIndex> (modulators);
     }
 
-    auto& getCarrier()
-    {
-        return carrier;
-    }
+    auto& getCarrier() { return carrier; }
 
-    [[nodiscard]] float getSample() const noexcept { return currentSample; }
+    [[nodiscard]] FloatType getSample() const noexcept { return currentSample; }
 
-private:
-    CarrierType carrier;
-    std::tuple<ModulatorTypes...> modulators;
+protected:
+    CarrierType<FloatType> carrier;
+    std::tuple<ModulatorTypes<FloatType>...> modulators;
     std::array<double, sizeof...(ModulatorTypes)> ratios;
     std::array<double, sizeof...(ModulatorTypes)> modulationIndices;
     double frequency = 0;
@@ -173,135 +233,130 @@ private:
 
 // ===================================================================================================
 
-struct SineWaveOscillator
+template <typename FloatType,
+          template <typename> typename CarrierType,
+          template <typename> typename... ModulatorTypes>
+struct FmOsc : public ModulationOscillatorBase<FloatType, CarrierType, ModulatorTypes...>
 {
-    SineWaveOscillator() = default;
-    ~SineWaveOscillator() = default;
-
-    void setSampleRate (double rate) noexcept
-    {
-        sampleRate = rate;
-        recalculateDeltaPhase();
-    }
-
-    void setFrequency (double freq) noexcept
-    {
-        frequency = freq;
-        recalculateDeltaPhase();
-    }
+    template <typename T>
+    using type = FmOsc<T, CarrierType, ModulatorTypes...>;
 
     void advance() noexcept
     {
-        normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
-        currentSample = (float) std::sin (normalizedPhase * juce::MathConstants<double>::twoPi);
-    }
+        auto carrierFreq = Base::frequency;
 
-    [[nodiscard]] float getSample() const noexcept
-    {
-        return currentSample;
+        details::forEachTupleItem (Base::modulators, [this, &carrierFreq] (auto& modulator, auto index) {
+            modulator.advance();
+            carrierFreq += modulator.getSample() * Base::frequency * Base::ratios[index] * Base::modulationIndices[index];
+        });
+
+        Base::carrier.setFrequency (carrierFreq);
+        Base::carrier.advance();
+        Base::currentSample = Base::carrier.getSample();
     }
 
 private:
-    float currentSample = 1.0;
-    double sampleRate = 0;
-    double normalizedPhase = 0;
-    double frequency = 0;
-    double deltaPhase = 0;
-
-    void recalculateDeltaPhase()
-    {
-        deltaPhase = frequency / sampleRate;
-    }
+    using Base = ModulationOscillatorBase<FloatType, CarrierType, ModulatorTypes...>;
 };
 
 // ===================================================================================================
-// just produces naive square wave
-struct SquareWaveOscillator
+// with ring modulation, the modulation indices are used for scaling the amplitude of the modulator
+template <typename FloatType,
+          template <typename> typename CarrierType,
+          template <typename> typename... ModulatorTypes>
+struct RmOsc : public ModulationOscillatorBase<FloatType, CarrierType, ModulatorTypes...>
 {
-    SquareWaveOscillator() = default;
-    ~SquareWaveOscillator() = default;
+    template <typename T>
+    using type = RmOsc<T, CarrierType, ModulatorTypes...>;
+
+    void advance() noexcept
+    {
+        Base::carrier.advance();
+        auto sample = Base::carrier.getSample();
+
+        details::forEachTupleItem (Base::modulators, [this, &sample] (auto& modulator, auto index) {
+            modulator.advance();
+            sample *= (modulator.getSample() * Base::modulationIndices[index]);
+        });
+
+        Base::currentSample = sample;
+    }
+
+private:
+    using Base = ModulationOscillatorBase<FloatType, CarrierType, ModulatorTypes...>;
+};
+
+// ===================================================================================================
+
+template <typename FloatType,
+          template <typename> typename OscillatorType,
+          int OversamplingFactor = 8>
+struct AAOsc : public OscillatorType<FloatType>
+{
+public:
+    AAOsc() = default;
+    ~AAOsc() = default;
+
+    template <typename T>
+    using type = AAOsc<T, OscillatorType, OversamplingFactor>;
+
 
     void setSampleRate (double rate) noexcept
     {
-        sampleRate = rate;
-        recalculateDeltaPhase();
+        Base::setSampleRate (rate * OversamplingFactor);
+        biquadCoefficients.reserve (4);
+        auto filterOrder = 8;
+        auto validFilter = Butterworth().loPass (rate * OversamplingFactor,
+                                                 20'000,
+                                                 0,
+                                                 filterOrder,
+                                                 biquadCoefficients,
+                                                 filterGain);
+        jassert (validFilter);
+        butterworthFilter.resize (4);
     }
 
-    void setFrequency (double freq) noexcept
+    void setFrequency (double frequency) noexcept
     {
-        frequency = freq;
-        recalculateDeltaPhase();
+        Base::setFrequency (frequency);
     }
 
     void advance() noexcept
     {
-        normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
-        currentSample = normalizedPhase < 0.5 ? 1.0 : -1.0;
+        for (auto i = 0; i < OversamplingFactor; ++i)
+        {
+            Base::advance();
+            signalBuffer[i] = Base::getSample();
+        }
+
+        constexpr auto stride = 1;
+        butterworthFilter.processBiquad (signalBuffer.data(),
+                                         filteredSignalBuffer.data(),
+                                         stride,
+                                         OversamplingFactor,
+                                         biquadCoefficients.data());
+
+        for (auto& sample : filteredSignalBuffer)
+            sample *= filterGain;
     }
 
     [[nodiscard]] float getSample() const noexcept
     {
-        return currentSample;
+        return filteredSignalBuffer[0];
     }
 
-protected:
-    float currentSample = 1.0;
-    double sampleRate = 0;
-    double normalizedPhase = 0;
-    double frequency = 0;
-    double deltaPhase = 0;
+private:
+    std::array<float, OversamplingFactor> signalBuffer;
+    std::array<float, OversamplingFactor> filteredSignalBuffer;
+    BiquadChain butterworthFilter;
+    std::vector<Biquad> biquadCoefficients;
+    double filterGain = 1.0;
 
-    void recalculateDeltaPhase()
-    {
-        deltaPhase = frequency / sampleRate;
-    }
+    using Base = OscillatorType<FloatType>;
 };
 
 // ===================================================================================================
-
-struct SawWaveOscillator
-{
-    SawWaveOscillator() = default;
-    ~SawWaveOscillator() = default;
-
-    void setSampleRate (double rate) noexcept
-    {
-        sampleRate = rate;
-        recalculateDeltaPhase();
-    }
-
-    void setFrequency (double freq) noexcept
-    {
-        frequency = freq;
-        recalculateDeltaPhase();
-    }
-
-    void advance() noexcept
-    {
-        normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
-        currentSample = (float) ((normalizedPhase * 2.0) - 1.0);
-    }
-
-    [[nodiscard]] float getSample() const noexcept
-    {
-        return currentSample;
-    }
-
-protected:
-    float currentSample = 1.0;
-    double sampleRate = 0;
-    double normalizedPhase = 0;
-    double frequency = 0;
-    double deltaPhase = 0;
-
-    void recalculateDeltaPhase()
-    {
-        deltaPhase = frequency / sampleRate;
-    }
-};
-
-// ===================================================================================================
-
+/*
 template <typename OscillatorType, int OversamplingFactor = 8>
 struct AntiAliasedOscillator : public OscillatorType
 {
@@ -359,7 +414,7 @@ private:
     std::vector<Biquad> biquadCoefficients;
     double filterGain = 1.0;
 };
-
+*/
 // ===================================================================================================
 
 /*
