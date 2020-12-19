@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <butterworth/Butterworth.h>
 #include <array>
+#include <butterworth/Butterworth.h>
+#include <juce_core/juce_core.h>
 
 template <typename T>
 inline constexpr T wrap (T dividend, const T divisor) noexcept
@@ -14,33 +15,6 @@ inline constexpr T wrap (T dividend, const T divisor) noexcept
 
     return dividend;
 }
-
-// a RenderPass is a unique token for a render cycle, it is used to
-// tell an oscillator which cycle it's in, this is essential for knowing if it needs to render
-// if the render pass the oscillator has saved is not the same as the render pass it's provided,
-// the oscillator needs to render a new sample, this system makes FM with feedback possible (I hope)
-struct RenderPass
-{
-public:
-    RenderPass() : uniquePassId (globalPassId)
-    {
-        globalPassId += 1;
-    }
-
-    RenderPass (const RenderPass& other) = default;
-
-    RenderPass& operator= (const RenderPass& other) = default;
-
-    [[nodiscard]] bool operator== (const RenderPass& other) const noexcept
-    {
-        return uniquePassId == other.uniquePassId;
-    }
-
-private:
-    inline static uint64_t globalPassId;
-    uint64_t uniquePassId;
-};
-
 
 // should represent one cycle of a waveform
 class WaveTable
@@ -61,37 +35,110 @@ private:
 };
 
 
-template <typename SampleType>
-class Oscillator
+template <typename CarrierType, typename ModulatorType>
+struct FmOscillator
 {
 public:
-    SampleType getSample (const RenderPass& renderPass) const
-    {
-        if (renderPass == lastProcessedRenderPass)
-            return cachedSample;
+    FmOscillator() = default;
+    ~FmOscillator() = default;
 
-        cachedSample = renderNextSample();
-        return cachedSample;
+    void setRatio (double newRatio)
+    {
+        ratio = newRatio;
     }
 
-    void setFrequency (double newFrequency)
+    void setSampleRate (double newRate)
     {
+        sampleRate = newRate;
+        carrier.setSampleRate (sampleRate);
+        modulator.setSampleRate (sampleRate);
+    }
+
+    void setModulationIndex (double index)
+    {
+        modulationIndex = index;
+    }
+
+    void setFrequency (double freq)
+    {
+        frequency = freq;
+        carrier.setFrequency (freq);
+        modulator.setFrequency (freq * ratio);
+    }
+
+    void advance()
+    {
+        modulator.advance();
+        carrier.setFrequency (frequency + modulator.getSample() * (modulationIndex * frequency * ratio));
+        carrier.advance();
+        currentSample = carrier.getSample();
+    }
+
+    [[nodiscard]] float getSample() const noexcept
+    {
+        return currentSample;
+    }
+
+    auto& getCarrier()
+    {
+        return carrier;
+    }
+
+    auto& getModulator()
+    {
+        return modulator;
     }
 
 private:
-    RenderPass lastProcessedRenderPass;
-    SampleType cachedSample;
-
-
-    // renders next sample and advances the oscillator
-    SampleType renderNextSample() noexcept
-    {
-    }
+    CarrierType carrier;
+    ModulatorType modulator;
+    double ratio = 0.5;
+    double modulationIndex = 0.5;
+    double sampleRate = 0;
+    double frequency = 0;
+    float currentSample = 0.0f;
 };
 
 
-class FmRenderer
+struct SineWaveOscillator
 {
+    SineWaveOscillator() = default;
+    ~SineWaveOscillator() = default;
+
+    void setSampleRate (double rate) noexcept
+    {
+        sampleRate = rate;
+        recalculateDeltaPhase();
+    }
+
+    void setFrequency (double freq) noexcept
+    {
+        frequency = freq;
+        recalculateDeltaPhase();
+    }
+
+    void advance() noexcept
+    {
+        normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
+        currentSample = (float) std::sin (normalizedPhase * juce::MathConstants<double>::twoPi);
+    }
+
+    [[nodiscard]] float getSample() const noexcept
+    {
+        return currentSample;
+    }
+
+private:
+    float currentSample = 1.0;
+    double sampleRate = 0;
+    double normalizedPhase = 0;
+    double frequency = 0;
+    double deltaPhase = 0;
+
+    void recalculateDeltaPhase()
+    {
+        deltaPhase = frequency / sampleRate;
+    }
 };
 
 
@@ -112,13 +159,11 @@ struct SquareWaveOscillator
         recalculateDeltaPhase();
     }
 
-
     void advance() noexcept
     {
         normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
         currentSample = normalizedPhase < 0.5 ? 1.0 : -1.0;
     }
-
 
     [[nodiscard]] float getSample() const noexcept
     {
@@ -139,22 +184,19 @@ protected:
 };
 
 
-template <typename OscillatorType, int OversamplingFactor = 16>
+template <typename OscillatorType, int OversamplingFactor = 8>
 struct AntiAliasedOscillator : public OscillatorType
 {
 public:
-    static_assert (OversamplingFactor % 2 == 0, "oversampling factor needs to be multiple of 2");
-
     AntiAliasedOscillator() = default;
 
     void setSampleRate (double rate) noexcept
     {
-        auto nyquist = rate / 2.0;
-        OscillatorType::setSampleRate (nyquist * OversamplingFactor);
+        OscillatorType::setSampleRate (rate * OversamplingFactor);
         biquadCoefficients.reserve (4);
         auto filterOrder = 8;
-        auto validFilter = Butterworth().loPass (nyquist * OversamplingFactor,
-                                                 nyquist,
+        auto validFilter = Butterworth().loPass (rate * OversamplingFactor,
+                                                 20'000,
                                                  0,
                                                  filterOrder,
                                                  biquadCoefficients,
@@ -170,7 +212,7 @@ public:
 
     void advance() noexcept
     {
-        for (auto i = 0; i < OversamplingFactor / 2; ++i)
+        for (auto i = 0; i < OversamplingFactor; ++i)
         {
             OscillatorType::advance();
             signalBuffer[i] = OscillatorType::getSample();
@@ -180,7 +222,7 @@ public:
         butterworthFilter.processBiquad (signalBuffer.data(),
                                          filteredSignalBuffer.data(),
                                          stride,
-                                         OversamplingFactor / 2,
+                                         OversamplingFactor,
                                          biquadCoefficients.data());
 
         for (auto& sample : filteredSignalBuffer)
@@ -193,8 +235,8 @@ public:
     }
 
 private:
-    std::array<float, OversamplingFactor / 2> signalBuffer;
-    std::array<float, OversamplingFactor / 2> filteredSignalBuffer;
+    std::array<float, OversamplingFactor> signalBuffer;
+    std::array<float, OversamplingFactor> filteredSignalBuffer;
     BiquadChain butterworthFilter;
     std::vector<Biquad> biquadCoefficients;
     double filterGain = 1.0;

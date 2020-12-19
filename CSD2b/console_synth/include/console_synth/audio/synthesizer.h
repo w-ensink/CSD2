@@ -20,9 +20,9 @@ public:
     OscillatorSynthesizerVoice()
     {
         auto envParams = juce::ADSR::Parameters {
-            .attack = 0,
+            .attack = 0.001,
             .decay = 0.5,
-            .sustain = 0.6,
+            .sustain = 0.4,
             .release = 0.2
         };
 
@@ -66,6 +66,10 @@ public:
     void controllerMoved (int controllerNumber, int newControllerValue) override {}
     void pitchWheelMoved (int newPitchWheelValue) override {}
 
+    auto& getOscillator()
+    {
+        return oscillator;
+    }
 
 private:
     OscillatorType oscillator;
@@ -87,7 +91,10 @@ public:
     {
         for (auto i = 0; i < numVoices; ++i)
         {
-            auto* oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SquareWaveOscillator>>();
+            //auto* oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SquareWaveOscillator>>();
+            auto* oscVoice = new OscillatorSynthesizerVoice<FmOscillator<SineWaveOscillator, SineWaveOscillator>>();
+            oscVoice->getOscillator().setModulationIndex(4.0);
+            oscVoice->getOscillator().setRatio(0.5);
             synthEngine.addVoice (oscVoice);
         }
 

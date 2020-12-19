@@ -127,3 +127,52 @@ TEST_CASE ("oversampling oscillator template class test")
         outputStream.writeText (fmt::format ("{}\n", sample), false, false, nullptr);
     }
 }
+
+
+struct RenderSpec
+{
+    int numSamples;
+    double sampleRate;
+    double frequency;
+};
+
+
+template <typename OscillatorType>
+void makeOscillatorRender (OscillatorType& oscillator, const juce::File& outputFile, const RenderSpec& spec)
+{
+    outputFile.deleteFile();
+    auto outputStream = juce::FileOutputStream { outputFile };
+
+    oscillator.setSampleRate (spec.sampleRate);
+    oscillator.setFrequency (spec.frequency);
+
+    auto buffer = std::vector<float> (spec.numSamples);
+
+    for (auto& sample : buffer)
+    {
+        oscillator.advance();
+        sample = oscillator.getSample();
+    }
+
+    for (auto sample : buffer)
+    {
+        outputStream.writeText (fmt::format ("{}\n", sample), false, false, nullptr);
+    }
+}
+
+
+TEST_CASE ("fm render test")
+{
+    auto outputFile = juce::File { fmt::format ("{}/fm_dual_sine_render.csv", getDataDirectoryPath()) };
+    auto fmOscillator = FmOscillator<SineWaveOscillator, SineWaveOscillator>();
+    fmOscillator.setRatio (2.0);
+    fmOscillator.setModulationIndex (1);
+
+    auto renderSpec = RenderSpec {
+        .numSamples = 1000,
+        .sampleRate = 44100.0,
+        .frequency = 500
+    };
+
+    makeOscillatorRender (fmOscillator, outputFile, renderSpec);
+}
