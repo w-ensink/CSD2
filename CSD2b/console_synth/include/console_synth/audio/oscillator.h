@@ -31,6 +31,20 @@ private:
 
 // ===================================================================================================
 
+
+namespace details
+{
+
+template <typename Tuple, typename Functor, size_t Index = 0>
+inline constexpr auto forEachTupleItem (Tuple& tuple, Functor&& function) noexcept
+{
+    function (std::get<Index> (tuple), Index);
+
+    if constexpr (Index + 1 < std::tuple_size_v<Tuple>)
+        forEachTupleItem<Tuple, Functor, Index + 1> (tuple, std::forward<Functor> (function));
+}
+
+
 template <typename T>
 inline constexpr T wrap (T dividend, const T divisor) noexcept
 {
@@ -40,10 +54,19 @@ inline constexpr T wrap (T dividend, const T divisor) noexcept
     return dividend;
 }
 
+}  // namespace details
+
+
+// ===================================================================================================
+
 
 template <typename FloatType>
 struct PrimitiveOscillatorBase
 {
+    using float_type = FloatType;
+
+    static_assert (std::is_floating_point_v<float_type>, "oscillator requires a floating point type");
+
     void setSampleRate (double rate) noexcept
     {
         sampleRate = rate;
@@ -76,8 +99,10 @@ protected:
 
     void advancePhase() noexcept
     {
-        normalizedPhase = wrap (normalizedPhase + deltaPhase, 1.0);
+        normalizedPhase = details::wrap (normalizedPhase + deltaPhase, 1.0);
     }
+
+    PrimitiveOscillatorBase() = default;
 };
 
 
@@ -87,10 +112,6 @@ struct SineOsc : public PrimitiveOscillatorBase<FloatType>
 {
     SineOsc() = default;
     ~SineOsc() = default;
-
-    template <typename T>
-    using type = SineOsc<T>;
-
 
     void advance() noexcept
     {
@@ -110,9 +131,6 @@ struct SquareOsc : public PrimitiveOscillatorBase<FloatType>
     SquareOsc() = default;
     ~SquareOsc() = default;
 
-    template <typename T>
-    using type = SquareOsc<T>;
-
     void advance() noexcept
     {
         Base::advancePhase();
@@ -130,9 +148,6 @@ struct SawOsc : public PrimitiveOscillatorBase<FloatType>
     SawOsc() = default;
     ~SawOsc() = default;
 
-    template <typename T>
-    using type = SawOsc<T>;
-
     void advance() noexcept
     {
         Base::advancePhase();
@@ -143,30 +158,18 @@ private:
     using Base = PrimitiveOscillatorBase<FloatType>;
 };
 
-// ===================================================================================================
-
-
-namespace details
-{
-template <typename Tuple, typename Functor, size_t Index = 0>
-inline constexpr auto forEachTupleItem (Tuple& tuple, Functor&& function) noexcept
-{
-    function (std::get<Index> (tuple), Index);
-
-    if constexpr (Index + 1 < std::tuple_size_v<Tuple>)
-        forEachTupleItem<Tuple, Functor, Index + 1> (tuple, std::forward<Functor> (function));
-}
-
-}  // namespace details
-
 
 // ===================================================================================================
 
-template <typename FloatType,
-          template <typename> typename CarrierType,
-          template <typename> typename... ModulatorTypes>
+template <typename CarrierType,
+          typename... ModulatorTypes>
 struct ModulationOscillatorBase
 {
+    static_assert ((std::is_same_v<typename CarrierType::float_type, typename ModulatorTypes::float_type> && ...),
+                   "all oscillator float types must match");
+
+    using float_type = typename CarrierType::float_type;
+
     void setRatio (int modulator, double ratio)
     {
         ratios[modulator] = ratio;
@@ -220,27 +223,24 @@ struct ModulationOscillatorBase
 
     auto& getCarrier() { return carrier; }
 
-    [[nodiscard]] FloatType getSample() const noexcept { return currentSample; }
+    [[nodiscard]] float_type getSample() const noexcept { return currentSample; }
 
 protected:
-    CarrierType<FloatType> carrier;
-    std::tuple<ModulatorTypes<FloatType>...> modulators;
+    CarrierType carrier;
+    std::tuple<ModulatorTypes...> modulators;
     std::array<double, sizeof...(ModulatorTypes)> ratios;
     std::array<double, sizeof...(ModulatorTypes)> modulationIndices;
     double frequency = 0;
-    float currentSample = 0.0;
+    float_type currentSample = 0.0;
+
+    ModulationOscillatorBase() = default;
 };
 
 // ===================================================================================================
 
-template <typename FloatType,
-          template <typename> typename CarrierType,
-          template <typename> typename... ModulatorTypes>
-struct FmOsc : public ModulationOscillatorBase<FloatType, CarrierType, ModulatorTypes...>
+template <typename CarrierType, typename... ModulatorTypes>
+struct FmOsc : public ModulationOscillatorBase<CarrierType, ModulatorTypes...>
 {
-    template <typename T>
-    using type = FmOsc<T, CarrierType, ModulatorTypes...>;
-
     void advance() noexcept
     {
         auto carrierFreq = Base::frequency;
@@ -256,19 +256,14 @@ struct FmOsc : public ModulationOscillatorBase<FloatType, CarrierType, Modulator
     }
 
 private:
-    using Base = ModulationOscillatorBase<FloatType, CarrierType, ModulatorTypes...>;
+    using Base = ModulationOscillatorBase<CarrierType, ModulatorTypes...>;
 };
 
 // ===================================================================================================
 // with ring modulation, the modulation indices are used for scaling the amplitude of the modulator
-template <typename FloatType,
-          template <typename> typename CarrierType,
-          template <typename> typename... ModulatorTypes>
-struct RmOsc : public ModulationOscillatorBase<FloatType, CarrierType, ModulatorTypes...>
+template <typename CarrierType, typename... ModulatorTypes>
+struct RmOsc : public ModulationOscillatorBase<CarrierType, ModulatorTypes...>
 {
-    template <typename T>
-    using type = RmOsc<T, CarrierType, ModulatorTypes...>;
-
     void advance() noexcept
     {
         Base::carrier.advance();
@@ -283,22 +278,19 @@ struct RmOsc : public ModulationOscillatorBase<FloatType, CarrierType, Modulator
     }
 
 private:
-    using Base = ModulationOscillatorBase<FloatType, CarrierType, ModulatorTypes...>;
+    using Base = ModulationOscillatorBase<CarrierType, ModulatorTypes...>;
 };
 
 // ===================================================================================================
 
-template <typename FloatType,
-          template <typename> typename OscillatorType,
-          int OversamplingFactor = 8>
-struct AAOsc : public OscillatorType<FloatType>
+template <typename OscillatorType, int OversamplingFactor = 8>
+struct AntiAliased : public OscillatorType
 {
 public:
-    AAOsc() = default;
-    ~AAOsc() = default;
+    AntiAliased() = default;
+    ~AntiAliased() = default;
 
-    template <typename T>
-    using type = AAOsc<T, OscillatorType, OversamplingFactor>;
+    using float_type = typename OscillatorType::float_type;
 
 
     void setSampleRate (double rate) noexcept
@@ -346,83 +338,13 @@ public:
     }
 
 private:
-    std::array<float, OversamplingFactor> signalBuffer;
-    std::array<float, OversamplingFactor> filteredSignalBuffer;
+    std::array<float_type, OversamplingFactor> signalBuffer;
+    std::array<float_type, OversamplingFactor> filteredSignalBuffer;
     BiquadChain butterworthFilter;
     std::vector<Biquad> biquadCoefficients;
     double filterGain = 1.0;
 
-    using Base = OscillatorType<FloatType>;
+    using Base = OscillatorType;
 };
 
 // ===================================================================================================
-/*
-template <typename OscillatorType, int OversamplingFactor = 8>
-struct AntiAliasedOscillator : public OscillatorType
-{
-public:
-    AntiAliasedOscillator() = default;
-
-    void setSampleRate (double rate) noexcept
-    {
-        OscillatorType::setSampleRate (rate * OversamplingFactor);
-        biquadCoefficients.reserve (4);
-        auto filterOrder = 8;
-        auto validFilter = Butterworth().loPass (rate * OversamplingFactor,
-                                                 20'000,
-                                                 0,
-                                                 filterOrder,
-                                                 biquadCoefficients,
-                                                 filterGain);
-        jassert (validFilter);
-        butterworthFilter.resize (4);
-    }
-
-    void setFrequency (double frequency) noexcept
-    {
-        OscillatorType::setFrequency (frequency);
-    }
-
-    void advance() noexcept
-    {
-        for (auto i = 0; i < OversamplingFactor; ++i)
-        {
-            OscillatorType::advance();
-            signalBuffer[i] = OscillatorType::getSample();
-        }
-
-        constexpr auto stride = 1;
-        butterworthFilter.processBiquad (signalBuffer.data(),
-                                         filteredSignalBuffer.data(),
-                                         stride,
-                                         OversamplingFactor,
-                                         biquadCoefficients.data());
-
-        for (auto& sample : filteredSignalBuffer)
-            sample *= filterGain;
-    }
-
-    [[nodiscard]] float getSample() const noexcept
-    {
-        return filteredSignalBuffer[0];
-    }
-
-private:
-    std::array<float, OversamplingFactor> signalBuffer;
-    std::array<float, OversamplingFactor> filteredSignalBuffer;
-    BiquadChain butterworthFilter;
-    std::vector<Biquad> biquadCoefficients;
-    double filterGain = 1.0;
-};
-*/
-// ===================================================================================================
-
-/*
-template <typename OscillatorType>
-struct OscillatorController {
-    juce::StringArray getAvailableParameters()
-    {
-
-    }
-};
- */

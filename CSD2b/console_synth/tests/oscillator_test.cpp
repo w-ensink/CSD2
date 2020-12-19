@@ -204,9 +204,6 @@ void lol()
 {
 
 
-    auto b = FmOsc<float,
-                   SineOsc<float>::type,
-                   AAOsc<float, SquareOsc>::type>();
+    auto b = FmOsc<SineOsc<float>, AntiAliased<SquareOsc<float>>>();
 
-    auto c = AAOsc<float, FmOsc<float, SineOsc, SquareOsc>::type>();
 }
