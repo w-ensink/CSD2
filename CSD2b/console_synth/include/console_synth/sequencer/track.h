@@ -89,7 +89,7 @@ struct Track
     }
 
 private:
-    Synthesizer synth { 4 };
+    FmSynthesizer synth { 4 };
     ProcessorChain processorChain { synth };
     std::bitset<128> activeMidiNotes { 0 };
     std::unique_ptr<Melody> melody = std::make_unique<Melody>();

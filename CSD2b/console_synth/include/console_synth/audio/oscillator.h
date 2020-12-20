@@ -34,7 +34,6 @@ private:
 
 namespace details
 {
-
 template <typename Tuple, typename Functor, size_t Index = 0>
 inline constexpr auto forEachTupleItem (Tuple& tuple, Functor&& function) noexcept
 {
@@ -161,8 +160,7 @@ private:
 
 // ===================================================================================================
 
-template <typename CarrierType,
-          typename... ModulatorTypes>
+template <typename CarrierType, typename... ModulatorTypes>
 struct ModulationOscillatorBase
 {
     static_assert ((std::is_same_v<typename CarrierType::float_type, typename ModulatorTypes::float_type> && ...),
@@ -347,4 +345,3 @@ private:
     using Base = OscillatorType;
 };
 
-// ===================================================================================================

@@ -90,25 +90,11 @@ private:
 };
 
 
-class Synthesizer : public AudioProcessorBase
+class SynthesizerBase : public AudioProcessorBase
 {
 public:
-    explicit Synthesizer (int numVoices)
+    SynthesizerBase()
     {
-        for (auto i = 0; i < numVoices; ++i)
-        {
-            //auto* oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SquareWaveOscillator>>();
-            //auto* oscVoice = new OscillatorSynthesizerVoice<FmOscillator<SineWaveOscillator, SineWaveOscillator>>();
-            //auto oscVoice = new OscillatorSynthesizerVoice<AntiAliasedOscillator<SineWaveOscillator>>();
-/*
-            auto* oscVoice = new OscillatorSynthesizerVoice<RmOscillator<float, SineWaveOscillator, SineWaveOscillator, SineWaveOscillator>>();
-
-            oscVoice->getOscillator().setRatios ({ 0.25, 0.5 });
-            oscVoice->getOscillator().setModulationIndices ({ 1.0, 1.0 });
-
-            synthEngine.addVoice (oscVoice);*/
-        }
-
         synthEngine.addSound (new GeneralSynthesizerVoice());
     }
 
@@ -128,7 +114,45 @@ public:
         synthEngine.clearVoices();
     }
 
-
-private:
+protected:
     juce::Synthesiser synthEngine;
+};
+
+
+// fm synth with anti aliased (8x oversampled) voices with 1 sine carrier and 3 sine modulators
+class FmSynthesizer : public SynthesizerBase
+{
+public:
+    using OscType = AntiAliased<FmOsc<SineOsc<float>, SineOsc<float>, SineOsc<float>, SineOsc<float>>>;
+    using VoiceType = OscillatorSynthesizerVoice<OscType>;
+
+    explicit FmSynthesizer (int numVoices)
+    {
+        for (auto i = 0; i < numVoices; ++i)
+        {
+            synthEngine.addVoice (new VoiceType {});
+        }
+    }
+
+    void setModulationIndexForModulator (int modulator, double index)
+    {
+        for (auto i = 0; i < synthEngine.getNumVoices(); ++i)
+        {
+            if (auto* voice = dynamic_cast<VoiceType*> (synthEngine.getVoice (i)))
+            {
+                voice->getOscillator().setModulationIndex (modulator, index);
+            }
+        }
+    }
+
+    void setRatioForModulator (int modulator, double ratio)
+    {
+        for (auto i = 0; i < synthEngine.getNumVoices(); ++i)
+        {
+            if (auto* voice = dynamic_cast<VoiceType*> (synthEngine.getVoice (i)))
+            {
+                voice->getOscillator().setModulationIndex (modulator, ratio);
+            }
+        }
+    }
 };

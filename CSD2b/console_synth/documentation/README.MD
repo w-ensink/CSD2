@@ -49,36 +49,39 @@ advance() method gets called for every new sample, the overhead of virtual dispa
 With the compiler knowing the entire flow at compile time, it can inline anything it wants and therefore 
 do way more optimisation.
 
-There are a couple of primitive naive oscillator (square, saw, sine, triangle, noise, pulse...),
-that can then be wrapped inside a higher level 'shell' to add functionality. 
+There are a couple of primitive naive oscillator types (square, saw, sine, triangle, noise, pulse...),
+that can then be wrapped inside a higher level 'shell' to add functionality (like anti aliasing) 
+or can be used to make higher level oscillators, like FM, AM and RM oscillators. 
 
 ```cpp
 // simple, naive square wave oscillator (with heavy aliasing)
-auto osc = SquareWaveOscillator();
+auto osc = SquareOsc<float>();
 
 // anti aliased square wave oscillator with 8x oversampling
-auto osc = AntiAliasedOscillator<SquareWaveOscillator, 8>();
+auto osc = AntiAliased<SquareOsc<float>, 8>();
 
-// fm oscillator with sine carrier and saw modulator
-auto osc = FmOscillator<SineWaveOscillator, SawWaveOscillator>();
+// fm oscillator with sine carrier and saw modulator (at double sample precision)
+auto osc = FmOsc<SineOsc<double>, SawOsc<double>>();
 
-// anti aliased Fm oscillator (8x oversampling) with sine carrier, one triangle modulator 
+// anti aliased fm oscillator (8x oversampling) with sine carrier, one triangle modulator 
+// (which is itself ring modulated by a saw) 
 // and one anti aliased square modulator with 4x oversampling
-auto osc = AntiAliasedOscillator<FmOscillator<SineWaveOscillator,
-                                              TriangleWaveOscillator,
-                                              AntiAliasedOscillator<SquareWaveOscillator, 4>>, 8>();
-                                                  
+auto osc = AntiAliased<FmOsc<SineOsc<float>, 
+                             RmOsc<TriangleOsc<float>, SawOsc<float>>,
+                             AntiAliased<SquareOsc<float>, 4>>, 8>();
 ```
 
 The types of primitives currently available are:
-* SineWaveOscillator
-* SawWaveOscillator
-* SquareWaveOscillator
-* NoiseOscillator
-* TriangleWaveOscillator
+* SineOsc
+* SawOsc
+* SquareOsc
+* NoiseOsc
+* TriangleOsc
 
-The types of 'shells' currently available are:
-* AntiAliasedOscillator
-* FmOscillator
-* AmOscillator
-* RmOscillator
+The types of higher order oscillators currently available are:
+* FmOsc
+* AmOsc
+* RmOsc
+
+The types of oscillator wrappers:
+* AntiAliased
