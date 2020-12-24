@@ -3,11 +3,11 @@
 
 #include <console_synth/audio/audio_callback.h>
 #include <console_synth/audio/audio_processor_base.h>
+#include <console_synth/format.h>
 #include <console_synth/identifiers.h>
 #include <console_synth/sequencer/sequencer.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_devices/juce_audio_devices.h>
-#include <console_synth/format.h>
 
 class Engine : private juce::AudioSource
 {
@@ -38,7 +38,7 @@ public:
 
         for (auto& d : devices)
         {
-            response.add(fmt::format("{} ({})", d.name, d.identifier));
+            response.add (fmt::format ("{} ({})", d.name, d.identifier));
         }
 
         return response;
@@ -49,8 +49,11 @@ public:
         return engineState;
     }
 
+    juce::UndoManager* getUndoManager() { return &undoManager; }
+
 private:
     juce::ValueTree engineState { IDs::engine };
+    juce::UndoManager undoManager;
 
     // for now the calling of prepare & release resources is in handled by sequencer (should move this around anyway)
     Sequencer sequencer { engineState };

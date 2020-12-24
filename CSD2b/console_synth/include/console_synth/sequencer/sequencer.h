@@ -10,13 +10,11 @@
 
 #include <console_synth/audio/audio_processor_base.h>
 #include <console_synth/identifiers.h>
-#include <console_synth/midi/midi_source.h>
 #include <console_synth/property.h>
 #include <console_synth/sequencer/play_head.h>
 #include <console_synth/sequencer/render_context.h>
 #include <console_synth/sequencer/time_signature.h>
 #include <console_synth/sequencer/track.h>
-#include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_devices/juce_audio_devices.h>
 
 
@@ -123,7 +121,7 @@ private:
     double sampleRate = 0;
     PlayHead playHead;
     PlayState playState = PlayState::stopped;
-    Track track;
+    Track track { sequencerState };
     juce::MidiMessageCollector midiMessageCollector;
     std::unique_ptr<juce::MidiInput> currentMidiInput = nullptr;
     juce::MidiBuffer midiBuffer;

@@ -4,27 +4,15 @@
 #include <console_synth/audio/processor_chain.h>
 #include <console_synth/audio/synthesizer.h>
 #include <console_synth/midi/midi_source.h>
-#include <console_synth/sequencer/event.h>
+#include <console_synth/sequencer/melody.h>
 #include <console_synth/sequencer/render_context.h>
-
 
 struct Track
 {
-    Track()
+    explicit Track (juce::ValueTree parent)
     {
-        melody->notes.push_back (Note {
-            .midiNoteNumber = 60 + 36,
-            .velocity = 100,
-            .timeStampTicks = 0,
-            .lengthInTicks = 48,
-        });
-
-        melody->notes.push_back (Note {
-            .midiNoteNumber = 62 + 36,
-            .velocity = 100,
-            .timeStampTicks = 48,
-            .lengthInTicks = 48,
-        });
+        parent.addChild (trackState, -1, nullptr);
+        trackState.addChild (melodyState, -1, nullptr);
     }
 
     void prepareToPlay (double sampleRate, int numSamplesPerBlockExpected)
@@ -92,8 +80,10 @@ private:
     FmSynthesizer synth { 4 };
     ProcessorChain processorChain { synth };
     std::bitset<128> activeMidiNotes { 0 };
-    std::unique_ptr<Melody> melody = std::make_unique<Melody>();
-    MelodyPlayerMidiSource melodyPlayerMidiSource { melody.get() };
+    juce::ValueTree trackState { IDs::track };
+    juce::ValueTree melodyState { IDs::melody };
+    Melody melody { melodyState };
+    MelodyPlayerMidiSource melodyPlayerMidiSource { &melody };
     juce::String name;
     bool isRecordEnabled = true;
     juce::MidiBuffer midiScratchBuffer;

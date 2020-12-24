@@ -10,7 +10,14 @@ namespace IDs
 {
 DECLARE_ID (engine);
 DECLARE_ID (sequencer);
-DECLARE_ID(tempo);
+DECLARE_ID (tempo);
+DECLARE_ID (note);
+DECLARE_ID (midiNoteNumber);
+DECLARE_ID (velocity);
+DECLARE_ID (startTimeTicks);
+DECLARE_ID (lengthTicks);
+DECLARE_ID (melody);
+DECLARE_ID (track);
 
 }  // namespace IDs
 

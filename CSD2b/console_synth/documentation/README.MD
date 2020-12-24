@@ -48,6 +48,12 @@ the oscillators compile time polymorphic, is performance. Since for any oscillat
 advance() method gets called for every new sample, the overhead of virtual dispatch can be pretty high. 
 With the compiler knowing the entire flow at compile time, it can inline anything it wants and therefore 
 do way more optimisation.
+ 
+I have done a benchmarking test with two fm oscillators 
+with exactly the same configurations (both had 3 modulators and the same ratio's and indices).
+All the logic inside the render functions was the same. The only difference was that one
+was my template library and the other used runtime polymorphism with virtual functions.
+The results showed that my template oscillator was about 275 times faster.
 
 There are a couple of primitive naive oscillator types (square, saw, sine, triangle, noise, pulse...),
 that can then be wrapped inside a higher level 'shell' to add functionality (like anti aliasing) 

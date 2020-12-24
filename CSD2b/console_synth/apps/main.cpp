@@ -10,7 +10,7 @@
 
 #include <console_synth/sequencer/sequencer.h>
 // ==============================================================
-
+#include <fmt/color.h>
 
 int main()
 {
@@ -29,10 +29,7 @@ int main()
             break;
 
         if (consoleInterface.handleCommand (input))
-            fmt::print ("{}\n", consoleInterface.getCurrentFeedback());
-
-        if (auto d = attemptSetMidiCommand (input))
-            fmt::print ("setting midi device to {}\n", *d);
+            fmt::print (fg (fmt::color::light_sky_blue), "{}\n", consoleInterface.getCurrentFeedback());
     }
 
 

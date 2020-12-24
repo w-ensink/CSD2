@@ -123,14 +123,16 @@ protected:
 class FmSynthesizer : public SynthesizerBase
 {
 public:
-    using OscType = AntiAliased<FmOsc<SineOsc<float>, SineOsc<float>, SineOsc<float>, SineOsc<float>>>;
+    using OscType = AntiAliased<FmOsc<SquareOsc<float>, SineOsc<float>, SineOsc<float>, SineOsc<float>>>;
     using VoiceType = OscillatorSynthesizerVoice<OscType>;
 
     explicit FmSynthesizer (int numVoices)
     {
         for (auto i = 0; i < numVoices; ++i)
         {
-            synthEngine.addVoice (new VoiceType {});
+            auto voice = new VoiceType {};
+            voice->getOscillator().setRatios({0.5, 0.25, 2.0});
+            synthEngine.addVoice (voice);
         }
     }
 

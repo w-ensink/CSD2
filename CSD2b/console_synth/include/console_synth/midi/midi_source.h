@@ -4,7 +4,7 @@
 
 #include <console_synth/sequencer/play_head.h>
 #include <juce_audio_basics/juce_audio_basics.h>
-#include <console_synth/sequencer/event.h>
+#include <console_synth/sequencer/melody.h>
 
 class MidiSource
 {
@@ -36,9 +36,9 @@ public:
                     auto samplePosition = (int) (normalizedPosition * numSamples);
 
                     if (e.isNoteOn)
-                        buffer.addEvent (juce::MidiMessage::noteOn (1, e.midiNote, e.velocity), samplePosition);
+                        buffer.addEvent (juce::MidiMessage::noteOn (1, e.midiNote, (uint8_t) e.velocity), samplePosition);
                     else
-                        buffer.addEvent (juce::MidiMessage::noteOff (1, e.midiNote, e.velocity), samplePosition);
+                        buffer.addEvent (juce::MidiMessage::noteOff (1, e.midiNote, (uint8_t) e.velocity), samplePosition);
                 }
             }
         });

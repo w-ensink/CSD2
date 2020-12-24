@@ -29,9 +29,9 @@ struct CommandHandler
 
 // =================================================================================================
 
-struct ChangeTempoCommandHandler : public CommandHandler
+struct ChangeTempo_CommandHandler : public CommandHandler
 {
-    ~ChangeTempoCommandHandler() override = default;
+    ~ChangeTempo_CommandHandler() override = default;
 
     bool canHandleCommand (std::string_view command) noexcept override
     {
@@ -56,7 +56,7 @@ private:
 
 // =================================================================================================
 
-struct ListAudioDevicesCommandHandler : public CommandHandler
+struct ListAudioDevices_CommandHandler : public CommandHandler
 {
     bool canHandleCommand (std::string_view command) noexcept override
     {
@@ -86,7 +86,7 @@ private:
 
 // =================================================================================================
 
-struct ListMidiDevicesCommandHandler : public CommandHandler
+struct ListMidiDevices_CommandHandler : public CommandHandler
 {
     bool canHandleCommand (std::string_view command) noexcept override
     {
@@ -194,16 +194,106 @@ private:
 
 // =================================================================================================
 
+struct AddNote_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto note = juce::ValueTree { IDs::note };
+
+        if (auto m = ctre::match<pattern> (command))
+        {
+            auto noteNumber = std::stoi (m.get<1>().to_string());
+            auto start = std::stoi (m.get<2>().to_string());
+
+            auto length = 48;
+            auto velocity = 127;
+
+            note.setProperty (IDs::midiNoteNumber, noteNumber, nullptr);
+            note.setProperty (IDs::startTimeTicks, start, nullptr);
+            note.setProperty (IDs::lengthTicks, length, nullptr);
+            note.setProperty (IDs::velocity, velocity, nullptr);
+
+            engine.getValueTreeState()
+                .getChildWithName (IDs::sequencer)
+                .getChildWithName (IDs::track)
+                .getChildWithName (IDs::melody)
+                .addChild (note, -1, engine.getUndoManager());
+
+            return fmt::format ("added note {} at {}", noteNumber, start);
+        }
+
+        return "failed to add note";
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "add note <number> <position_ticks>";
+    }
+
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { R"(^add\snote\s([0-9]+)\s([0-9]+)$)" };
+};
+
+// =================================================================================================
+
+struct ListNotes_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto melody = engine.getValueTreeState()
+                          .getChildWithName (IDs::sequencer)
+                          .getChildWithName (IDs::track)
+                          .getChildWithName (IDs::melody);
+
+        auto answer = std::string {};
+
+        for (auto&& note : melody)
+        {
+            auto midiNum = (int) note.getProperty (IDs::midiNoteNumber);
+            auto start = (int) note.getProperty (IDs::startTimeTicks);
+            auto length = (int) note.getProperty (IDs::lengthTicks);
+            auto velocity = (int) note.getProperty (IDs::velocity);
+
+            answer += fmt::format ("number: {},\tstart: {},\tlength: {},\tvelocity: {}\n", midiNum, start, length, velocity);
+        }
+
+        return answer;
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "ls notes (gives a formatted list of all notes in the melody)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^ls\\snotes$" };
+};
+
+// =================================================================================================
+
 struct ConsoleInterface
 {
     explicit ConsoleInterface (Engine& engineToControl) : engine { engineToControl }
     {
         commandHandlers.push_back (std::make_unique<StartPlayback_CommandHandler>());
         commandHandlers.push_back (std::make_unique<StopPlayback_CommandHandler>());
-        commandHandlers.push_back (std::make_unique<ChangeTempoCommandHandler>());
-        commandHandlers.push_back (std::make_unique<ListAudioDevicesCommandHandler>());
-        commandHandlers.push_back (std::make_unique<ListMidiDevicesCommandHandler>());
+        commandHandlers.push_back (std::make_unique<ChangeTempo_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<ListAudioDevices_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<ListMidiDevices_CommandHandler>());
         commandHandlers.push_back (std::make_unique<OpenMidiInputDevice_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<AddNote_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<ListNotes_CommandHandler>());
     }
 
     bool handleCommand (std::string_view command)
