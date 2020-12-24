@@ -2,14 +2,8 @@
 // Written by Wouter Ensink
 
 #include <console_synth/audio/audio_engine.h>
-#include <console_synth/audio/reverb.h>
-#include <console_synth/audio/saw_synthesizer.h>
 #include <console_synth/console_interface/console_interface.h>
-#include <console_synth/format.h>
 #include <console_synth/utility.h>
-
-#include <console_synth/sequencer/sequencer.h>
-// ==============================================================
 #include <fmt/color.h>
 
 int main()
@@ -31,7 +25,6 @@ int main()
         if (consoleInterface.handleCommand (input))
             fmt::print (fg (fmt::color::light_sky_blue), "{}\n", consoleInterface.getCurrentFeedback());
     }
-
 
     return 0;
 }

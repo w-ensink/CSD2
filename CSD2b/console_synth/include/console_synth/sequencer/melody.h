@@ -6,7 +6,6 @@
 #include <console_synth/identifiers.h>
 #include <console_synth/property.h>
 #include <console_synth/sequencer/event.h>
-
 #include <utility>
 
 struct Note

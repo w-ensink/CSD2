@@ -31,12 +31,22 @@ public:
 
     static bool isValidDenominator (uint32_t toCheck) noexcept;
 
+    [[nodiscard]] uint32_t getTicksPerBar() const noexcept
+    {
+        return getTicksPerDenominator() * numerator;
+    }
+
+    [[nodiscard]] uint32_t getTicksPerDenominator() const
+    {
+        auto numDenominatorsInQuarterNote = denominator / 4;
+        return ticksPerQuarterNote / numDenominatorsInQuarterNote;
+    }
+
 private:
     uint32_t numerator { 4 };
     uint32_t denominator { 4 };
     uint32_t ticksPerQuarterNote { 4 };
 };
-
 
 
 struct TimeSignature::InvalidNumeratorError : std::exception

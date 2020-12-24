@@ -140,6 +140,34 @@ TEST_CASE ("property")
     CHECK_THAT (callbackValue, Catch::Matchers::WithinAbs (5.0, 0.001));
 }
 
+
+TEST_CASE ("property undo/redo")
+{
+    auto sequencer = juce::ValueTree { "sequencer" };
+    sequencer.setProperty ("tempo", 100, nullptr);
+    auto undoManager = juce::UndoManager {};
+    auto tempo = Property<int> { sequencer, "tempo", nullptr };
+
+    CHECK (tempo.getValue() == 100);
+
+    auto v = 0;
+    tempo.onChange = [&v] (auto newValue) {
+        v = newValue;
+    };
+
+    CHECK (v == 0);
+
+    sequencer.setProperty ("tempo", 200, &undoManager);
+
+    CHECK (v == 200);
+
+    CHECK (undoManager.undo());
+    CHECK (v == 100);
+
+    CHECK (undoManager.redo());
+    CHECK (v == 200);
+}
+
 // ========================================================================================
 // below a test that incorporates the whole project structure in a simple
 // example to verify that it will work as planned

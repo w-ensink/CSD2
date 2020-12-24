@@ -3,19 +3,10 @@
 
 #include <console_synth/audio/audio_engine.h>
 #include <console_synth/format.h>
+#include <console_synth/sequencer/melody_generator.h>
 #include <ctre.hpp>
 #include <optional>
 
-
-std::optional<std::string_view> attemptSetMidiCommand (std::string_view s) noexcept
-{
-    static constexpr auto pattern = ctll::fixed_string { "^set\\smidi\\s([a-zA-Z0-9]+)$" };
-
-    if (auto m = ctre::match<pattern> (s))
-        return m.get<1>().to_view();
-
-    return std::nullopt;
-}
 
 // =================================================================================================
 
@@ -41,7 +32,7 @@ struct ChangeTempo_CommandHandler : public CommandHandler
     std::string handleCommand (Engine& engine, std::string_view command) override
     {
         auto num = std::stod (ctre::match<pattern> (command).get<1>().to_string());
-        engine.getValueTreeState().getChildWithName (IDs::sequencer).setProperty (IDs::tempo, num, nullptr);
+        engine.getValueTreeState().getChildWithName (IDs::sequencer).setProperty (IDs::tempo, num, engine.getUndoManager());
         return fmt::format ("set tempo to {}", num);
     }
 
@@ -282,6 +273,91 @@ private:
 
 // =================================================================================================
 
+struct GenerateMelody_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto generator = MelodyGenerator {};
+        auto melody = generator.generateMelody (engine.getSequencer().getTimeSignature());
+
+        auto m = engine.getValueTreeState()
+                     .getChildWithName (IDs::sequencer)
+                     .getChildWithName (IDs::track)
+                     .getChildWithName (IDs::melody);
+        m.removeAllChildren (nullptr);
+        m.copyPropertiesAndChildrenFrom (melody, nullptr);
+
+        return "generated melody";
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "g (generates melody)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^g$" };
+};
+
+// =================================================================================================
+
+struct Undo_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        if (engine.getUndoManager()->undo())
+            return "undo successful";
+
+        return "undo failed";
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "undo (undoes effect of last command)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^undo$" };
+};
+
+// =================================================================================================
+
+struct Redo_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        if (engine.getUndoManager()->redo())
+            return "redo successful";
+
+        return "redo failed";
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "redo (redoes effect of last undone command)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { "^redo$" };
+};
+
+// =================================================================================================
+
 struct ConsoleInterface
 {
     explicit ConsoleInterface (Engine& engineToControl) : engine { engineToControl }
@@ -294,6 +370,9 @@ struct ConsoleInterface
         commandHandlers.push_back (std::make_unique<OpenMidiInputDevice_CommandHandler>());
         commandHandlers.push_back (std::make_unique<AddNote_CommandHandler>());
         commandHandlers.push_back (std::make_unique<ListNotes_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<GenerateMelody_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<Undo_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<Redo_CommandHandler>());
     }
 
     bool handleCommand (std::string_view command)
@@ -320,6 +399,7 @@ private:
 
     std::vector<std::unique_ptr<CommandHandler>> commandHandlers {};
 };
+
 
 // =================================================================================================
 

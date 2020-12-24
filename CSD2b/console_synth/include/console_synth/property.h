@@ -11,6 +11,11 @@ public:
         : tree { tree }, identifier { std::move (id) }, undoManager { undoManager }, cachedValue { initialValue }
     {
         tree.addListener (this);
+
+        if (auto* v = tree.getPropertyPointer (identifier))
+            cachedValue = juce::VariantConverter<T>::fromVar (*v);
+        else
+            tree.setProperty (identifier, juce::VariantConverter<T>::toVar (cachedValue), nullptr);
     }
 
     Property& operator= (T newValue)
