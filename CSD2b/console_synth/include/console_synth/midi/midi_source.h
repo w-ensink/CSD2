@@ -1,6 +1,7 @@
 
-#pragma once
+// Written by Wouter Ensink
 
+#pragma once
 
 #include <console_synth/sequencer/play_head.h>
 #include <juce_audio_basics/juce_audio_basics.h>

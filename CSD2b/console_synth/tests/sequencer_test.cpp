@@ -1,13 +1,12 @@
 
+// Written by Wouter Ensink
+
 #include <catch2/catch_all.hpp>
-#include <console_synth/sequencer/sequencer.h>
-
-#include <juce_audio_basics/juce_audio_basics.h>
-
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_templated.hpp>
-
 #include <console_synth/sequencer/play_head.h>
+#include <console_synth/sequencer/sequencer.h>
+#include <juce_audio_basics/juce_audio_basics.h>
 
 auto makeZeroedBufferOfSize (int size)
 {
@@ -154,8 +153,7 @@ TEST_CASE ("single event in second buffer")
 
 namespace tst2
 {
-
-auto convertBpmToTickTimeMs(double bpm, int ticksPerQuarterNote)
+auto convertBpmToTickTimeMs (double bpm, int ticksPerQuarterNote)
 {
     auto ticksPerMinute = bpm * ticksPerQuarterNote;
     auto msPerMinute = 60'000;
@@ -213,12 +211,13 @@ struct TransportControl
     void moveToTick (int tick);
 
 
-    void setTicksPerQuarterNote(int ticks) { ticksPerQuarterNote = ticks; }
+    void setTicksPerQuarterNote (int ticks) { ticksPerQuarterNote = ticks; }
 
     // make sure ticks per quarter note is set before calling this one
-    void setPlaybackTempoBpm (double bpm) {
+    void setPlaybackTempoBpm (double bpm)
+    {
         currentBpm = bpm;
-       // auto tickTimeMs =
+        // auto tickTimeMs =
     }
 
 private:
@@ -338,14 +337,14 @@ struct AudioDeviceMock
 }  // namespace tst2
 
 
-TEST_CASE("bpm to ms per tick")
+TEST_CASE ("bpm to ms per tick")
 {
     auto bpm = 60;
     auto tpqn = 16;
 
     auto expected = 0;
 
-    REQUIRE(tst2::convertBpmToTickTimeMs(bpm, tpqn) == expected);
+    REQUIRE (tst2::convertBpmToTickTimeMs (bpm, tpqn) == expected);
 }
 
 

@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #pragma once
 
 #include <console_synth/audio/audio_engine.h>
@@ -131,7 +133,7 @@ struct OpenMidiInputDevice_CommandHandler : public CommandHandler
     }
 
 private:
-    static constexpr auto pattern = ctll::fixed_string { "^open\\smidi\\s([a-zA-Z0-9\\s]+)$" };
+    static constexpr auto pattern = ctll::fixed_string { R"(^open\smidi\s([a-zA-Z0-9\s]+)$)" };
 };
 
 
@@ -225,7 +227,6 @@ struct AddNote_CommandHandler : public CommandHandler
     {
         return "add note <number> <position_ticks>";
     }
-
 
 private:
     static constexpr auto pattern = ctll::fixed_string { R"(^add\snote\s([0-9]+)\s([0-9]+)$)" };
@@ -358,6 +359,28 @@ private:
 
 // =================================================================================================
 
+struct ChangeEnvelope_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto synth = engine.getValueTreeState()
+                         .getChildWithName (IDs::sequencer)
+                         .getChildWithName (IDs::track)
+                         .getChildWithName (IDs::synth);
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "adsr <a> <d> <s> <r> (sets the envelope)";
+    }
+};
+
+// =================================================================================================
+
 struct ConsoleInterface
 {
     explicit ConsoleInterface (Engine& engineToControl) : engine { engineToControl }
@@ -373,6 +396,7 @@ struct ConsoleInterface
         commandHandlers.push_back (std::make_unique<GenerateMelody_CommandHandler>());
         commandHandlers.push_back (std::make_unique<Undo_CommandHandler>());
         commandHandlers.push_back (std::make_unique<Redo_CommandHandler>());
+        commandHandlers.push_back (std::make_unique<ChangeEnvelope_CommandHandler>());
     }
 
     bool handleCommand (std::string_view command)

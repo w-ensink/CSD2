@@ -1,6 +1,7 @@
 
-#pragma once
+// Written by Wouter Ensink
 
+#pragma once
 
 #include <console_synth/drow_ValueTreeObjectList.h>
 #include <console_synth/identifiers.h>
@@ -44,9 +45,9 @@ struct Note
 
 struct Melody : public drow::ValueTreeObjectList<Note>
 {
-    explicit Melody (juce::ValueTree& tree) : drow::ValueTreeObjectList<Note> { tree }
+    explicit Melody (juce::ValueTree& tree) : drow::ValueTreeObjectList<Note> { juce::ValueTree { IDs::melody } }
     {
-        jassert (tree.hasType (IDs::melody));
+        tree.appendChild (drow::ValueTreeObjectList<Note>::parent, nullptr);
         rebuildObjects();
     }
 

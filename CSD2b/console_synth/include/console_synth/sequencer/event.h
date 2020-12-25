@@ -1,7 +1,5 @@
 
-
-// structure that represents an event that can be scheduled by the sequencer
-//
+// Written by Wouter Ensink
 
 #pragma once
 

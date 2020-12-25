@@ -1,4 +1,5 @@
 
+// Written by Wouter Ensink
 
 #include <catch2/catch_all.hpp>
 #include <console_synth/property.h>
@@ -166,6 +167,30 @@ TEST_CASE ("property undo/redo")
 
     CHECK (undoManager.redo());
     CHECK (v == 200);
+}
+
+
+TEST_CASE ("value tree copy children and properties")
+{
+    auto engine = juce::ValueTree { "engine" };
+    auto sequencer = juce::ValueTree { "sequencer" };
+    engine.appendChild (sequencer, nullptr);
+    auto tempo = Property<int> { sequencer, "tempo", nullptr };
+
+    auto value = 0;
+    tempo.onChange = [&value] (auto newValue) { value = newValue; };
+    sequencer.setProperty ("tempo", 100, nullptr);
+
+    CHECK (value == 100);
+
+    auto engineCopy = engine.createCopy();
+
+    engineCopy.getChildWithName ("sequencer").setProperty ("tempo", 200, nullptr);
+
+    CHECK (value == 100);
+
+    engine.copyPropertiesAndChildrenFrom (engineCopy, nullptr);
+    CHECK ((int) engine.getChildWithName ("sequencer").getProperty ("tempo") == 200);
 }
 
 // ========================================================================================

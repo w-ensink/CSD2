@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #pragma once
 
 #include <cstdint>
@@ -125,7 +127,7 @@ public:
         currentTick = tick;
     }
 
-    uint64_t getTickAfter (uint64_t tick) const
+    [[nodiscard]] uint64_t getTickAfter (uint64_t tick) const
     {
         tick += 1;
         if (isLooping())
@@ -140,13 +142,12 @@ private:
     uint64_t currentTick = 0;
     double timeSinceLastTickMs = 0;
     std::optional<juce::Range<uint64_t>> loopingRangeTicks = std::nullopt;
-    juce::CriticalSection mutex;
 };
 
 // ===================================================================================================
 
-template <typename Function>
-auto forEachTick (const PlayHead& playHead, Function&& function)
+template <typename Functor>
+auto forEachTick (const PlayHead& playHead, Functor&& function)
 {
     auto currentTick = playHead.getCurrentTick();
     auto timePointMs = playHead.getTickTimeMs() - playHead.getTimeSinceLastTickMs();

@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #pragma once
 
 #include <juce_core/juce_core.h>
@@ -18,6 +20,14 @@ DECLARE_ID (startTimeTicks);
 DECLARE_ID (lengthTicks);
 DECLARE_ID (melody);
 DECLARE_ID (track);
+DECLARE_ID (synth);
+DECLARE_ID (numVoices);
+DECLARE_ID (attack);
+DECLARE_ID (decay);
+DECLARE_ID (sustain);
+DECLARE_ID (release);
+DECLARE_ID (modulationIndex);
+DECLARE_ID (ratio);
 
 }  // namespace IDs
 

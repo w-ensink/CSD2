@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #pragma once
 
 #include <console_synth/audio/audio_processor_base.h>

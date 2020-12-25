@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #include <console_synth/audio/audio_callback.h>
 #include <console_synth/format.h>
 #include <juce_audio_basics/juce_audio_basics.h>
@@ -20,15 +22,6 @@ void AudioIODeviceCallback::audioDeviceIOCallback (const float** inputChannelDat
 
 void AudioIODeviceCallback::audioDeviceAboutToStart (juce::AudioIODevice* device)
 {
-    fmt::print ("{} about to start:\n"
-                "\tsample rate: {}\n"
-                "\tbuffer size: {}\n"
-                "\tbit depth:   {}\n",
-                device->getName(),
-                device->getCurrentSampleRate(),
-                device->getCurrentBufferSizeSamples(),
-                device->getCurrentBitDepth());
-
     audioSource.prepareToPlay (device->getCurrentBufferSizeSamples(), device->getCurrentSampleRate());
 }
 
@@ -36,7 +29,6 @@ void AudioIODeviceCallback::audioDeviceAboutToStart (juce::AudioIODevice* device
 void AudioIODeviceCallback::audioDeviceStopped()
 {
     audioSource.releaseResources();
-    fmt::print ("Audio Device Stopped\n");
 }
 
 

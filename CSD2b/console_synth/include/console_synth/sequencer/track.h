@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #pragma once
 
 #include <console_synth/audio/processor_chain.h>
@@ -11,8 +13,7 @@ struct Track
 {
     explicit Track (juce::ValueTree parent)
     {
-        parent.addChild (trackState, -1, nullptr);
-        trackState.addChild (melodyState, -1, nullptr);
+        parent.appendChild (trackState, nullptr);
     }
 
     void prepareToPlay (double sampleRate, int numSamplesPerBlockExpected)
@@ -77,12 +78,11 @@ struct Track
     }
 
 private:
-    FmSynthesizer synth { 4 };
+    juce::ValueTree trackState { IDs::track };
+    FmSynthesizer synth { trackState };
     ProcessorChain processorChain { synth };
     std::bitset<128> activeMidiNotes { 0 };
-    juce::ValueTree trackState { IDs::track };
-    juce::ValueTree melodyState { IDs::melody };
-    Melody melody { melodyState };
+    Melody melody { trackState };
     MelodyPlayerMidiSource melodyPlayerMidiSource { &melody };
     juce::String name;
     bool isRecordEnabled = true;

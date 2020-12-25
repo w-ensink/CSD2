@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #pragma once
 
 #include "audio_processor_base.h"
@@ -19,16 +21,7 @@ class OscillatorSynthesizerVoice : public juce::SynthesiserVoice
 public:
     OscillatorSynthesizerVoice()
     {
-        auto envParams = juce::ADSR::Parameters {
-            .attack = 0.001,
-            .decay = 0.5,
-            .sustain = 0.4,
-            .release = 0.2
-        };
-
         envelope.setSampleRate (getSampleRate());
-        envelope.setParameters (envParams);
-
         oscillator.setSampleRate (getSampleRate());
     }
 
@@ -75,6 +68,11 @@ public:
     // with partial specialization for each different type of oscillator
     auto getOscillatorController()
     {
+    }
+
+    void setEnvelope (juce::ADSR::Parameters params)
+    {
+        envelope.setParameters (params);
     }
 
 private:
@@ -126,35 +124,68 @@ public:
     using OscType = AntiAliased<FmOsc<SquareOsc<float>, SineOsc<float>, SineOsc<float>, SineOsc<float>>>;
     using VoiceType = OscillatorSynthesizerVoice<OscType>;
 
-    explicit FmSynthesizer (int numVoices)
+    explicit FmSynthesizer (juce::ValueTree parent)
     {
-        for (auto i = 0; i < numVoices; ++i)
+        parent.appendChild (synthState, nullptr);
+
+        for (auto i = 0; i < numVoices.getValue(); ++i)
         {
             auto voice = new VoiceType {};
-            voice->getOscillator().setRatios({0.5, 0.25, 2.0});
+            voice->getOscillator().setRatios ({ 0.5, 0.25, 2.0 });
             synthEngine.addVoice (voice);
         }
+
+        auto onEnvChange = [this] (auto) { envelopeChanged(); };
+        attack.onChange = onEnvChange;
+        decay.onChange = onEnvChange;
+        sustain.onChange = onEnvChange;
+        release.onChange = onEnvChange;
+        envelopeChanged();
     }
 
     void setModulationIndexForModulator (int modulator, double index)
     {
-        for (auto i = 0; i < synthEngine.getNumVoices(); ++i)
-        {
-            if (auto* voice = dynamic_cast<VoiceType*> (synthEngine.getVoice (i)))
-            {
-                voice->getOscillator().setModulationIndex (modulator, index);
-            }
-        }
+        forEachVoice ([modulator, index] (auto& voice) {
+            voice.getOscillator().setModulationIndex (modulator, index);
+        });
     }
 
     void setRatioForModulator (int modulator, double ratio)
     {
+        forEachVoice ([modulator, ratio] (auto& voice) {
+            voice.getOscillator().setModulationIndex (modulator, ratio);
+        });
+    }
+
+private:
+    juce::ValueTree synthState { IDs::synth };
+    Property<int> numVoices { synthState, IDs::numVoices, nullptr, 4 };
+    Property<double> modulationIndex { synthState, IDs::modulationIndex, nullptr, 1.0 };
+    Property<float> attack { synthState, IDs::attack, nullptr, 0.001 };
+    Property<float> decay { synthState, IDs::decay, nullptr, 1.0 };
+    Property<float> sustain { synthState, IDs::sustain, nullptr, 0.5 };
+    Property<float> release { synthState, IDs::release, nullptr, 1.0 };
+
+
+    template <typename Functor>
+    void forEachVoice (Functor&& function)
+    {
         for (auto i = 0; i < synthEngine.getNumVoices(); ++i)
-        {
             if (auto* voice = dynamic_cast<VoiceType*> (synthEngine.getVoice (i)))
-            {
-                voice->getOscillator().setModulationIndex (modulator, ratio);
-            }
-        }
+                function (*voice);
+    }
+
+    void envelopeChanged()
+    {
+        auto params = juce::ADSR::Parameters {
+            .attack = attack.getValue(),
+            .decay = decay.getValue(),
+            .sustain = sustain.getValue(),
+            .release = release.getValue()
+        };
+
+        forEachVoice ([params] (auto& voice) {
+            voice.setEnvelope (params);
+        });
     }
 };

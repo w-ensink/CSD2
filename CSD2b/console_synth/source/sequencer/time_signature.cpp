@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #include <bitset>
 #include <console_synth/sequencer/time_signature.h>
 

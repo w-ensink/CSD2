@@ -1,4 +1,6 @@
 
+// Written by Wouter Ensink
+
 #include <catch2/catch_all.hpp>
 #include <console_synth/sequencer/time_signature.h>
 
