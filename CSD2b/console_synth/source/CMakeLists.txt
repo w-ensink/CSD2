@@ -1,14 +1,17 @@
 
 add_library(console_synth_lib STATIC
+        engine.cpp
+        # audio
         audio/audio_callback.cpp
-        audio/audio_engine.cpp
-        audio/noise_generator.cpp
         # sequencer
-        sequencer/time_signature.cpp)
+        sequencer/time_signature.cpp
+        # console_interface
+        console_interface/console_interface.cpp)
 
 target_link_libraries(console_synth_lib PRIVATE
         butterworth_filter
         fmt::fmt
+        ctre::ctre
         juce::juce_core
         juce::juce_audio_basics
         juce::juce_audio_devices

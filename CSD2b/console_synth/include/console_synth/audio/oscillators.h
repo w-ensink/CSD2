@@ -10,28 +10,6 @@
 
 // ===================================================================================================
 
-// should represent one cycle of a waveform
-class WaveTable
-{
-public:
-    float getSample (float normalizedPosition)
-    {
-        auto numSamples = table.size();
-        auto index = normalizedPosition * numSamples;
-        auto index0 = (int) std::floor (index);
-        auto index1 = (int) std::ceil (index);
-        auto sample0 = table[index0];
-        return 0.0;
-    }
-
-private:
-    std::vector<float> table;
-};
-
-
-// ===================================================================================================
-
-
 namespace details
 {
 template <typename Tuple, typename Functor, size_t Index = 0>
@@ -344,4 +322,3 @@ private:
 
     using Base = OscillatorType;
 };
-

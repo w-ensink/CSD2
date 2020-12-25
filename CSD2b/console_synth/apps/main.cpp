@@ -1,7 +1,7 @@
 
 // Written by Wouter Ensink
 
-#include <console_synth/audio/audio_engine.h>
+#include <console_synth/engine.h>
 #include <console_synth/console_interface/console_interface.h>
 #include <console_synth/utility.h>
 #include <fmt/color.h>

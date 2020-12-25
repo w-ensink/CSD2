@@ -52,10 +52,9 @@ public:
     juce::UndoManager* getUndoManager() { return &undoManager; }
 
 private:
+
     juce::ValueTree engineState { IDs::engine };
     juce::UndoManager undoManager;
-
-    // for now the calling of prepare & release resources is in handled by sequencer (should move this around anyway)
     Sequencer sequencer { engineState };
     juce::AudioDeviceManager deviceManager {};
     AudioIODeviceCallback audioCallback { *this };
@@ -69,26 +68,3 @@ private:
 };
 
 
-Engine::~Engine()
-{
-    deviceManager.closeAudioDevice();
-}
-
-
-void Engine::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
-{
-    sequencer.prepareToPlay (samplesPerBlockExpected, sampleRate);
-}
-
-
-void Engine::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
-{
-    bufferToFill.clearActiveBufferRegion();
-    sequencer.getNextAudioBlock (bufferToFill);
-}
-
-
-void Engine::releaseResources()
-{
-    sequencer.releaseResources();
-}

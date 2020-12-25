@@ -4,8 +4,9 @@
 #pragma once
 
 #include "audio_processor_base.h"
-#include <console_synth/audio/oscillator.h>
+#include <console_synth/audio/oscillators.h>
 
+// ===================================================================================================
 
 class GeneralSynthesizerVoice : public juce::SynthesiserSound
 {
@@ -14,6 +15,7 @@ public:
     bool appliesToNote (int midiNoteNumber) override { return true; }
 };
 
+// ===================================================================================================
 
 template <typename OscillatorType>
 class OscillatorSynthesizerVoice : public juce::SynthesiserVoice
@@ -87,6 +89,7 @@ private:
     }
 };
 
+// ===================================================================================================
 
 class SynthesizerBase : public AudioProcessorBase
 {
@@ -116,6 +119,7 @@ protected:
     juce::Synthesiser synthEngine;
 };
 
+// ===================================================================================================
 
 // fm synth with anti aliased (8x oversampled) voices with 1 sine carrier and 3 sine modulators
 class FmSynthesizer : public SynthesizerBase
