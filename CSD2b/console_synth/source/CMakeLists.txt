@@ -1,6 +1,7 @@
 
 add_library(console_synth_lib STATIC
         engine.cpp
+        utility.cpp
         # audio
         audio/audio_callback.cpp
         # sequencer

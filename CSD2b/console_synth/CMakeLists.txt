@@ -22,6 +22,8 @@ FetchContent_Declare(Ctre
 # Make all fetched libraries available inside the CMake project
 FetchContent_MakeAvailable(Juce FmtLib Ctre)
 
+message("juce source dir: ${juce_SOURCE_DIR}/modules/juce_core/juce_core.h")
+
 # give the target a name (same as project name now)
 set(TARGET_NAME ${PROJECT_NAME})
 

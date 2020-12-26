@@ -17,7 +17,7 @@ class Sequencer : public juce::AudioSource
 public:
     explicit Sequencer (juce::ValueTree& parent)
     {
-        playHead.setLooping (0, 48 * 2);
+        playHead.setLooping (0, 48 * 4 + 1);
 
         setTempoBpm (tempoBpm.getValue());
 

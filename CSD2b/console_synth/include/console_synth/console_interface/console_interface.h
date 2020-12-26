@@ -27,6 +27,7 @@ struct ConsoleInterface
     explicit ConsoleInterface (Engine& engineToControl);
     bool handleCommand (std::string_view command);
     [[nodiscard]] std::string getCurrentFeedback() const;
+    void showHelp();
 
 private:
     Engine& engine;

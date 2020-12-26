@@ -59,6 +59,13 @@ struct Track
             addMidiOffMessagesForActiveMidiNotes();
         }
 
+        forEachTick(renderContext.getPlayHead(), [this, &renderContext] (uint64_t tick, double timeRelativeToBuffer) {
+            if (tick == renderContext.getPlayHead().getLoopingEnd())
+            {
+                addMidiOffMessagesForActiveMidiNotes();
+            }
+        });
+
         processorChain.processBlock (renderContext.getAudioBuffer(), midiScratchBuffer);
         previousPlayState = renderContext.getPlayState();
     }

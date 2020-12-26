@@ -3,9 +3,9 @@
 
 #pragma once
 
+#include <console_synth/sequencer/melody.h>
 #include <console_synth/sequencer/play_head.h>
 #include <juce_audio_basics/juce_audio_basics.h>
-#include <console_synth/sequencer/melody.h>
 
 class MidiSource
 {
@@ -26,22 +26,20 @@ public:
             return;
 
         auto bufferDuration = playHead.getDeviceCallbackDurationMs();
-        auto&& events = melody->getSequencerEvents();
 
         forEachTick (playHead, [&] (uint64_t tick, double timeStampRelativeToBuffer) {
-            for (auto&& e : events)
-            {
-                if (e.timeStampTicks == tick)
+            melody->forEachEvent ([&] (const auto& event) {
+                if (event.timeStampTicks == tick)
                 {
                     auto normalizedPosition = timeStampRelativeToBuffer / bufferDuration;
                     auto samplePosition = (int) (normalizedPosition * numSamples);
 
-                    if (e.isNoteOn)
-                        buffer.addEvent (juce::MidiMessage::noteOn (1, e.midiNote, (uint8_t) e.velocity), samplePosition);
+                    if (event.isNoteOn)
+                        buffer.addEvent (juce::MidiMessage::noteOn (1, event.midiNote, (uint8_t) event.velocity), samplePosition);
                     else
-                        buffer.addEvent (juce::MidiMessage::noteOff (1, e.midiNote, (uint8_t) e.velocity), samplePosition);
+                        buffer.addEvent (juce::MidiMessage::noteOff (1, event.midiNote, (uint8_t) event.velocity), samplePosition);
                 }
-            }
+            });
         });
     }
 

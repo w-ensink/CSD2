@@ -2,10 +2,10 @@
 // Written by Wouter Ensink
 
 #include <console_synth/console_interface/console_interface.h>
+#include <console_synth/engine.h>
 #include <console_synth/format.h>
 #include <console_synth/sequencer/melody_generator.h>
 #include <ctre.hpp>
-#include <console_synth/engine.h>
 
 // =================================================================================================
 
@@ -388,7 +388,7 @@ struct ChangeEnvelope_CommandHandler : public CommandHandler
     }
 
     // regex for: "adsr <float> <float> <float> <float>"
-    static constexpr auto pattern = ctll::fixed_string { R"(^adsr\s([0-9]+\.[0-9]+)\s([0-9]+\.[0-9]+)\s([0-9]+\.[0-9]+)\s([0-9]+\.[0-9]+)$)" };
+    static constexpr auto pattern = ctll::fixed_string { R"(^adsr\s(\d+\.\d+)\s(\d+\.\d+)\s(\d+\.\d+)\s(\d+\.\d+)$)" };
 };
 
 // =================================================================================================
@@ -420,7 +420,27 @@ bool ConsoleInterface::handleCommand (std::string_view command)
             return true;
         }
     }
+
+    if (command == "help")
+    {
+        showHelp();
+        return true;
+    }
+
+    feedback = fmt::format ("'{}' is not a valid command, enter 'help' to see what's possible", command);
     return false;
+}
+
+void ConsoleInterface::showHelp()
+{
+    auto help = std::string {};
+
+    for (auto&& handler : commandHandlers)
+        help += fmt::format (" - {}\n", handler->getHelpString());
+
+
+    fmt::print (help);
+    fetchUserInput ("Press enter to return... ");
 }
 
 std::string ConsoleInterface::getCurrentFeedback() const

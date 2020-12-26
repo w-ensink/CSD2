@@ -34,12 +34,11 @@ public:
     static juce::StringArray getAvailableMidiDevices()
     {
         auto devices = juce::MidiInput::getAvailableDevices();
+
         auto response = juce::StringArray();
 
         for (auto& d : devices)
-        {
             response.add (fmt::format ("{} ({})", d.name, d.identifier));
-        }
 
         return response;
     }
