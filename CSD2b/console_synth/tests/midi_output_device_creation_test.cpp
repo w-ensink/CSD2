@@ -7,10 +7,10 @@
 
 // It has successfully been tested on macOS Big Sur using Max/MSP 8
 
-#include <console_synth/format.h>
+#include <console_synth/utility/format.h>
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <thread>
-#include <console_synth/utility.h>
+#include <console_synth/utility/scoped_message_thread_enabler.h>
 
 using namespace std::chrono_literals;
 

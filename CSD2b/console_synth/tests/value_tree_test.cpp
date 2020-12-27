@@ -2,7 +2,7 @@
 // Written by Wouter Ensink
 
 #include <catch2/catch_all.hpp>
-#include <console_synth/property.h>
+#include <console_synth/utility/property.h>
 #include <juce_data_structures/juce_data_structures.h>
 #include <utility>
 

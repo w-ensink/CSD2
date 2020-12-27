@@ -4,7 +4,7 @@
 #include <butterworth/Butterworth.h>
 #include <catch2/catch_all.hpp>
 #include <console_synth/audio/oscillators.h>
-#include <console_synth/format.h>
+#include <console_synth/utility/format.h>
 #include <filesystem>
 
 auto getDataDirectoryPath()

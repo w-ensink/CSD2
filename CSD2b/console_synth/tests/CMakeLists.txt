@@ -34,10 +34,7 @@ function(add_unit_test NAME SOURCE)
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/tests")
 endfunction()
 
-# add cli unit test
 add_unit_test(cli_test cli_test.cpp)
-
-# add midi message queue unit test (and link with internal midi lib)
 add_unit_test(midi_message_queue_test midi_queue_test.cpp)
 add_unit_test(melody_generator_test melody_generator_test.cpp)
 add_unit_test(time_signature_test time_signature_test.cpp)
@@ -45,5 +42,5 @@ add_unit_test(midi_output_device_creation_test midi_output_device_creation_test.
 add_unit_test(play_head_test play_head_test.cpp)
 add_unit_test(sequencer_test sequencer_test.cpp)
 add_unit_test(oscillator_test oscillator_test.cpp)
-
+add_unit_test(adsr_test adsr_test.cpp)
 add_unit_test(value_tree_test value_tree_test.cpp)
