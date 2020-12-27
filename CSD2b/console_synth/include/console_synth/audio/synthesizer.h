@@ -4,6 +4,7 @@
 #pragma once
 
 #include "audio_processor_base.h"
+#include <console_synth/audio/envelope.h>
 #include <console_synth/audio/oscillators.h>
 
 // ===================================================================================================
@@ -24,6 +25,7 @@ public:
     OscillatorSynthesizerVoice()
     {
         envelope.setSampleRate (getSampleRate());
+        envelope.setReleaseFinishedCallback ([this] { clearCurrentNote(); });
         oscillator.setSampleRate (getSampleRate());
     }
 
@@ -34,16 +36,13 @@ public:
             auto value = getNextSample();
 
             for (auto channel = 0; channel < outputBuffer.getNumChannels(); ++channel)
-            {
                 outputBuffer.addSample (channel, sample, value);
-            }
         }
     }
 
     void stopNote (float velocity, bool allowTailOff) override
     {
         envelope.noteOff();
-        clearCurrentNote();
     }
 
     void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound* sound, int currentPitchWheelPosition) override
@@ -73,7 +72,7 @@ public:
 
 private:
     OscillatorType oscillator;
-    juce::ADSR envelope;
+    ADSR envelope;
 
 
     double getNextSample()
@@ -197,7 +196,7 @@ class RmSynthesizer : public SynthesizerBase
     using OscType = RmOsc<SineOsc<float>, SquareOsc<float>, TriangleOsc<float>>;
     using VoiceType = OscillatorSynthesizerVoice<OscType>;
 
-    RmSynthesizer(juce::ValueTree tree) {
-
+    RmSynthesizer (juce::ValueTree tree)
+    {
     }
 };

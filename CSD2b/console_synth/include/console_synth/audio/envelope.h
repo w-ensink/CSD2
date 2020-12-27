@@ -14,8 +14,7 @@ public:
             onReleaseDone();
 
         wasActive = internalAdsr.isActive();
-        auto sample = internalAdsr.getNextSample();
-        return sample;
+        return internalAdsr.getNextSample();
     }
 
     void noteOn()
@@ -44,6 +43,12 @@ public:
     }
 
     [[nodiscard]] bool isActive() const noexcept { return internalAdsr.isActive(); }
+
+    void reset()
+    {
+        internalAdsr.reset();
+        wasActive = false;
+    }
 
 private:
     std::function<void()> onReleaseDone = [] {};
