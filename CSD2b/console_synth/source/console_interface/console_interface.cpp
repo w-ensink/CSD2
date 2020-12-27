@@ -3,7 +3,7 @@
 
 #include <console_synth/console_interface/console_interface.h>
 #include <console_synth/engine.h>
-#include <console_synth/format.h>
+#include <console_synth/utility/format.h>
 #include <console_synth/sequencer/melody_generator.h>
 #include <ctre.hpp>
 

@@ -3,7 +3,7 @@
 
 #include <console_synth/console_interface/console_interface.h>
 #include <console_synth/engine.h>
-#include <console_synth/utility.h>
+#include <console_synth/utility/scoped_message_thread_enabler.h>
 #include <fmt/color.h>
 
 int main()

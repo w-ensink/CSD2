@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <console_synth/drow_ValueTreeObjectList.h>
 #include <console_synth/identifiers.h>
-#include <console_synth/property.h>
 #include <console_synth/sequencer/event.h>
+#include <console_synth/utility/drow_ValueTreeObjectList.h>
+#include <console_synth/utility/property.h>
 #include <utility>
 
 struct Note
@@ -61,12 +61,11 @@ struct Melody : private drow::ValueTreeObjectList<Note>
     // could result in a dangling reference if a new melody was generated while the
     // sequencer was still using the old sequencer events.
     // and returning a copy of the events is very expensive, since it requires a heap allocation.
-    // Since changing the events only locks for a move operation, this function will never have to wait
-    // for long.
+    // the function has to acquire the lock, so it might have to wait a very small time.
     template <typename Functor>
     void forEachEvent (Functor&& function)
     {
-        auto eventsLock = std::scoped_lock { eventsMutex };
+        auto lock = std::scoped_lock { eventsMutex };
         std::for_each (events.begin(), events.end(), std::forward<Functor> (function));
     }
 

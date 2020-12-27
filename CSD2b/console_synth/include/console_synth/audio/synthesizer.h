@@ -66,12 +66,6 @@ public:
         return oscillator;
     }
 
-    // oscillator controller will be a templated class,
-    // with partial specialization for each different type of oscillator
-    auto getOscillatorController()
-    {
-    }
-
     void setEnvelope (juce::ADSR::Parameters params)
     {
         envelope.setParameters (params);
@@ -117,6 +111,15 @@ public:
 
 protected:
     juce::Synthesiser synthEngine;
+
+
+    template <typename VoiceType, typename Functor>
+    void forEachVoice (Functor&& function)
+    {
+        for (auto i = 0; i < synthEngine.getNumVoices(); ++i)
+            if (auto* voice = dynamic_cast<VoiceType*> (synthEngine.getVoice (i)))
+                function (*voice);
+    }
 };
 
 // ===================================================================================================
@@ -149,20 +152,21 @@ public:
 
     void setModulationIndexForModulator (int modulator, double index)
     {
-        forEachVoice ([modulator, index] (auto& voice) {
+        forEachVoice<VoiceType> ([modulator, index] (auto& voice) {
             voice.getOscillator().setModulationIndex (modulator, index);
         });
     }
 
     void setRatioForModulator (int modulator, double ratio)
     {
-        forEachVoice ([modulator, ratio] (auto& voice) {
+        forEachVoice<VoiceType> ([modulator, ratio] (auto& voice) {
             voice.getOscillator().setModulationIndex (modulator, ratio);
         });
     }
 
 private:
     juce::ValueTree synthState { IDs::synth };
+    Property<juce::String> type { synthState, IDs::name, nullptr, "FM" };
     Property<int> numVoices { synthState, IDs::numVoices, nullptr, 4 };
     Property<double> modulationIndex { synthState, IDs::modulationIndex, nullptr, 1.0 };
     Property<float> attack { synthState, IDs::attack, nullptr, 0.001 };
@@ -170,14 +174,6 @@ private:
     Property<float> sustain { synthState, IDs::sustain, nullptr, 0.5 };
     Property<float> release { synthState, IDs::release, nullptr, 1.0 };
 
-
-    template <typename Functor>
-    void forEachVoice (Functor&& function)
-    {
-        for (auto i = 0; i < synthEngine.getNumVoices(); ++i)
-            if (auto* voice = dynamic_cast<VoiceType*> (synthEngine.getVoice (i)))
-                function (*voice);
-    }
 
     void envelopeChanged()
     {
@@ -188,8 +184,20 @@ private:
             .release = release.getValue()
         };
 
-        forEachVoice ([params] (auto& voice) {
+        forEachVoice<VoiceType> ([params] (auto& voice) {
             voice.setEnvelope (params);
         });
+    }
+};
+
+// ===================================================================================================
+
+class RmSynthesizer : public SynthesizerBase
+{
+    using OscType = RmOsc<SineOsc<float>, SquareOsc<float>, TriangleOsc<float>>;
+    using VoiceType = OscillatorSynthesizerVoice<OscType>;
+
+    RmSynthesizer(juce::ValueTree tree) {
+
     }
 };

@@ -4,7 +4,7 @@
 #pragma once
 
 #include <console_synth/audio/audio_callback.h>
-#include <console_synth/format.h>
+#include <console_synth/utility/format.h>
 #include <console_synth/sequencer/sequencer.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_devices/juce_audio_devices.h>

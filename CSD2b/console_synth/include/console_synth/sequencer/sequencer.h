@@ -5,7 +5,7 @@
 
 #include <console_synth/audio/audio_processor_base.h>
 #include <console_synth/identifiers.h>
-#include <console_synth/property.h>
+#include <console_synth/utility/property.h>
 #include <console_synth/sequencer/play_head.h>
 #include <console_synth/sequencer/time_signature.h>
 #include <console_synth/sequencer/track.h>
