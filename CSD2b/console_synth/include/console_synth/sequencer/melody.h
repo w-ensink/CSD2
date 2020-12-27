@@ -43,7 +43,7 @@ struct Note
 };
 
 
-struct Melody : public drow::ValueTreeObjectList<Note>
+struct Melody : private drow::ValueTreeObjectList<Note>
 {
     explicit Melody (juce::ValueTree& tree) : drow::ValueTreeObjectList<Note> { juce::ValueTree { IDs::melody } }
     {
@@ -55,6 +55,49 @@ struct Melody : public drow::ValueTreeObjectList<Note>
     {
         freeObjects();
     }
+
+    // Thread safe way of applying a function to each event in the melody.
+    // The reason for this construct is that returning a reference to the events
+    // could result in a dangling reference if a new melody was generated while the
+    // sequencer was still using the old sequencer events.
+    // and returning a copy of the events is very expensive, since it requires a heap allocation.
+    // Since changing the events only locks for a move operation, this function will never have to wait
+    // for long.
+    template <typename Functor>
+    void forEachEvent (Functor&& function)
+    {
+        auto eventsLock = std::scoped_lock { eventsMutex };
+        std::for_each (events.begin(), events.end(), std::forward<Functor> (function));
+    }
+
+private:
+    std::vector<Event> events;
+    std::mutex eventsMutex;
+
+    void rebuildEventList()
+    {
+        auto newEvents = std::vector<Event> (objects.size() * 2);
+
+        for (auto* note : objects)
+        {
+            auto [e1, e2] = note->getSequencerEvents();
+            newEvents.emplace_back (e1);
+            newEvents.emplace_back (e2);
+        }
+
+        // when a note on and note off event for the same note at the same tick occur,
+        // it should first handle the note off and then the note on
+        std::sort (newEvents.begin(), newEvents.end(), [] (const auto& a, const auto& b) {
+            if (a.timeStampTicks == b.timeStampTicks && a.midiNote == b.midiNote)
+                return ! a.isNoteOn;
+
+            return a.timeStampTicks > b.timeStampTicks;
+        });
+
+        auto eventsLock = std::scoped_lock { eventsMutex };
+        events = std::move (newEvents);
+    }
+
 
     Note* createNewObject (const juce::ValueTree& tree) override
     {
@@ -81,48 +124,5 @@ struct Melody : public drow::ValueTreeObjectList<Note>
         rebuildEventList();
     }
 
-
-    // Thread safe way of applying a function to each event in the melody.
-    // The reason for this construct is that returning a reference to the events
-    // could result in a dangling reference if a new melody was generated while the
-    // sequencer was still using the old sequencer events.
-    // and returning a copy of the events is very expensive, since it requires a heap allocation.
-    // Since changing the events only locks for a move operation, this function will never have to block
-    // for long.
-    template <typename Functor>
-    void forEachEvent (Functor&& function)
-    {
-        auto eventsLock = std::scoped_lock { eventsMutex };
-        std::for_each (events.begin(), events.end(), std::forward<Functor> (function));
-    }
-
     void objectOrderChanged() override {}
-
-private:
-    std::vector<Event> events;
-    std::mutex eventsMutex;
-
-    void rebuildEventList()
-    {
-        auto newEvents = std::vector<Event> (objects.size() * 2);
-
-        for (auto* note : objects)
-        {
-            auto [e1, e2] = note->getSequencerEvents();
-            newEvents.emplace_back (e1);
-            newEvents.emplace_back (e2);
-        }
-
-        // when a note on and note off event for the same note at the same tick occur,
-        // it should first handle the note off and then the note on
-        std::sort (newEvents.begin(), newEvents.end(), [] (auto a, auto b) {
-            if (a.timeStampTicks == b.timeStampTicks && a.midiNote == b.midiNote)
-                return ! a.isNoteOn;
-
-            return a.timeStampTicks > b.timeStampTicks;
-        });
-
-        auto eventsLock = std::scoped_lock { eventsMutex };
-        events = std::move (newEvents);
-    }
 };

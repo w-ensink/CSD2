@@ -15,14 +15,13 @@ FetchContent_Declare(Juce
         GIT_REPOSITORY "https://github.com/juce-framework/JUCE.git"
         GIT_TAG "df3b49fbd35655ed2530e77e005034d87987c765")
 
+# Fetch CTRE from github to parse commands for the UI
 FetchContent_Declare(Ctre
         GIT_REPOSITORY "https://github.com/hanickadot/compile-time-regular-expressions.git"
         GIT_TAG "9a37e550f1f2879b51582fba79a8bd7ba12cb5b0")
 
 # Make all fetched libraries available inside the CMake project
 FetchContent_MakeAvailable(Juce FmtLib Ctre)
-
-message("juce source dir: ${juce_SOURCE_DIR}/modules/juce_core/juce_core.h")
 
 # give the target a name (same as project name now)
 set(TARGET_NAME ${PROJECT_NAME})

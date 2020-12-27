@@ -117,6 +117,29 @@ struct SquareOsc : public PrimitiveOscillatorBase<FloatType>
 private:
     using Base = PrimitiveOscillatorBase<FloatType>;
 };
+
+// ===================================================================================================
+
+template <typename FloatType>
+struct TriangleOsc : public PrimitiveOscillatorBase<FloatType>
+{
+    TriangleOsc() = default;
+    ~TriangleOsc() = default;
+
+    void advance() noexcept
+    {
+        Base::advancePhase();
+
+        if (Base::normalizedPhase < 0.5)
+            Base::currentSample = Base::normalizedPhase * 4.0 - 1.0;
+        else
+            Base::currentSample = (1.0 - Base::normalizedPhase) * 4.0 - 1.0;
+    }
+
+private:
+    using Base = PrimitiveOscillatorBase<FloatType>;
+};
+
 // ===================================================================================================
 
 template <typename FloatType>
@@ -135,6 +158,32 @@ private:
     using Base = PrimitiveOscillatorBase<FloatType>;
 };
 
+// ===================================================================================================
+
+template <typename FloatType>
+struct NoiseOsc
+{
+    using float_type = FloatType;
+
+    static_assert (std::is_floating_point_v<float_type>, "oscillator requires a floating point type");
+
+    void setFrequency (double) {}
+    void setSampleRate (double) {}
+
+    FloatType getSample() const noexcept
+    {
+        return currentSample;
+    }
+
+    void advance() noexcept
+    {
+        currentSample = (FloatType) random.nextDouble();
+    }
+
+private:
+    juce::Random random;
+    FloatType currentSample;
+};
 
 // ===================================================================================================
 
@@ -248,6 +297,28 @@ struct RmOsc : public ModulationOscillatorBase<CarrierType, ModulatorTypes...>
         details::forEachTupleItem (Base::modulators, [this, &sample] (auto& modulator, auto index) {
             modulator.advance();
             sample *= (modulator.getSample() * Base::modulationIndices[index]);
+        });
+
+        Base::currentSample = sample;
+    }
+
+private:
+    using Base = ModulationOscillatorBase<CarrierType, ModulatorTypes...>;
+};
+
+// ===================================================================================================
+
+template <typename CarrierType, typename... ModulatorTypes>
+struct AmOsc : public ModulationOscillatorBase<CarrierType, ModulatorTypes...>
+{
+    void advance() noexcept
+    {
+        Base::carrier.advance();
+        auto sample = Base::carrier.getSample();
+
+        details::forEachTupleItem (Base::modulators, [this, &sample] (auto& modulator, auto index) {
+            modulator.advance();
+            sample *= (std::abs (modulator.getSample()) * Base::modulationIndices[index]);
         });
 
         Base::currentSample = sample;
