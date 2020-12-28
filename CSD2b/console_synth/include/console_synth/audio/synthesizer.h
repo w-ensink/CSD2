@@ -169,9 +169,9 @@ private:
     Property<int> numVoices { synthState, IDs::numVoices, nullptr, 4 };
     Property<double> modulationIndex { synthState, IDs::modulationIndex, nullptr, 1.0 };
     Property<float> attack { synthState, IDs::attack, nullptr, 0.001 };
-    Property<float> decay { synthState, IDs::decay, nullptr, 1.0 };
+    Property<float> decay { synthState, IDs::decay, nullptr, 0.1 };
     Property<float> sustain { synthState, IDs::sustain, nullptr, 0.5 };
-    Property<float> release { synthState, IDs::release, nullptr, 1.0 };
+    Property<float> release { synthState, IDs::release, nullptr, 0.1 };
 
 
     void envelopeChanged()
