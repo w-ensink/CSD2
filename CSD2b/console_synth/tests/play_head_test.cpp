@@ -130,7 +130,7 @@ TEST_CASE ("play head basic looping")
     playHead.setPositionInTicks (startTick);
 
     // loop from tick 5 to 49 (including), so 5-50 exclusive
-    playHead.setLooping (5, 49);
+    playHead.setLooping (5, 50);
     REQUIRE (playHead.isLooping());
 
     auto timeStampsIntoBufferMs = std::vector<double>();

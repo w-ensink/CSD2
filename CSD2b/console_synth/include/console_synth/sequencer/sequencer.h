@@ -17,11 +17,9 @@ class Sequencer : public juce::AudioSource
 public:
     explicit Sequencer (juce::ValueTree& parent)
     {
-        playHead.setLooping (0, 48 * 4 + 1);
-
+        playHead.setLooping (0, timeSignature.getTicksPerBar()+1);
         setTempoBpm (tempoBpm.getValue());
-
-        parent.addChild (sequencerState, -1, nullptr);
+        parent.appendChild (sequencerState, nullptr);
 
         tempoBpm.onChange = [this] (auto newTempo) { setTempoBpm (newTempo); };
 

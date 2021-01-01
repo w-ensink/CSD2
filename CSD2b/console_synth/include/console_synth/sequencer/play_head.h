@@ -56,7 +56,7 @@ public:
         return timeSinceLastTickMs;
     }
 
-    // looping from start to (including) end
+    // looping from start to (excluding) end
     void setLooping (uint64_t start, uint64_t end)
     {
         loopingRangeTicks = { start, end };
@@ -131,7 +131,7 @@ public:
     {
         tick += 1;
         if (isLooping())
-            if (tick > loopingRangeTicks->getEnd())
+            if (tick >= loopingRangeTicks->getEnd())
                 tick = loopingRangeTicks->getStart();
         return tick;
     }
