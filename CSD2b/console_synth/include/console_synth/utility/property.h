@@ -5,12 +5,17 @@
 
 #include <juce_data_structures/juce_data_structures.h>
 
+/* This is a wrapper around a value tree property, to make it more usable. This class
+ * listens to changes in the value of the property inside the value tree. When
+ * a change in value occurs, it will call the callback that was assigned to it with the new value.
+ * */
+
 template <typename T>
 class Property final : private juce::ValueTree::Listener
 {
 public:
-    Property (juce::ValueTree& tree, juce::Identifier id, juce::UndoManager* undoManager, T initialValue = {})
-        : tree { tree }, identifier { std::move (id) }, undoManager { undoManager }, cachedValue { initialValue }
+    Property (juce::ValueTree& tree, juce::Identifier id, T initialValue = {})
+        : tree { tree }, identifier { std::move (id) }, cachedValue { initialValue }
     {
         tree.addListener (this);
 
@@ -34,7 +39,7 @@ public:
     void setValue (T newValue)
     {
         cachedValue = newValue;
-        tree.setPropertyExcludingListener (this, identifier, juce::VariantConverter<T>::toVar (newValue), undoManager);
+        tree.setPropertyExcludingListener (this, identifier, juce::VariantConverter<T>::toVar (newValue), nullptr);
     }
 
     [[nodiscard]] T getValue() const
@@ -47,7 +52,6 @@ public:
 private:
     juce::ValueTree tree;
     const juce::Identifier identifier;
-    juce::UndoManager* undoManager {};
     T cachedValue;
 
 

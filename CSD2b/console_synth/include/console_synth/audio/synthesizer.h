@@ -6,6 +6,7 @@
 #include "audio_processor_base.h"
 #include <console_synth/audio/envelope.h>
 #include <console_synth/audio/oscillators.h>
+#include <console_synth/utility/property.h>
 
 // ===================================================================================================
 
@@ -165,13 +166,13 @@ public:
 
 private:
     juce::ValueTree synthState { IDs::synth };
-    Property<juce::String> type { synthState, IDs::name, nullptr, "FM" };
-    Property<int> numVoices { synthState, IDs::numVoices, nullptr, 4 };
-    Property<double> modulationIndex { synthState, IDs::modulationIndex, nullptr, 1.0 };
-    Property<float> attack { synthState, IDs::attack, nullptr, 0.001 };
-    Property<float> decay { synthState, IDs::decay, nullptr, 0.1 };
-    Property<float> sustain { synthState, IDs::sustain, nullptr, 0.5 };
-    Property<float> release { synthState, IDs::release, nullptr, 0.1 };
+    Property<juce::String> type { synthState, IDs::name, "FM" };
+    Property<int> numVoices { synthState, IDs::numVoices, 4 };
+    Property<double> modulationIndex { synthState, IDs::modulationIndex, 1.0 };
+    Property<float> attack { synthState, IDs::attack, 0.001 };
+    Property<float> decay { synthState, IDs::decay, 0.1 };
+    Property<float> sustain { synthState, IDs::sustain, 0.5 };
+    Property<float> release { synthState, IDs::release, 0.1 };
 
 
     void envelopeChanged()
@@ -193,10 +194,51 @@ private:
 
 class RmSynthesizer : public SynthesizerBase
 {
-    using OscType = RmOsc<SineOsc<float>, SquareOsc<float>, TriangleOsc<float>>;
+    using OscType = AntiAliased<RmOsc<SineOsc<float>, SquareOsc<float>, TriangleOsc<float>>>;
     using VoiceType = OscillatorSynthesizerVoice<OscType>;
 
-    RmSynthesizer (juce::ValueTree tree)
+    explicit RmSynthesizer (juce::ValueTree parent)
     {
+        parent.appendChild (synthState, nullptr);
+
+        for (auto i = 0; i < numVoices.getValue(); ++i)
+        {
+            auto voice = new VoiceType {};
+            voice->getOscillator().setRatios ({ 0.5, 0.25 });
+            synthEngine.addVoice (voice);
+        }
+
+        auto onEnvChange = [this] (auto) { envelopeChanged(); };
+        attack.onChange = onEnvChange;
+        decay.onChange = onEnvChange;
+        sustain.onChange = onEnvChange;
+        release.onChange = onEnvChange;
+        envelopeChanged();
+    }
+
+
+private:
+    juce::ValueTree synthState { IDs::synth };
+    Property<juce::String> type { synthState, IDs::name, "RM" };
+    Property<int> numVoices { synthState, IDs::numVoices, 4 };
+    Property<double> modulationIndex { synthState, IDs::modulationIndex, 1.0 };
+    Property<float> attack { synthState, IDs::attack, 0.001 };
+    Property<float> decay { synthState, IDs::decay, 0.1 };
+    Property<float> sustain { synthState, IDs::sustain, 0.5 };
+    Property<float> release { synthState, IDs::release, 0.1 };
+
+
+    void envelopeChanged()
+    {
+        auto params = juce::ADSR::Parameters {
+            .attack = attack.getValue(),
+            .decay = decay.getValue(),
+            .sustain = sustain.getValue(),
+            .release = release.getValue()
+        };
+
+        forEachVoice<VoiceType> ([params] (auto& voice) {
+            voice.setEnvelope (params);
+        });
     }
 };

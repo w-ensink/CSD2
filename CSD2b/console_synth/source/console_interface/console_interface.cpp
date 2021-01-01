@@ -3,8 +3,8 @@
 
 #include <console_synth/console_interface/console_interface.h>
 #include <console_synth/engine.h>
-#include <console_synth/utility/format.h>
 #include <console_synth/sequencer/melody_generator.h>
+#include <console_synth/utility/format.h>
 #include <ctre.hpp>
 
 // =================================================================================================
@@ -277,8 +277,17 @@ struct GenerateMelody_CommandHandler : public CommandHandler
                      .getChildWithName (IDs::sequencer)
                      .getChildWithName (IDs::track)
                      .getChildWithName (IDs::melody);
+
+        auto shouldPausePlayback = engine.getSequencer().isPlaying();
+
+        if (shouldPausePlayback)
+            engine.getSequencer().stopPlayback();
+
         m.removeAllChildren (nullptr);
         m.copyPropertiesAndChildrenFrom (melody, nullptr);
+
+        if (shouldPausePlayback)
+            engine.getSequencer().startPlayback();
 
         return "generated melody";
     }

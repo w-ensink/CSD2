@@ -55,7 +55,7 @@ All the logic inside the render functions was the same. The only difference was 
 was my template library and the other used runtime polymorphism with virtual functions.
 The results showed that my template oscillator was about 275 times faster. I don't know for
 sure if this is accurate in the real world though. Further testing showed that this difference
-shrunk when faces with bigger audio buffers (in the order of 10,000,000 samples). The difference 
+shrunk when faced with bigger audio buffers (in the order of 10,000,000 samples). The difference 
 was then still around 70 times.
 
 There are a couple of primitive naive oscillator types (square, saw, sine, triangle, noise, pulse...),

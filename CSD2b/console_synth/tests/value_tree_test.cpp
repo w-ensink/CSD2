@@ -109,7 +109,7 @@ TEST_CASE ("property")
     auto synthBranch = juce::ValueTree { "synth" };
     rootTree.addChild (synthBranch, -1, nullptr);
 
-    auto frequency = Property<double> { synthBranch, "frequency", nullptr };
+    auto frequency = Property<double> { synthBranch, "frequency" };
     auto callbackValue = 0.0;
 
     frequency.onChange = [&] (auto freq) {
@@ -147,7 +147,7 @@ TEST_CASE ("property undo/redo")
     auto sequencer = juce::ValueTree { "sequencer" };
     sequencer.setProperty ("tempo", 100, nullptr);
     auto undoManager = juce::UndoManager {};
-    auto tempo = Property<int> { sequencer, "tempo", nullptr };
+    auto tempo = Property<int> { sequencer, "tempo" };
 
     CHECK (tempo.getValue() == 100);
 
@@ -175,7 +175,7 @@ TEST_CASE ("value tree copy children and properties")
     auto engine = juce::ValueTree { "engine" };
     auto sequencer = juce::ValueTree { "sequencer" };
     engine.appendChild (sequencer, nullptr);
-    auto tempo = Property<int> { sequencer, "tempo", nullptr };
+    auto tempo = Property<int> { sequencer, "tempo" };
 
     auto value = 0;
     tempo.onChange = [&value] (auto newValue) { value = newValue; };
@@ -225,8 +225,8 @@ struct Synth
 {
     explicit Synth (juce::ValueTree& tree, SynthType type) : type { type },
                                                              state ("synth"),
-                                                             amplitude (state, "amplitude", nullptr, 0.0),
-                                                             frequency (state, "frequency", nullptr, 440)
+                                                             amplitude (state, "amplitude", 0.0),
+                                                             frequency (state, "frequency", 440)
     {
         tree.addChild (state, -1, nullptr);
 
@@ -247,7 +247,7 @@ struct Synth
 
 struct Engine
 {
-    explicit Engine (juce::ValueTree tree) : synthType { state, "synth_type", nullptr, SynthType::sine }
+    explicit Engine (juce::ValueTree tree) : synthType { state, "synth_type", SynthType::sine }
     {
         possibleSynths.push_back (std::make_unique<Synth> (state, SynthType::sine));
         possibleSynths.push_back (std::make_unique<Synth> (state, SynthType::square));
