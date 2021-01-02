@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <memory>
 
 class Engine;
 
@@ -25,19 +25,19 @@ struct CommandHandler
 struct ConsoleInterface
 {
     explicit ConsoleInterface (Engine& engineToControl);
-    bool handleCommand (std::string_view command);
-    [[nodiscard]] std::string getCurrentFeedback() const;
+    void handleCommand (std::string_view command);
     void showHelp();
+    void run();
+    void addCommandHandler (std::unique_ptr<CommandHandler> handler);
 
 private:
     Engine& engine;
     std::string feedback { "type 'help' to see what's possible" };
     std::vector<std::unique_ptr<CommandHandler>> commandHandlers {};
+    bool keepRunning = true;
+
+    static std::string fetchUserInput (std::string_view message);
+    static void clearScreen();
 };
 
-
 // =================================================================================================
-
-bool isQuitCommand (std::string_view s) noexcept;
-
-std::string fetchUserInput (const std::string& message);

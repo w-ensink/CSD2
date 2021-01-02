@@ -4,7 +4,6 @@
 #include <console_synth/console_interface/console_interface.h>
 #include <console_synth/engine.h>
 #include <console_synth/utility/scoped_message_thread_enabler.h>
-#include <fmt/color.h>
 
 int main()
 {
@@ -15,17 +14,7 @@ int main()
     auto engine = Engine {};
     auto consoleInterface = ConsoleInterface { engine };
 
-    for (;;)
-    {
-        auto input = fetchUserInput (" ---> ");
-
-        if (isQuitCommand (input))
-            break;
-
-        consoleInterface.handleCommand (input);
-
-        fmt::print (fg (fmt::color::light_sky_blue), "{}\n", consoleInterface.getCurrentFeedback());
-    }
+    consoleInterface.run();
 
     return 0;
 }

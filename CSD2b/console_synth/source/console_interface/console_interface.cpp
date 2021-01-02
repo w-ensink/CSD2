@@ -409,40 +409,46 @@ struct ChangeEnvelope_CommandHandler : public CommandHandler
 
 ConsoleInterface::ConsoleInterface (Engine& engineToControl) : engine { engineToControl }
 {
-    commandHandlers.push_back (std::make_unique<StartPlayback_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<StopPlayback_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<ChangeTempo_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<ListAudioDevices_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<ListMidiDevices_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<OpenMidiInputDevice_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<AddNote_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<ListNotes_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<GenerateMelody_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<Undo_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<Redo_CommandHandler>());
-    commandHandlers.push_back (std::make_unique<ChangeEnvelope_CommandHandler>());
+    addCommandHandler (std::make_unique<StartPlayback_CommandHandler>());
+    addCommandHandler (std::make_unique<StopPlayback_CommandHandler>());
+    addCommandHandler (std::make_unique<ChangeTempo_CommandHandler>());
+    addCommandHandler (std::make_unique<ListAudioDevices_CommandHandler>());
+    addCommandHandler (std::make_unique<ListMidiDevices_CommandHandler>());
+    addCommandHandler (std::make_unique<OpenMidiInputDevice_CommandHandler>());
+    addCommandHandler (std::make_unique<AddNote_CommandHandler>());
+    addCommandHandler (std::make_unique<ListNotes_CommandHandler>());
+    addCommandHandler (std::make_unique<GenerateMelody_CommandHandler>());
+    addCommandHandler (std::make_unique<Undo_CommandHandler>());
+    addCommandHandler (std::make_unique<Redo_CommandHandler>());
+    addCommandHandler (std::make_unique<ChangeEnvelope_CommandHandler>());
 }
 
-bool ConsoleInterface::handleCommand (std::string_view command)
+void ConsoleInterface::handleCommand (std::string_view command)
 {
     for (auto&& handler : commandHandlers)
     {
         if (handler->canHandleCommand (command))
         {
             feedback = handler->handleCommand (engine, command);
-            return true;
+            return;
         }
     }
 
     if (command == "help")
     {
         showHelp();
-        return true;
+        return;
+    }
+
+    if (command == "quit" || command == "exit")
+    {
+        keepRunning = false;
+        return;
     }
 
     feedback = fmt::format ("'{}' is not a valid command, enter 'help' to see what's possible", command);
-    return false;
 }
+
 
 void ConsoleInterface::showHelp()
 {
@@ -456,29 +462,49 @@ void ConsoleInterface::showHelp()
     fetchUserInput ("Press enter to return... ");
 }
 
-std::string ConsoleInterface::getCurrentFeedback() const
+
+void ConsoleInterface::run()
 {
-    return feedback;
+    static constexpr auto header = std::string_view {
+        "░██╗░░░░░░░██╗░█████╗░██╗░░░██╗████████╗███████╗██████╗░\n"
+        "░██║░░██╗░░██║██╔══██╗██║░░░██║╚══██╔══╝██╔════╝██╔══██╗\n"
+        "░╚██╗████╗██╔╝██║░░██║██║░░░██║░░░██║░░░█████╗░░██████╔╝\n"
+        "░░████╔═████║░██║░░██║██║░░░██║░░░██║░░░██╔══╝░░██╔══██╗\n"
+        "░░╚██╔╝░╚██╔╝░╚█████╔╝╚██████╔╝░░░██║░░░███████╗██║░░██║\n"
+        "░░░╚═╝░░░╚═╝░░░╚════╝░░╚═════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝"
+    };
+
+    while (keepRunning)
+    {
+        clearScreen();
+        fmt::print ("{}\n\n", header);
+        fmt::print ("{}\n", feedback);
+        auto command = fetchUserInput (" --> ");
+
+        handleCommand (command);
+    }
 }
 
-
-// =================================================================================================
-
-
-bool isQuitCommand (std::string_view s) noexcept
-{
-    static constexpr auto pattern = ctll::fixed_string { "^(quit|exit)$" };
-
-    if (ctre::match<pattern> (s))
-        return true;
-
-    return false;
-}
-
-std::string fetchUserInput (const std::string& message)
+std::string ConsoleInterface::fetchUserInput (std::string_view message)
 {
     fmt::print ("{}", message);
     auto targetString = std::string {};
     std::getline (std::cin, targetString);
     return targetString;
+}
+
+
+void ConsoleInterface::clearScreen()
+{
+#if defined(JUCE_MAC) || defined(JUCE_LINUX)
+    system ("clear");
+#elif defined(JUCE_WINDOWS)
+    system ("cls");
+#endif
+}
+
+
+void ConsoleInterface::addCommandHandler (std::unique_ptr<CommandHandler> handler)
+{
+    commandHandlers.push_back (std::move (handler));
 }
