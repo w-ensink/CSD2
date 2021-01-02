@@ -205,7 +205,7 @@ struct AddNote_CommandHandler : public CommandHandler
                 .getChildWithName (IDs::melody)
                 .addChild (note, -1, engine.getUndoManager());
 
-            return fmt::format ("added note {} at {}", noteNumber, start);
+            return fmt::format ("added note {} at tick {}", noteNumber, start);
         }
 
         return "failed to add note";
@@ -400,8 +400,42 @@ struct ChangeEnvelope_CommandHandler : public CommandHandler
         return "adsr <a> <d> <s> <r> (sets the envelope)";
     }
 
+private:
     // regex for: "adsr <float> <float> <float> <float>"
     static constexpr auto pattern = ctll::fixed_string { R"(^adsr\s(\d+\.\d+)\s(\d+\.\d+)\s(\d+\.\d+)\s(\d+\.\d+)$)" };
+};
+
+// =================================================================================================
+
+struct ChangeSynth_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        return ctre::match<pattern> (command);
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto type = ctre::match<pattern> (command).get<1>().to_view();
+        auto track = engine.getValueTreeState().getChildWithName (IDs::sequencer).getChildWithName (IDs::track);
+
+        auto newType = SynthType::fm;
+
+        if (type == "rm")
+            newType = SynthType::rm;
+
+        track.setProperty (IDs::synthType, juce::VariantConverter<SynthType>::toVar (newType), engine.getUndoManager());
+
+        return fmt::format ("changed synth type to {}", type);
+    }
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "switch synth <rm|fm> (switches the synth to the given type)";
+    }
+
+private:
+    static constexpr auto pattern = ctll::fixed_string { R"(^switch\ssynth\s(rm|fm)$)" };
 };
 
 // =================================================================================================
@@ -421,6 +455,7 @@ ConsoleInterface::ConsoleInterface (Engine& engineToControl) : engine { engineTo
     addCommandHandler (std::make_unique<Undo_CommandHandler>());
     addCommandHandler (std::make_unique<Redo_CommandHandler>());
     addCommandHandler (std::make_unique<ChangeEnvelope_CommandHandler>());
+    addCommandHandler (std::make_unique<ChangeSynth_CommandHandler>());
 }
 
 void ConsoleInterface::handleCommand (std::string_view command)

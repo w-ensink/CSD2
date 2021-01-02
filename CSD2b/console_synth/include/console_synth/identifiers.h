@@ -29,6 +29,7 @@ DECLARE_ID (release);
 DECLARE_ID (modulationIndex);
 DECLARE_ID (ratio);
 DECLARE_ID (name);
+DECLARE_ID (synthType);
 
 }  // namespace IDs
 

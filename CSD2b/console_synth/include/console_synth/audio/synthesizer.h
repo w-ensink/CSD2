@@ -10,7 +10,7 @@
 
 // ===================================================================================================
 
-class GeneralSynthesizerVoice : public juce::SynthesiserSound
+class GeneralSynthesizerSound : public juce::SynthesiserSound
 {
 public:
     bool appliesToChannel (int midiChannel) override { return true; }
@@ -55,7 +55,7 @@ public:
 
     bool canPlaySound (juce::SynthesiserSound* sound) override
     {
-        return dynamic_cast<GeneralSynthesizerVoice*> (sound) != nullptr;
+        return dynamic_cast<GeneralSynthesizerSound*> (sound) != nullptr;
     }
 
     void controllerMoved (int controllerNumber, int newControllerValue) override {}
@@ -90,7 +90,7 @@ class SynthesizerBase : public AudioProcessorBase
 public:
     SynthesizerBase()
     {
-        synthEngine.addSound (new GeneralSynthesizerVoice());
+        synthEngine.addSound (new GeneralSynthesizerSound());
     }
 
     void prepareToPlay (double sampleRate, int maximumExpectedSamplesPerBlock) override
@@ -138,7 +138,8 @@ public:
         for (auto i = 0; i < numVoices.getValue(); ++i)
         {
             auto voice = new VoiceType {};
-            voice->getOscillator().setRatios ({ 0.5, 0.25, 2.0 });
+            voice->getOscillator().setRatios ({ 0.125, 0.25, 0.5 });
+            voice->getOscillator().setModulationIndices({ 1.0, 1.0, 1.0 });
             synthEngine.addVoice (voice);
         }
 
@@ -194,7 +195,8 @@ private:
 
 class RmSynthesizer : public SynthesizerBase
 {
-    using OscType = AntiAliased<RmOsc<SineOsc<float>, SquareOsc<float>, TriangleOsc<float>>>;
+public:
+    using OscType = AntiAliased<RmOsc<SineOsc<float>, TriangleOsc<float>, SawOsc<float>>>;
     using VoiceType = OscillatorSynthesizerVoice<OscType>;
 
     explicit RmSynthesizer (juce::ValueTree parent)
@@ -204,7 +206,8 @@ class RmSynthesizer : public SynthesizerBase
         for (auto i = 0; i < numVoices.getValue(); ++i)
         {
             auto voice = new VoiceType {};
-            voice->getOscillator().setRatios ({ 0.5, 0.25 });
+            voice->getOscillator().setRatios ({ 0.125, 0.5 });
+            voice->getOscillator().setModulationIndices ({ 1.0, 1.0 });
             synthEngine.addVoice (voice);
         }
 

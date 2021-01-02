@@ -4,6 +4,7 @@
 #pragma once
 
 #include <console_synth/audio/processor_chain.h>
+#include <console_synth/audio/synth_types.h>
 #include <console_synth/audio/synthesizer.h>
 #include <console_synth/midi/midi_source.h>
 #include <console_synth/sequencer/melody.h>
@@ -14,11 +15,21 @@ struct Track
     explicit Track (juce::ValueTree parent)
     {
         parent.appendChild (trackState, nullptr);
+
+        synthType.onChange = [this] (auto newType) {
+            if (newType == SynthType::fm && dynamic_cast<FmSynthesizer*> (synth.get()) == nullptr)
+                switchSynth<FmSynthesizer>();
+
+            else if (newType == SynthType::rm && dynamic_cast<RmSynthesizer*> (synth.get()) == nullptr)
+                switchSynth<RmSynthesizer>();
+        };
     }
 
 
-    void prepareToPlay (double sampleRate, int numSamplesPerBlockExpected)
+    void prepareToPlay (double newSampleRate, int numSamplesPerBlockExpected)
     {
+        sampleRate = newSampleRate;
+
         {
             auto synthLock = std::scoped_lock { synthMutex };
             synth->prepareToPlay (sampleRate, numSamplesPerBlockExpected);
@@ -86,6 +97,7 @@ private:
     juce::ValueTree trackState { IDs::track };
     std::mutex synthMutex;
     std::unique_ptr<SynthesizerBase> synth = std::make_unique<FmSynthesizer> (trackState);
+    Property<SynthType> synthType { trackState, IDs::synthType, SynthType::fm };
     std::bitset<128> activeMidiNotes { 0 };
     Melody melody { trackState };
     MelodyPlayerMidiSource melodyPlayerMidiSource { &melody };
@@ -93,6 +105,7 @@ private:
     bool isRecordEnabled = true;
     juce::MidiBuffer midiScratchBuffer;
     PlayState previousPlayState = PlayState::stopped;
+    double sampleRate = 0;
 
 
     template <typename SynthType>
@@ -102,6 +115,7 @@ private:
         auto synthNode = trackState.getChildWithName (IDs::synth);
         trackState.removeChild (synthNode, nullptr);
         auto newSynth = std::make_unique<SynthType> (trackState);
+        newSynth->prepareToPlay (sampleRate, 512);
         synth = std::move (newSynth);
     }
 
