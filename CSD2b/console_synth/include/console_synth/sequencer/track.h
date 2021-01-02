@@ -52,13 +52,12 @@ struct Track
         if (previousPlayState != PlayState::stopped && renderContext.isStopped())
             addMidiOffMessagesForActiveMidiNotes (0);
 
-
         // when the play head reaches the end of a loop, it should fire note off events for all active midi notes
         // to prevent them from going on forever
         if (renderContext.getPlayHead().isLooping())
         {
             forEachTick (renderContext.getPlayHead(), [this, &renderContext] (uint64_t tick, double timeRelativeToBuffer) {
-                if (tick == *renderContext.getPlayHead().getLoopingEnd())
+                if (tick == *renderContext.getPlayHead().getLoopingEnd() - 1)
                 {
                     auto sample = (int) (timeRelativeToBuffer / renderContext.getPlayHead().getDeviceCallbackDurationMs()) * renderContext.getNumSamples();
                     addMidiOffMessagesForActiveMidiNotes (sample);

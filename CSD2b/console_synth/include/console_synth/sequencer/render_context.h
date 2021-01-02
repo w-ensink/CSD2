@@ -7,14 +7,7 @@
 #include <console_synth/sequencer/time_signature.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 
-enum struct PlayState
-{
-    playing,
-    stopped,
-    recording,
-    exporting
-};
-
+#include <console_synth/sequencer/transport_control.h>
 
 struct RenderContext final
 {

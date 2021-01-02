@@ -6,6 +6,7 @@
 #include <console_synth/sequencer/melody_generator.h>
 #include <console_synth/utility/format.h>
 #include <ctre.hpp>
+#include <thread>
 
 // =================================================================================================
 
@@ -282,6 +283,9 @@ struct GenerateMelody_CommandHandler : public CommandHandler
 
         if (shouldPausePlayback)
             engine.getSequencer().stopPlayback();
+
+        // kind of a hack to make all notes currently playing stop... (wait for more than 1 buffer length)
+        std::this_thread::sleep_for (std::chrono::milliseconds { 50 });
 
         m.removeAllChildren (nullptr);
         m.copyPropertiesAndChildrenFrom (melody, nullptr);

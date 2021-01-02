@@ -17,12 +17,11 @@ class Sequencer : public juce::AudioSource
 public:
     explicit Sequencer (juce::ValueTree& parent)
     {
-        playHead.setLooping (0, timeSignature.getTicksPerBar()+1);
+        playHead.setLooping (0, timeSignature.getTicksPerBar() + 1);
         setTempoBpm (tempoBpm.getValue());
         parent.appendChild (sequencerState, nullptr);
 
         tempoBpm.onChange = [this] (auto newTempo) { setTempoBpm (newTempo); };
-
         midiMessageCollector.ensureStorageAllocated (256);
     }
 
@@ -54,7 +53,7 @@ public:
             *bufferToFill.buffer,
             midiBuffer,
             playHead,
-            playState,
+            transportControl.getPlayState(),
             sampleRate,
             { 0, callbackDurationMs },
             timeSignature
@@ -64,7 +63,7 @@ public:
         track.renderNextBlock (renderContext);
 
         // move play head one block ahead to prepare for the next callback
-        if (playState != PlayState::stopped)
+        if (! transportControl.isStopped())
             playHead.advanceDeviceBuffer();
     }
 
@@ -98,17 +97,19 @@ public:
 
     void stopPlayback()
     {
-        playState = PlayState::stopped;
+        transportControl.stopPlayback();
     }
 
     void startPlayback()
     {
-        playState = PlayState::playing;
+        transportControl.startPlayback();
     }
 
-    [[nodiscard]] bool isPlaying() const noexcept { return playState != PlayState::stopped; }
+    [[nodiscard]] bool isPlaying() const noexcept { return transportControl.isPlaying(); }
 
     const TimeSignature& getTimeSignature() const noexcept { return timeSignature; }
+
+    TransportControl& getTransportControl() noexcept { return transportControl; }
 
 private:
     juce::ValueTree sequencerState { IDs::sequencer };
@@ -116,7 +117,7 @@ private:
     TimeSignature timeSignature { 4, 4, 48 };
     double sampleRate = 0;
     PlayHead playHead;
-    PlayState playState = PlayState::stopped;
+    TransportControl transportControl;
     Track track { sequencerState };
     juce::MidiMessageCollector midiMessageCollector;
     std::unique_ptr<juce::MidiInput> currentMidiInput = nullptr;
