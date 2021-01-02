@@ -6,8 +6,7 @@
 #include <console_synth/sequencer/play_head.h>
 #include <console_synth/sequencer/time_signature.h>
 #include <juce_audio_basics/juce_audio_basics.h>
-
-#include <console_synth/sequencer/transport_control.h>
+#include <console_synth/sequencer/play_state.h>
 
 struct RenderContext final
 {

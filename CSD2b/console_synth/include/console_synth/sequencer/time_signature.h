@@ -33,16 +33,9 @@ public:
 
     static bool isValidDenominator (uint32_t toCheck) noexcept;
 
-    [[nodiscard]] uint32_t getTicksPerBar() const noexcept
-    {
-        return getTicksPerDenominator() * numerator;
-    }
+    [[nodiscard]] uint32_t getTicksPerBar() const noexcept;
 
-    [[nodiscard]] uint32_t getTicksPerDenominator() const
-    {
-        auto numDenominatorsInQuarterNote = denominator / 4;
-        return ticksPerQuarterNote / numDenominatorsInQuarterNote;
-    }
+    [[nodiscard]] uint32_t getTicksPerDenominator() const;
 
 private:
     uint32_t numerator { 4 };

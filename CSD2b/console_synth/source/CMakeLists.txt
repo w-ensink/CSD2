@@ -6,6 +6,9 @@ add_library(console_synth_lib STATIC
         # audio
         audio/audio_callback.cpp
         # sequencer
+        sequencer/sequencer.cpp
+        sequencer/track.cpp
+        sequencer/play_head.cpp
         sequencer/time_signature.cpp
         # console_interface
         console_interface/console_interface.cpp)

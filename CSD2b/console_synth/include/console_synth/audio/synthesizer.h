@@ -6,6 +6,7 @@
 #include "audio_processor_base.h"
 #include <console_synth/audio/envelope.h>
 #include <console_synth/audio/oscillators.h>
+#include <console_synth/identifiers.h>
 #include <console_synth/utility/property.h>
 
 // ===================================================================================================
@@ -29,6 +30,8 @@ public:
         envelope.setReleaseFinishedCallback ([this] { clearCurrentNote(); });
         oscillator.setSampleRate (getSampleRate());
     }
+
+    ~OscillatorSynthesizerVoice() override = default;
 
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override
     {
@@ -81,6 +84,8 @@ private:
         oscillator.advance();
         return oscillator.getSample() * envelope.getNextSample();
     }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OscillatorSynthesizerVoice);
 };
 
 // ===================================================================================================
@@ -92,6 +97,8 @@ public:
     {
         synthEngine.addSound (new GeneralSynthesizerSound());
     }
+
+    ~SynthesizerBase() override = default;
 
     void prepareToPlay (double sampleRate, int maximumExpectedSamplesPerBlock) override
     {
@@ -139,7 +146,7 @@ public:
         {
             auto voice = new VoiceType {};
             voice->getOscillator().setRatios ({ 0.125, 0.25, 0.5 });
-            voice->getOscillator().setModulationIndices({ 1.0, 1.0, 1.0 });
+            voice->getOscillator().setModulationIndices ({ 1.0, 1.0, 1.0 });
             synthEngine.addVoice (voice);
         }
 
@@ -150,6 +157,8 @@ public:
         release.onChange = onEnvChange;
         envelopeChanged();
     }
+
+    ~FmSynthesizer() override = default;
 
     void setModulationIndexForModulator (int modulator, double index)
     {
@@ -189,6 +198,8 @@ private:
             voice.setEnvelope (params);
         });
     }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FmSynthesizer);
 };
 
 // ===================================================================================================
@@ -219,6 +230,8 @@ public:
         envelopeChanged();
     }
 
+    ~RmSynthesizer() override = default;
+
 
 private:
     juce::ValueTree synthState { IDs::synth };
@@ -244,4 +257,6 @@ private:
             voice.setEnvelope (params);
         });
     }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RmSynthesizer);
 };

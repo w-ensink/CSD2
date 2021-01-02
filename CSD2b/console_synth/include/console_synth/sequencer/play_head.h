@@ -24,117 +24,48 @@ class PlayHead
 {
 public:
     PlayHead() = default;
+    ~PlayHead() = default;
 
-    void setTickTimeMs (double tickTime)
-    {
-        tickTimeMs = tickTime;
-        timeSinceLastTickMs = tickTime;
-    }
+    void setTickTimeMs (double tickTime);
 
-    void setDeviceCallbackDurationMs (double duration)
-    {
-        blockDurationMs = duration;
-    }
+    void setDeviceCallbackDurationMs (double duration);
 
-    void setPositionInTicks (uint64_t position)
-    {
-        currentTick = position;
-    }
+    void setPositionInTicks (uint64_t position);
 
-    void setTimeSinceLastTickMs (double time)
-    {
-        timeSinceLastTickMs = time;
-    }
-
+    void setTimeSinceLastTickMs (double time);
 
     // returns the time that was left into the last processed buffer
     // after the last time point a tick was scheduled in that buffer
     // e.g.: the last tick in the previous device callback buffer
     // was at 9ms into a 10ms buffer, then this should return 1.
-    [[nodiscard]] double getTimeSinceLastTickMs() const
-    {
-        return timeSinceLastTickMs;
-    }
+    [[nodiscard]] double getTimeSinceLastTickMs() const;
 
     // looping from start to (excluding) end
-    void setLooping (uint64_t start, uint64_t end)
-    {
-        loopingRangeTicks = { start, end };
-
-        if (! (*loopingRangeTicks).contains (currentTick))
-        {
-            currentTick = start;
-        }
-    }
+    void setLooping (uint64_t start, uint64_t end);
 
     // returns the start of the loop in ticks. if not looping, it returns a nullopt
-    [[nodiscard]] std::optional<uint64_t> getLoopingStart() const
-    {
-        if (isLooping())
-            return loopingRangeTicks->getStart();
-
-        return std::nullopt;
-    }
+    [[nodiscard]] std::optional<uint64_t> getLoopingStart() const;
 
     // returns the end of the loop in ticks. if not looping, it returns a nullopt
-    [[nodiscard]] std::optional<uint64_t> getLoopingEnd() const
-    {
-        if (isLooping())
-            return loopingRangeTicks->getEnd();
+    [[nodiscard]] std::optional<uint64_t> getLoopingEnd() const;
 
-        return std::nullopt;
-    }
-
-    [[nodiscard]] uint64_t getCurrentTick() const
-    {
-        return currentTick;
-    }
+    [[nodiscard]] uint64_t getCurrentTick() const;
 
     // returns the amount of time (in ms) a audio callback represents (the buffer length / sample rate)
-    [[nodiscard]] double getDeviceCallbackDurationMs() const
-    {
-        return blockDurationMs;
-    }
+    [[nodiscard]] double getDeviceCallbackDurationMs() const;
 
-    [[nodiscard]] double getTickTimeMs() const
-    {
-        return tickTimeMs;
-    }
+    [[nodiscard]] double getTickTimeMs() const;
 
     // returns whether the play head has a looping range (which makes it loop automatically)
-    [[nodiscard]] bool isLooping() const
-    {
-        return loopingRangeTicks.has_value();
-    }
+    [[nodiscard]] bool isLooping() const;
 
     // advances the play head by one device callback duration (ms)
     // if one buffer of the device callback represents 10ms of audio,
     // the play head will be moved forward by 10ms
     // this will also take into account the ticks that were scheduled during that device callback
-    void advanceDeviceBuffer()
-    {
-        auto timePoint = tickTimeMs - timeSinceLastTickMs;
-        auto tick = currentTick;
+    void advanceDeviceBuffer();
 
-        while (timePoint < blockDurationMs)
-        {
-            timePoint += tickTimeMs;
-            tick = getTickAfter (tick);
-        }
-
-        timeSinceLastTickMs = blockDurationMs - (timePoint - tickTimeMs);
-        // tick now represents the last tick in the current buffer, so it should be one after that
-        currentTick = tick;
-    }
-
-    [[nodiscard]] uint64_t getTickAfter (uint64_t tick) const
-    {
-        tick += 1;
-        if (isLooping())
-            if (tick >= loopingRangeTicks->getEnd())
-                tick = loopingRangeTicks->getStart();
-        return tick;
-    }
+    [[nodiscard]] uint64_t getTickAfter (uint64_t tick) const;
 
 private:
     double tickTimeMs = 0;
@@ -144,8 +75,9 @@ private:
     std::optional<juce::Range<uint64_t>> loopingRangeTicks = std::nullopt;
 };
 
-// ===================================================================================================
 
+// ===================================================================================================
+// Functor should have a call operator with the signature: (uint64_t tick, double timeRelativeToBufferMs)
 template <typename Functor>
 auto forEachTick (const PlayHead& playHead, Functor&& function)
 {

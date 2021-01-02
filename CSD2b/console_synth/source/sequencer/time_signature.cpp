@@ -54,3 +54,15 @@ bool TimeSignature::isValidDenominator (uint32_t toCheck) noexcept
     // a power of 2, but not 1.
     return std::bitset<sizeof (uint32_t) * 8> { toCheck }.count() == 1 && toCheck != 1;
 }
+
+
+[[nodiscard]] uint32_t TimeSignature::getTicksPerBar() const noexcept
+{
+    return getTicksPerDenominator() * numerator;
+}
+
+[[nodiscard]] uint32_t TimeSignature::getTicksPerDenominator() const
+{
+    auto numDenominatorsInQuarterNote = denominator / 4;
+    return ticksPerQuarterNote / numDenominatorsInQuarterNote;
+}

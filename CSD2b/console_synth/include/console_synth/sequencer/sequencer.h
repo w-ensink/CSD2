@@ -15,101 +15,28 @@
 class Sequencer : public juce::AudioSource
 {
 public:
-    explicit Sequencer (juce::ValueTree& parent)
-    {
-        playHead.setLooping (0, timeSignature.getTicksPerBar() + 1);
-        setTempoBpm (tempoBpm.getValue());
-        parent.appendChild (sequencerState, nullptr);
+    explicit Sequencer (juce::ValueTree& parent);
+    ~Sequencer() override = default;
 
-        tempoBpm.onChange = [this] (auto newTempo) { setTempoBpm (newTempo); };
-        midiMessageCollector.ensureStorageAllocated (256);
-    }
+    void prepareToPlay (int samplesPerBlockExpected, double newSampleRate) override;
 
 
-    void prepareToPlay (int samplesPerBlockExpected, double newSampleRate) override
-    {
-        setSampleRate (newSampleRate);
-        track.prepareToPlay (sampleRate, samplesPerBlockExpected);
-        midiMessageCollector.reset (sampleRate);
-    }
+    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override;
 
 
-    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override
-    {
-        // ensure the play head has the right callback duration set
-        const auto callbackDurationMs = (double) (bufferToFill.numSamples / sampleRate) * 1000;
-
-        if (callbackDurationMs != playHead.getDeviceCallbackDurationMs())
-            playHead.setDeviceCallbackDurationMs (callbackDurationMs);
-
-        // clear the destination buffer for the external midi messages
-        midiBuffer.clear();
-
-        // fetch the incoming midi messages from external midi
-        midiMessageCollector.removeNextBlockOfMessages (midiBuffer, bufferToFill.numSamples);
-
-        // prepare the render context for the current render pass
-        auto renderContext = RenderContext {
-            *bufferToFill.buffer,
-            midiBuffer,
-            playHead,
-            transportControl.getPlayState(),
-            sampleRate,
-            { 0, callbackDurationMs },
-            timeSignature
-        };
-
-        // render over all tracks...
-        track.renderNextBlock (renderContext);
-
-        // move play head one block ahead to prepare for the next callback
-        if (! transportControl.isStopped())
-            playHead.advanceDeviceBuffer();
-    }
+    void releaseResources() override;
 
 
-    void releaseResources() override
-    {
-        track.releaseResources();
-    }
+    bool openMidiInputDevice (const juce::String& name);
 
+    void stopPlayback();
 
-    bool openMidiInputDevice (const juce::String& name)
-    {
-        for (auto& d : juce::MidiInput::getAvailableDevices())
-        {
-            if (d.name.equalsIgnoreCase (name))
-            {
-                if (auto newInput = juce::MidiInput::openDevice (d.identifier, &midiMessageCollector))
-                {
-                    if (currentMidiInput != nullptr)
-                        currentMidiInput->stop();
+    void startPlayback();
 
-                    currentMidiInput = std::move (newInput);
-                    currentMidiInput->start();
-                    return true;
-                }
-            }
-        }
+    [[nodiscard]] bool isPlaying() const noexcept;
 
-        return false;
-    }
+    const TimeSignature& getTimeSignature() const noexcept;
 
-    void stopPlayback()
-    {
-        transportControl.stopPlayback();
-    }
-
-    void startPlayback()
-    {
-        transportControl.startPlayback();
-    }
-
-    [[nodiscard]] bool isPlaying() const noexcept { return transportControl.isPlaying(); }
-
-    const TimeSignature& getTimeSignature() const noexcept { return timeSignature; }
-
-    TransportControl& getTransportControl() noexcept { return transportControl; }
 
 private:
     juce::ValueTree sequencerState { IDs::sequencer };
@@ -117,23 +44,13 @@ private:
     TimeSignature timeSignature { 4, 4, 48 };
     double sampleRate = 0;
     PlayHead playHead;
-    TransportControl transportControl;
+    PlayState playState = PlayState::stopped;
     Track track { sequencerState };
     juce::MidiMessageCollector midiMessageCollector;
     std::unique_ptr<juce::MidiInput> currentMidiInput = nullptr;
     juce::MidiBuffer midiBuffer;
 
 
-    void setTempoBpm (double bpm)
-    {
-        auto ticksPerMinute = bpm * timeSignature.getTicksPerQuarterNote();
-        auto msPerTick = 60'000 / ticksPerMinute;
-        playHead.setTickTimeMs (msPerTick);
-    }
-
-
-    void setSampleRate (double rate)
-    {
-        sampleRate = rate;
-    }
+    void setTempoBpm (double bpm);
+    void setSampleRate (double rate);
 };

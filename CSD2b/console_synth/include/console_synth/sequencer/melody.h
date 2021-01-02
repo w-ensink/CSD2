@@ -4,10 +4,24 @@
 #pragma once
 
 #include <console_synth/identifiers.h>
-#include <console_synth/sequencer/event.h>
 #include <console_synth/utility/drow_ValueTreeObjectList.h>
 #include <console_synth/utility/property.h>
 #include <utility>
+#include <console_synth/sequencer/time_signature.h>
+#include <cstdint>
+#include <functional>
+#include <utility>
+#include <vector>
+
+
+struct Event
+{
+    int midiNote;
+    int velocity;
+    int timeStampTicks;
+    bool isNoteOn;
+};
+
 
 struct Note
 {
