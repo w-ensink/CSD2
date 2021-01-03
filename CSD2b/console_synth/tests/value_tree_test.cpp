@@ -315,3 +315,35 @@ TEST_CASE ("general project structure")
     consoleInterface.undoManager.undo();
     CHECK (engine.currentSynth->type == SynthType::sine);
 }
+
+TEST_CASE ("array property")
+{
+    auto tree = juce::ValueTree { "parent" };
+    auto property = Property<juce::Array<juce::var>> { tree, "array", { 0.0, 1.0, 2.0 } };
+
+    auto propertyChanged = false;
+    auto newValue = juce::Array<juce::var> { 1.0, 1.0, 1.0 };
+
+    property.onChange = [&propertyChanged] (auto p) {
+        propertyChanged = true;
+    };
+
+
+    CHECK (! propertyChanged);
+    tree.setProperty ("array", newValue, nullptr);
+    CHECK (propertyChanged);
+    CHECK ((double) tree["array"][0] == 1.0);
+
+    newValue = juce::Array<juce::var> { 5.0, 4.0, 3.0 };
+    REQUIRE ((double) newValue[0] == 5.0);
+
+    double firstValue = 0;
+
+    property.onChange = [&firstValue] (auto p) {
+        firstValue = p[0];
+    };
+
+    tree.setProperty ("array", newValue, nullptr);
+
+    CHECK (firstValue == 5.0);
+}
