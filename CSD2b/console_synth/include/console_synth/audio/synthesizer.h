@@ -257,7 +257,7 @@ private:
     Property<float> decay { synthState, IDs::decay, 0.1 };
     Property<float> sustain { synthState, IDs::sustain, 0.5 };
     Property<float> release { synthState, IDs::release, 0.1 };
-
+    ArrayProperty ratios { synthState, IDs::ratios, { 0.125, 0.5 } };
 
     void envelopeChanged()
     {
@@ -270,6 +270,19 @@ private:
 
         forEachVoice<VoiceType> ([params] (auto& voice) {
             voice.setEnvelope (params);
+        });
+    }
+
+    void ratiosChanged()
+    {
+        auto newRatios = std::array<double, 2> {};
+        auto ratioValues = ratios.getValue();
+
+        for (auto i = 0; i < 2; ++i)
+            newRatios[i] = ratioValues[i];
+
+        forEachVoice<VoiceType> ([&newRatios] (auto& voice) {
+            voice.getOscillator().setRatios (newRatios);
         });
     }
 

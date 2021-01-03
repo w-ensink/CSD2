@@ -48,10 +48,13 @@ struct ListAudioDevices_CommandHandler : public CommandHandler
     {
         auto deviceNames = engine.getAvailableAudioDevices();
 
-        auto nameList = std::string { "\n" };
+        auto nameList = std::string {};
 
         for (auto& name : deviceNames)
-            nameList += fmt::format (" - {}\n", name);
+            nameList += fmt::format ("\n - {}", name);
+
+        if (nameList.empty())
+            return "no audio devices available";
 
         return nameList;
     }
@@ -78,10 +81,13 @@ struct ListMidiDevices_CommandHandler : public CommandHandler
     {
         auto deviceNames = Engine::getAvailableMidiDevices();
 
-        auto nameList = std::string { "\n" };
+        auto nameList = std::string {};
 
         for (auto& name : deviceNames)
-            nameList += fmt::format (" - {}\n", name);
+            nameList += fmt::format ("\n - {}", name);
+
+        if (nameList.empty())
+            return "no midi devices available";
 
         return nameList;
     }
@@ -203,7 +209,7 @@ struct AddNote_CommandHandler : public CommandHandler
                 .getChildWithName (IDs::sequencer)
                 .getChildWithName (IDs::track)
                 .getChildWithName (IDs::melody)
-                .addChild (note, -1, engine.getUndoManager());
+                .appendChild (note, engine.getUndoManager());
 
             return fmt::format ("added note {} at tick {}", noteNumber, start);
         }
@@ -238,15 +244,20 @@ struct ListNotes_CommandHandler : public CommandHandler
 
         auto answer = std::string {};
 
+        auto ticksPerQuarterNote = (double) engine.getSequencer().getTimeSignature().getTicksPerQuarterNote();
+
         for (auto&& note : melody)
         {
             auto midiNum = (int) note.getProperty (IDs::midiNoteNumber);
-            auto start = (int) note.getProperty (IDs::startTimeTicks);
-            auto length = (int) note.getProperty (IDs::lengthTicks);
+            auto start = (double) ((int) note.getProperty (IDs::startTimeTicks)) / ticksPerQuarterNote;
+            auto length = (double) ((int) note.getProperty (IDs::lengthTicks)) / ticksPerQuarterNote;
             auto velocity = (int) note.getProperty (IDs::velocity);
 
-            answer += fmt::format ("number: {},\tstart: {},\tlength: {},\tvelocity: {}\n", midiNum, start, length, velocity);
+            answer += fmt::format ("\n - number: {},\tstart (beats): {},\tlength (beats): {},\tvelocity: {}", midiNum, start, length, velocity);
         }
+
+        if (answer.empty())
+            return "No notes in the melody currently";
 
         return answer;
     }
@@ -552,11 +563,13 @@ void ConsoleInterface::handleCommand (std::string_view command)
 
 void ConsoleInterface::showHelp()
 {
+    clearScreen();
     auto help = std::string {};
 
     for (auto&& handler : commandHandlers)
         help += fmt::format (" - {}\n", handler->getHelpString());
 
+    help += " - exit | quit (exits program)\n";
 
     fmt::print (help);
     fetchUserInput ("Press enter to return... ");
@@ -565,24 +578,32 @@ void ConsoleInterface::showHelp()
 
 void ConsoleInterface::run()
 {
-    static constexpr auto header = std::string_view {
-        "░██╗░░░░░░░██╗░█████╗░██╗░░░██╗████████╗███████╗██████╗░\n"
-        "░██║░░██╗░░██║██╔══██╗██║░░░██║╚══██╔══╝██╔════╝██╔══██╗\n"
-        "░╚██╗████╗██╔╝██║░░██║██║░░░██║░░░██║░░░█████╗░░██████╔╝\n"
-        "░░████╔═████║░██║░░██║██║░░░██║░░░██║░░░██╔══╝░░██╔══██╗\n"
-        "░░╚██╔╝░╚██╔╝░╚█████╔╝╚██████╔╝░░░██║░░░███████╗██║░░██║\n"
-        "░░░╚═╝░░░╚═╝░░░╚════╝░░╚═════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝"
-    };
-
     while (keepRunning)
     {
-        clearScreen();
-        fmt::print ("{}\n\n", header);
-        fmt::print ("{}\n", feedback);
+        printHeader();
         auto command = fetchUserInput (" --> ");
 
         handleCommand (command);
     }
+
+    clearScreen();
+    fmt::print ("{}\n\n\nThank you for using Console Synth\n\n", header);
+}
+
+void ConsoleInterface::printHeader()
+{
+    clearScreen();
+    fmt::print ("{}\n\n", header);
+
+    auto& sequencer = engine.getSequencer();
+    fmt::print ("play state: {}\n", sequencer.isPlaying() ? "playing" : "stopped");
+
+    auto tempo = (double) engine.getValueTreeState()
+                     .getChildWithName (IDs::sequencer)
+                     .getProperty (IDs::tempo);
+
+    fmt::print ("tempo: {} bpm\n\n", tempo);
+    fmt::print ("feedback: {}\n\n", feedback);
 }
 
 std::string ConsoleInterface::fetchUserInput (std::string_view message)
