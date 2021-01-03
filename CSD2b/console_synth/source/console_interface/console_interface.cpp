@@ -440,6 +440,70 @@ private:
 
 // =================================================================================================
 
+struct ChangeRatios_CommandHandler : public CommandHandler
+{
+    bool canHandleCommand (std::string_view command) noexcept override
+    {
+        if (ctre::match<fmPattern> (command) || ctre::match<rmPattern> (command))
+            return true;
+
+        return false;
+    }
+
+    std::string handleCommand (Engine& engine, std::string_view command) override
+    {
+        auto typeProperty = engine.getValueTreeState()
+                                .getChildWithName (IDs::sequencer)
+                                .getChildWithName (IDs::track)
+                                .getProperty (IDs::synthType);
+
+        auto type = juce::VariantConverter<SynthType>::fromVar (typeProperty);
+
+        auto synth = engine.getValueTreeState()
+                         .getChildWithName (IDs::sequencer)
+                         .getChildWithName (IDs::track)
+                         .getChildWithName (IDs::synth);
+
+        if (auto match = ctre::match<fmPattern> (command))
+        {
+            if (type != SynthType::fm)
+                return "didn't give enough arguments for fm synth";
+
+            auto first = std::stod (match.get<1>().to_string());
+            auto second = std::stod (match.get<2>().to_string());
+            auto third = std::stod (match.get<3>().to_string());
+
+            auto newRatios = juce::Array<juce::var> { first, second, third };
+            synth.setProperty (IDs::ratios, newRatios, engine.getUndoManager());
+        }
+
+        if (auto match = ctre::match<rmPattern> (command))
+        {
+            if (type != SynthType::rm)
+                return "gave too many arguments for rm synth";
+
+            auto first = std::stod (match.get<1>().to_string());
+            auto second = std::stod (match.get<2>().to_string());
+
+            auto newRatios = juce::Array<juce::var> { first, second };
+            synth.setProperty (IDs::ratios, newRatios, engine.getUndoManager());
+        }
+
+        return "set ratios";
+    }
+
+
+    [[nodiscard]] std::string_view getHelpString() const noexcept override
+    {
+        return "ratios <ratios>";
+    }
+
+private:
+    static constexpr auto fmPattern = ctll::fixed_string { R"(^ratios\s(\d+\.\d+)\s(\d+\.\d+)\s(\d+\.\d+)$)" };
+    static constexpr auto rmPattern = ctll::fixed_string { R"(^ratios\s(\d+\.\d+)\s(\d+\.\d+)$)" };
+};
+// =================================================================================================
+
 
 ConsoleInterface::ConsoleInterface (Engine& engineToControl) : engine { engineToControl }
 {
@@ -456,6 +520,7 @@ ConsoleInterface::ConsoleInterface (Engine& engineToControl) : engine { engineTo
     addCommandHandler (std::make_unique<Redo_CommandHandler>());
     addCommandHandler (std::make_unique<ChangeEnvelope_CommandHandler>());
     addCommandHandler (std::make_unique<ChangeSynth_CommandHandler>());
+    addCommandHandler (std::make_unique<ChangeRatios_CommandHandler>());
 }
 
 void ConsoleInterface::handleCommand (std::string_view command)

@@ -27,7 +27,7 @@ DECLARE_ID (decay);
 DECLARE_ID (sustain);
 DECLARE_ID (release);
 DECLARE_ID (modulationIndex);
-DECLARE_ID (ratio);
+DECLARE_ID (ratios);
 DECLARE_ID (name);
 DECLARE_ID (synthType);
 

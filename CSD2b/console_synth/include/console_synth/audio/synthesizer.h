@@ -7,8 +7,8 @@
 #include <console_synth/audio/envelope.h>
 #include <console_synth/audio/oscillators.h>
 #include <console_synth/identifiers.h>
+#include <console_synth/utility/format.h>
 #include <console_synth/utility/property.h>
-
 // ===================================================================================================
 
 class GeneralSynthesizerSound : public juce::SynthesiserSound
@@ -145,10 +145,13 @@ public:
         for (auto i = 0; i < numVoices.getValue(); ++i)
         {
             auto voice = new VoiceType {};
-            voice->getOscillator().setRatios ({ 0.125, 0.25, 0.5 });
             voice->getOscillator().setModulationIndices ({ 1.0, 1.0, 1.0 });
             synthEngine.addVoice (voice);
         }
+
+        ratiosChanged();
+
+        ratios.onChange = [this] (auto) { ratiosChanged(); };
 
         auto onEnvChange = [this] (auto) { envelopeChanged(); };
         attack.onChange = onEnvChange;
@@ -178,12 +181,11 @@ private:
     juce::ValueTree synthState { IDs::synth };
     Property<juce::String> type { synthState, IDs::name, "FM" };
     Property<int> numVoices { synthState, IDs::numVoices, 4 };
-    Property<double> modulationIndex { synthState, IDs::modulationIndex, 1.0 };
     Property<float> attack { synthState, IDs::attack, 0.001 };
     Property<float> decay { synthState, IDs::decay, 0.1 };
     Property<float> sustain { synthState, IDs::sustain, 0.5 };
     Property<float> release { synthState, IDs::release, 0.1 };
-
+    ArrayProperty ratios { synthState, IDs::ratios, { 0.125, 0.25, 0.5 } };
 
     void envelopeChanged()
     {
@@ -196,6 +198,19 @@ private:
 
         forEachVoice<VoiceType> ([params] (auto& voice) {
             voice.setEnvelope (params);
+        });
+    }
+
+    void ratiosChanged()
+    {
+        auto newRatios = std::array<double, 3> {};
+        auto ratioValues = ratios.getValue();
+
+        for (auto i = 0; i < 3; ++i)
+            newRatios[i] = ratioValues[i];
+
+        forEachVoice<VoiceType> ([&newRatios] (auto& voice) {
+            voice.getOscillator().setRatios (newRatios);
         });
     }
 

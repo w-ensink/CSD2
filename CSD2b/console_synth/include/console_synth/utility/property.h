@@ -103,7 +103,7 @@ public:
         tree.setPropertyExcludingListener (this, identifier, newValue, nullptr);
     }
 
-    [[nodiscard]] juce::Array<juce::var> getValue() const
+    [[nodiscard]] juce::var getValue() const
     {
         return cachedValue;
     }
@@ -132,3 +132,5 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Property);
 };
+
+using ArrayProperty = Property<juce::Array<juce::var>>;
