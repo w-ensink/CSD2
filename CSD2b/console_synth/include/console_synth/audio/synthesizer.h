@@ -9,6 +9,7 @@
 #include <console_synth/identifiers.h>
 #include <console_synth/utility/format.h>
 #include <console_synth/utility/property.h>
+
 // ===================================================================================================
 
 class GeneralSynthesizerSound : public juce::SynthesiserSound
@@ -118,39 +119,32 @@ public:
 
 protected:
     juce::Synthesiser synthEngine;
-
-
-    template <typename VoiceType, typename Functor>
-    void forEachVoice (Functor&& function)
-    {
-        for (auto i = 0; i < synthEngine.getNumVoices(); ++i)
-            if (auto* voice = dynamic_cast<VoiceType*> (synthEngine.getVoice (i)))
-                function (*voice);
-    }
 };
 
-// ===================================================================================================
 
-// fm synth with anti aliased (8x oversampled) voices with 1 sine carrier and 3 sine modulators
-class FmSynthesizer : public SynthesizerBase
+template <typename OscType>
+class ModulationSynthesizer : public SynthesizerBase
 {
 public:
-    using OscType = AntiAliased<FmOsc<SquareOsc<float>, SineOsc<float>, SineOsc<float>, SineOsc<float>>>;
     using VoiceType = OscillatorSynthesizerVoice<OscType>;
 
-    explicit FmSynthesizer (juce::ValueTree parent)
+    explicit ModulationSynthesizer (juce::ValueTree parent)
     {
         parent.appendChild (synthState, nullptr);
+
+        auto modIndices = std::array<double, OscType::getNumModulators()> {};
+
+        for (auto& index : modIndices)
+            index = 1.0;
 
         for (auto i = 0; i < numVoices.getValue(); ++i)
         {
             auto voice = new VoiceType {};
-            voice->getOscillator().setModulationIndices ({ 1.0, 1.0, 1.0 });
+            voice->getOscillator().setModulationIndices (modIndices);
             synthEngine.addVoice (voice);
         }
 
         ratiosChanged();
-
         ratios.onChange = [this] (auto) { ratiosChanged(); };
 
         auto onEnvChange = [this] (auto) { envelopeChanged(); };
@@ -161,25 +155,11 @@ public:
         envelopeChanged();
     }
 
-    ~FmSynthesizer() override = default;
+    ~ModulationSynthesizer() override = default;
 
-    void setModulationIndexForModulator (int modulator, double index)
-    {
-        forEachVoice<VoiceType> ([modulator, index] (auto& voice) {
-            voice.getOscillator().setModulationIndex (modulator, index);
-        });
-    }
-
-    void setRatioForModulator (int modulator, double ratio)
-    {
-        forEachVoice<VoiceType> ([modulator, ratio] (auto& voice) {
-            voice.getOscillator().setModulationIndex (modulator, ratio);
-        });
-    }
 
 private:
     juce::ValueTree synthState { IDs::synth };
-    Property<juce::String> type { synthState, IDs::name, "FM" };
     Property<int> numVoices { synthState, IDs::numVoices, 4 };
     Property<float> attack { synthState, IDs::attack, 0.001 };
     Property<float> decay { synthState, IDs::decay, 0.1 };
@@ -196,95 +176,51 @@ private:
             .release = release.getValue()
         };
 
-        forEachVoice<VoiceType> ([params] (auto& voice) {
+        forEachVoice ([params] (auto& voice) {
             voice.setEnvelope (params);
         });
     }
 
     void ratiosChanged()
     {
-        auto newRatios = std::array<double, 3> {};
+        auto newRatios = std::array<double, OscType::getNumModulators()> {};
         auto ratioValues = ratios.getValue();
 
-        for (auto i = 0; i < 3; ++i)
+        for (auto i = 0; i < OscType::getNumModulators(); ++i)
             newRatios[i] = ratioValues[i];
 
-        forEachVoice<VoiceType> ([&newRatios] (auto& voice) {
+        forEachVoice ([&newRatios] (auto& voice) {
             voice.getOscillator().setRatios (newRatios);
         });
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FmSynthesizer);
+
+    template <typename Functor>
+    void forEachVoice (Functor&& function)
+    {
+        for (auto i = 0; i < synthEngine.getNumVoices(); ++i)
+            if (auto* voice = dynamic_cast<VoiceType*> (synthEngine.getVoice (i)))
+                function (*voice);
+    }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ModulationSynthesizer);
 };
 
 // ===================================================================================================
 
-class RmSynthesizer : public SynthesizerBase
-{
-public:
-    using OscType = AntiAliased<RmOsc<SineOsc<float>, TriangleOsc<float>, SawOsc<float>>>;
-    using VoiceType = OscillatorSynthesizerVoice<OscType>;
+using FmSynthesizer = ModulationSynthesizer<
+    AntiAliased<
+        FmOsc<
+            SquareOsc<float>,
+            SineOsc<float>,
+            SineOsc<float>,
+            SineOsc<float>>>>;
 
-    explicit RmSynthesizer (juce::ValueTree parent)
-    {
-        parent.appendChild (synthState, nullptr);
+// ===================================================================================================
 
-        for (auto i = 0; i < numVoices.getValue(); ++i)
-        {
-            auto voice = new VoiceType {};
-            voice->getOscillator().setRatios ({ 0.125, 0.5 });
-            voice->getOscillator().setModulationIndices ({ 1.0, 1.0 });
-            synthEngine.addVoice (voice);
-        }
-
-        auto onEnvChange = [this] (auto) { envelopeChanged(); };
-        attack.onChange = onEnvChange;
-        decay.onChange = onEnvChange;
-        sustain.onChange = onEnvChange;
-        release.onChange = onEnvChange;
-        envelopeChanged();
-    }
-
-    ~RmSynthesizer() override = default;
-
-
-private:
-    juce::ValueTree synthState { IDs::synth };
-    Property<juce::String> type { synthState, IDs::name, "RM" };
-    Property<int> numVoices { synthState, IDs::numVoices, 4 };
-    Property<double> modulationIndex { synthState, IDs::modulationIndex, 1.0 };
-    Property<float> attack { synthState, IDs::attack, 0.001 };
-    Property<float> decay { synthState, IDs::decay, 0.1 };
-    Property<float> sustain { synthState, IDs::sustain, 0.5 };
-    Property<float> release { synthState, IDs::release, 0.1 };
-    ArrayProperty ratios { synthState, IDs::ratios, { 0.125, 0.5 } };
-
-    void envelopeChanged()
-    {
-        auto params = juce::ADSR::Parameters {
-            .attack = attack.getValue(),
-            .decay = decay.getValue(),
-            .sustain = sustain.getValue(),
-            .release = release.getValue()
-        };
-
-        forEachVoice<VoiceType> ([params] (auto& voice) {
-            voice.setEnvelope (params);
-        });
-    }
-
-    void ratiosChanged()
-    {
-        auto newRatios = std::array<double, 2> {};
-        auto ratioValues = ratios.getValue();
-
-        for (auto i = 0; i < 2; ++i)
-            newRatios[i] = ratioValues[i];
-
-        forEachVoice<VoiceType> ([&newRatios] (auto& voice) {
-            voice.getOscillator().setRatios (newRatios);
-        });
-    }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RmSynthesizer);
-};
+using RmSynthesizer = ModulationSynthesizer<
+    AntiAliased<
+        RmOsc<
+            SineOsc<float>,
+            TriangleOsc<float>,
+            SawOsc<float>>>>;

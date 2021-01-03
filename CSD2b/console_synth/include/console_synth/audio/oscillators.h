@@ -215,7 +215,7 @@ struct ModulationOscillatorBase
         modulationIndices = indices;
     }
 
-    constexpr auto getNumModulators() noexcept
+    static constexpr auto getNumModulators() noexcept
     {
         return sizeof...(ModulatorTypes);
     }
