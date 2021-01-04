@@ -121,3 +121,33 @@ is never fired, causing the current note to go on until either the user pauses p
 or the loops ends. Fixing this in a proper way probably requires some major design chances.
 
 ### User Interface Design
+The UI is roughly the same as in the CSD2a Python assignment. It's separated from the 
+Engine and doesn't exist as far as the Engine is concerned. It again uses a system where each
+command is fetched and then matched with a CommandHandler implementation that can handle the command. 
+---
+## Personal Reflection
+This project was meant as an introduction to C++. For me this was about 5 years after I originally started
+with the language. That meant there were two options for me. I could either go along with the rest and
+have a really easy time, or I could try to do new things. I chose to do the latter. 
+
+In CSD2a I started experimenting with Test Driven Development (TDD). In this project I tried to incorporate 
+that a little more into my workflow. This wasn't easy, since audio code is often very hard to test.
+For some cases, like the PlayHead class (which was really tricky), I found ways to test the code. 
+TDD required me to think "how could I prove this works", before I even started writing the code. 
+This meant that when I came up with a way to do it, it was basically a given that it would work
+when I was done. For things like the PlayHead, Property and ADSR classes, it meant that it just
+worked and I didn't have to worry about it once. 
+For other classes I didn't really find ways to test the behaviour in a simple way (like the 
+synths and oscillators). In the future I want to write some kind of library that can make this 
+easier. For this project I didn't really find the time to do that. 
+
+What I found the hardest to do, was making the UML diagram. I know exactly what relations
+there are in my code, but pieces of my code are really heavily templated. I didn't find 
+good ways to really deal with that in UML. Then it was also hard to find the right amount
+of detail to show on the diagram. If I showed every detail, the diagram would be extremely 
+big and would not serve its purpose of giving a good overview. Therefore I created multiple 
+diagrams, showing the different "modules" of my code. And one showing them together.
+
+As for the time I spent this project, that is somewhere around 10-15 hours a week 
+(outside of the normal C++ lessons). Some weeks a little more, some a little less, but a steady
+amount overall. 

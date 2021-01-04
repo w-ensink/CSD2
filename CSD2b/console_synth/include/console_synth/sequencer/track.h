@@ -4,7 +4,7 @@
 #pragma once
 
 #include <console_synth/audio/synth_types.h>
-#include <console_synth/audio/synthesizer.h>
+#include <console_synth/audio/synthesizers.h>
 #include <console_synth/midi/midi_source.h>
 #include <console_synth/sequencer/melody.h>
 #include <console_synth/sequencer/render_context.h>

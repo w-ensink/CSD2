@@ -119,8 +119,11 @@ public:
 
 protected:
     juce::Synthesiser synthEngine;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SynthesizerBase);
 };
 
+// ===================================================================================================
 
 template <typename OscType>
 class ModulationSynthesizer : public SynthesizerBase
@@ -155,8 +158,8 @@ public:
         envelopeChanged();
     }
 
-    ~ModulationSynthesizer() override = default;
 
+    ~ModulationSynthesizer() override = default;
 
 private:
     juce::ValueTree synthState { IDs::synth };
@@ -166,6 +169,7 @@ private:
     Property<float> sustain { synthState, IDs::sustain, 0.5 };
     Property<float> release { synthState, IDs::release, 0.1 };
     ArrayProperty ratios { synthState, IDs::ratios, { 0.125, 0.25, 0.5 } };
+
 
     void envelopeChanged()
     {
@@ -180,6 +184,7 @@ private:
             voice.setEnvelope (params);
         });
     }
+
 
     void ratiosChanged()
     {
