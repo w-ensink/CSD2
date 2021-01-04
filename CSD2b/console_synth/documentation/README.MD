@@ -58,7 +58,7 @@ sure if this is accurate in the real world though. Further testing showed that t
 shrunk when faced with bigger audio buffers (in the order of 10,000,000 samples). The difference 
 was then still around 70 times.
 
-There are a couple of primitive naive oscillator types (square, saw, sine, triangle, noise, pulse...),
+There are a couple of primitive naive oscillator types (square, saw, sine, triangle, noise...),
 that can then be wrapped inside a higher level 'shell' to add functionality (like anti aliasing) 
 or can be used to make higher level oscillators, like FM, AM and RM oscillators. 
 
@@ -121,9 +121,11 @@ is never fired, causing the current note to go on until either the user pauses p
 or the loops ends. Fixing this in a proper way probably requires some major design chances.
 
 ### User Interface Design
+
 The UI is roughly the same as in the CSD2a Python assignment. It's separated from the 
 Engine and doesn't exist as far as the Engine is concerned. It again uses a system where each
-command is fetched and then matched with a CommandHandler implementation that can handle the command. 
+command is fetched and then matched with a CommandHandler implementation that can handle the command.
+
 ---
 ## Personal Reflection
 This project was meant as an introduction to C++. For me this was about 5 years after I originally started
